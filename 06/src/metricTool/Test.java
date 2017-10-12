@@ -1,6 +1,6 @@
 package metricTool;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -21,17 +22,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+
+import de.uni_hamburg.informatik.swt.accessanalysis.Analysis;
+import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisFactory;
+import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisFactory.AnalysisMode;
+import de.uni_hamburg.informatik.swt.accessanalysis.results.ResultFormatter;
+import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisException;
+
+import org.gravity.eclipse.exceptions.NoConverterRegisteredException;
 import org.gravity.hulk.HulkAPI;
 import org.gravity.hulk.HulkAPI.AntiPatternNames;
 import org.gravity.hulk.antipatterngraph.HAntiPattern;
@@ -40,16 +48,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import metricTool.GradleImport;
-
-//import de.uni_hamburg.informatik.swt.accessanalysis.Analysis;
-//import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisFactory;
-//import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisFactory.AnalysisMode;
-//import de.uni_hamburg.informatik.swt.accessanalysis.results.ResultFormatter;
-//import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisException;
-
-import org.gravity.eclipse.exceptions.NoConverterRegisteredException;
-
 public class Test {
 	public final String env_variable_name_jadx = "JADX"; //$NON-NLS-1$
 	public final String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
@@ -57,123 +55,202 @@ public class Test {
 	public final String env_variable_name_mongod = "MONGOD";
 	public List<String> results = new ArrayList<String>();
 	public List<String> timelog = new ArrayList<String>();
+	public List<String> apks_not_built = new ArrayList<String>();
 	private static final String SRC_METER_FOLDER = "SrcMeter"; //$NON-NLS-1$
 	public static List<IJavaProject> apk_project = new ArrayList<IJavaProject>();
+	public static File compiled_apk;
 
 	@org.junit.Test
 	public void execute() {
 
-		// IProject myProject0 =
-		// ResourcesPlugin.getWorkspace().getRoot().getProject("ColorNote.apk");
-		// IJavaProject p0 = JavaCore.create(myProject0);
-		// apk_project.add(p0);
-		// getAntipatterns(p0);
+		File src_location = new File("C:\\Users\\Biggi\\Documents\\strategie2\\Sourcecode");
+		File metric_results = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\results\\NewMetricResults.csv");
+		// mainProcess(src_location, metric_results);
+		importProject();
+	}
 
-		// IProject myProject1 =
-		// ResourcesPlugin.getWorkspace().getRoot().getProject("Torch.apk");
-		// IJavaProject p1 = JavaCore.create(myProject1);
-		// apk_project.add(p1);
-		//
-		 IProject myProject2 =
-		 ResourcesPlugin.getWorkspace().getRoot().getProject("com.facebook.lite.apk");
-		 IJavaProject p2 = JavaCore.create(myProject2);
-		 apk_project.add(p2);
-		 getAntipatterns(p2);
-		//
-		// IProject myProject3 =
-		// ResourcesPlugin.getWorkspace().getRoot().getProject("FlappyBirdv1.2.apk");
-		// IJavaProject p3 = JavaCore.create(myProject3);
-		// apk_project.add(p3);
-		//
-		// IProject myProject4 =
-		// ResourcesPlugin.getWorkspace().getRoot().getProject("info.free.followers1.1.apk");
-		// IJavaProject p4 = JavaCore.create(myProject4);
-		// apk_project.add(p4);
-		//
-		// IProject myProject5 =
-		// ResourcesPlugin.getWorkspace().getRoot().getProject("net.openvpn.openvpn.76.apk");
-		// IJavaProject p5 = JavaCore.create(myProject5);
-		// apk_project.add(p5);
-		//
-		// for (IJavaProject i : apk_project) {
-		// if (!createGradleSrcFolder(i, null)) {
-		// fail("Adding src folder to classpath failed.");
-		// }
-		// getAntipatterns(i);
-		// }
+	public static void main(String[] args) {
 
 		Test t = new Test();
-		File apks = new File("C:\\Users\\Biggi\\Documents\\all_apks");
-		File metric_results = new File("C:\\Users\\Biggi\\Documents\\results\\MetricResults.csv");
-		File time_log = new File("C:\\Users\\Biggi\\Documents\\results\\TimeLog.csv");
-		//t.bigProcess(apks, metric_results, time_log);
+		File srcCode = new File("C:\\Users\\Biggi\\Documents\\strategie2\\Sourcecode");
+		File metric_results = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\results\\TestResults.csv");
+		// t.mainProcess(srcCode, metric_results);
 
-		// File location = new
-		// File("C:\\Users\\Biggi\\Documents\\myProject3\\Torch.apk");
-		//
-		// IProject project = GradleImport.importProject(location);
-		// IJavaProject iProject = JavaCore.create(project);
-		// createGradleSrcFolder(iProject, new NullProgressMonitor());
 	}
 
-	public static void main(String args[]) {
-		Test t = new Test();
-		File apks = new File("C:\\Users\\Biggi\\Documents\\apks");
-		File metric_results = new File("C:\\Users\\Biggi\\Documents\\results\\MetricResults.csv");
-		File time_log = new File("C:\\Users\\Biggi\\Documents\\results\\TimeLog.csv");
-		t.bigProcess(apks, metric_results, time_log);
-
-		File location = new File("");
-		IProject project = GradleImport.importProject(location);
-		IJavaProject iProject = JavaCore.create(project);
-		t.createGradleSrcFolder(iProject, new NullProgressMonitor());
+	static boolean isWindowsSystem() {
+		String osName = System.getProperty("os.name").toLowerCase();
+		return osName.indexOf("windows") >= 0;
 	}
 
-	public void getTimestamp() {
-		Date date = new Date();
-		long time = date.getTime();
-		Timestamp ts = new Timestamp(time);
-		timelog.add(ts.toString());
+	static boolean isLinuxSystem() {
+		String osName = System.getProperty("os.name").toLowerCase();
+		return osName.indexOf("linux") >= 0;
 	}
 
-	public void bigProcess(File apks, File metric_results, File time_log) {
-		initCSV(metric_results, time_log);
-		if (apks.isDirectory()) {
-			String[] apk_string = apks.list();
-			if (apk_string[0] != null) {
-				for (String s : apk_string) {
-					File apk_file = new File(apks, s);
-					File src_code = new File("C:\\Users\\Biggi\\Documents\\myProject5\\" + s);
-					getTimestamp();
-					if (!src_code.exists()) {
-						decompileApk(apk_file, src_code);
-					}
-					File srcmeter_out = new File("C:\\Users\\Biggi\\Documents\\myProject5\\" + s + "SrcMeter");
-					getTimestamp();
+	/*
+	 * TODO MongoDB parallel laufen lassen
+	 */
+
+	public void startDatabase() {
+		String mongod = System.getenv(this.env_variable_name_mongod);
+		String cmd = "cd " + mongod + " && mongod";
+		System.out.println("MONGOD: " + mongod);
+		Runtime run = Runtime.getRuntime();
+		try {
+			Process process = run.exec("cmd /c \"" + cmd);
+			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line;
+			while ((line = stream_reader.readLine()) != null) {
+				System.out.println("> " + line); //$NON-NLS-1$
+			}
+			process.waitFor();
+			process.destroy();
+			stream_reader.close();
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void importProject() {
+		 IProject appProject0 =
+		 ResourcesPlugin.getWorkspace().getRoot().getProject("app");
+		 IJavaProject p0 = JavaCore.create(appProject0);
+		 apk_project.add(p0);
+		 getAntipatterns(p0);
+
+//		IProject appProject1 = ResourcesPlugin.getWorkspace().getRoot().getProject("OIFileManager");
+//		IJavaProject p1 = JavaCore.create(appProject1);
+//		getAntipatterns(p1);
+//		apk_project.add(p1);
+
+//		for (IJavaProject i : apk_project) {
+//			if (!createGradleSrcFolder(i, null)) {
+//				fail("Adding src folder to classpath failed.");
+//			}
+//			getAntipatterns(i);
+//		}
+		
+		File folder = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\results");
+		NullProgressMonitor monitor = new NullProgressMonitor();
+		printAccessibilityMetric(folder, monitor);
+
+	}
+
+	// Input Sourcecode mainProcess
+
+	public void mainProcess(File src_location, File metric_results) {
+		initCSV(metric_results);
+		if (src_location.isDirectory()) {
+			String[] app_string = src_location.list();
+			if (app_string[0] != null) {
+				Arrays.stream(app_string).forEach(System.out::println);
+				for (String s : app_string) {
+					File app_file = new File(src_location, s);
+					File srcmeter_out = new File("C:\\Users\\Biggi\\Documents\\strategie2\\SourceMeter\\" + s);
 					if (!srcmeter_out.exists()) {
-						calculateMetrics(src_code, srcmeter_out);
+						calculateMetrics(app_file, srcmeter_out);
 					}
-					getTimestamp();
-					if (getPermissions(apk_file)) {
-						getTimestamp();
-						writeCSV(metric_results, time_log, s);
-						results.clear();
-						timelog.clear();
+					File src_meter_folder = new File(srcmeter_out, SRC_METER_FOLDER);
+					if (!getMetrics(src_meter_folder)) {
+						for (int i = 0; i < 6; i++)
+							results.add(null);
 					}
+					if (buildApk(app_file)) {
+						getApkFile(app_file);
+						if (compiled_apk != null) {
+							System.out.println(compiled_apk);
+							getPermissions(compiled_apk);
+
+						} else {
+							System.out.println(s + ": No Apk built!");
+							apks_not_built.add(s);
+						}
+
+					}
+					writeCSV(metric_results, s);
+					results.clear();
 				}
-
 			} else
-				System.err.println("APK-Directory is empty!");
-		} else
-			System.err.println("Denoted path is no directory!");
+				System.err.println("Sourcecode-Directory is empty!");
+		}
+		System.out.println(apks_not_built);
+	}
 
+	public boolean buildApk(File srcCode) {
+		if (new File(srcCode, "build").exists()) {
+			System.out.println("Build already exists!");
+			return true;
+		}
+		boolean apk_build = false;
+		String cmd = "cd " + srcCode.getPath() + " && gradlew assembleDebug";
+		Runtime run = Runtime.getRuntime();
+		try {
+			Process process;
+			if (isWindowsSystem()) {
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			} else if (isLinuxSystem())
+				process = run.exec(cmd + " && exit\"");
+			else
+				return false;
+			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line;
+			while ((line = stream_reader.readLine()) != null) {
+				System.out.println("> " + line); //$NON-NLS-1$
+				/*
+				 * TODO if(line == "BUILD SUCCESSFUL") apk_build = true; else...
+				 */
+			}
+			process.waitFor();
+			process.destroy();
+			stream_reader.close();
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return apk_build;
+	}
+
+	public boolean getApkFile(File file) {
+		compiled_apk = null;
+		File[] list = file.listFiles();
+		// Arrays.stream(list).forEach(System.out::println);
+		if (list != null) {
+			for (File fil : list) {
+				if (compiled_apk != null)
+					break;
+				if (!fil.isDirectory()) {
+
+					FilenameFilter filter = new FilenameFilter() {
+						@Override
+						public boolean accept(File dir, String name) {
+							return name.endsWith(".apk");
+						};
+					};
+					File temp = new File(fil.getParent());
+					File[] apklist = temp.listFiles(filter);
+					// Arrays.stream(apklist).forEach(System.out::println);
+					if (apklist.length > 0) {
+						compiled_apk = apklist[0];
+						// System.out.println(compiled_apk);
+						return true;
+					}
+				} else
+					getApkFile(fil);
+			}
+			return true;
+		} else
+			System.out.println("Directory is empty!");
+		return false;
 	}
 
 	public boolean getAntipatterns(IJavaProject p) {
 		List<HAntiPattern> hulkResults;
 		try {
 			hulkResults = HulkAPI.detect(p, new NullProgressMonitor(), AntiPatternNames.Blob);
-			System.out.println(hulkResults.size());
+			System.out.println("Antipatterns: " + hulkResults.size());
 			hulkResults.size();
 
 		} catch (NoConverterRegisteredException e) {
@@ -183,6 +260,9 @@ public class Test {
 		return false;
 	}
 
+	/*
+	 * TODO für Linux cmd-Befehl testen
+	 */
 	public boolean getPermissions(File apk) {
 
 		String andro = System.getenv(this.env_variable_name_androlyze);
@@ -192,7 +272,14 @@ public class Test {
 
 		Runtime run = Runtime.getRuntime();
 		try {
-			Process process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
+			Process process;
+			if (isWindowsSystem())
+				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
+			else if (isLinuxSystem())
+				process = run.exec(andro_cmd + " && exit\"");
+			else
+				return false;
+
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			String line;
 
@@ -203,21 +290,23 @@ public class Test {
 			process.destroy();
 			stream_reader.close();
 
-			String path = andro + "\\storage\\res";
-			File location = new File(path);
+			File location = new File(andro + "\\storage\\res");
 			String[] fileList = location.list();
+			if (fileList.length > 0) {
+				String jsonPath = andro + "\\storage\\res\\" + fileList[0];
+				File f = new File(jsonPath);
 
-			String jsonPath = path + "\\" + fileList[0];
-			File f = new File(jsonPath);
+				while (!f.isFile()) {
+					String[] s = f.list();
+					jsonPath = jsonPath + "\\" + s[0];
+					f = new File(jsonPath);
 
-			while (!f.isFile()) {
-				String[] s = f.list();
-				jsonPath = jsonPath + "\\" + s[0];
-				f = new File(jsonPath);
-
+				}
+				if (parseJsonFile(jsonPath)) {
+					clear(location);
+					return true;
+				}
 			}
-			if (parseJsonFile(jsonPath))
-				return true;
 
 			return false;
 
@@ -231,7 +320,8 @@ public class Test {
 		JSONParser parser = new JSONParser();
 		Object obj;
 		try {
-			obj = parser.parse(new FileReader(jsonPath));
+			FileReader reader = new FileReader(jsonPath);
+			obj = parser.parse(reader);
 			JSONObject jsonObject = (JSONObject) obj;
 			Object name = jsonObject.get("code permissions");
 			JSONObject j = (JSONObject) name;
@@ -250,9 +340,11 @@ public class Test {
 					sumNotUsedPermissions++;
 				}
 			}
-
 			results.add(String.valueOf(sumPermissions));
 			results.add(String.valueOf(sumNotUsedPermissions));
+			System.out.println("All: " + sumPermissions + ", NotUsed: " + sumNotUsedPermissions);
+			System.out.println(results);
+			reader.close();
 			return true;
 		} catch (IOException | ParseException e) {
 
@@ -298,7 +390,13 @@ public class Test {
 
 		Runtime run = Runtime.getRuntime();
 		try {
-			Process process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			Process process;
+			if (isWindowsSystem())
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			else if (isLinuxSystem())
+				process = run.exec(cmd + " && exit\"");
+			else
+				return "Program is not compatibel with the Operating System";
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			String line;
 			while ((line = stream_reader.readLine()) != null) {
@@ -316,17 +414,26 @@ public class Test {
 		return "ok";
 	}
 
-	public String calculateMetrics(File in, File out) {
+	public boolean calculateMetrics(File in, File out) {
 
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		File src_meter_folder = new File(out, SRC_METER_FOLDER);
+
 		String cmd = src_meter + " -projectName=" + SRC_METER_FOLDER + //$NON-NLS-1$
 				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
 				" -resultsDir=" + out.toString(); //$NON-NLS-1$
 
 		Runtime run = Runtime.getRuntime();
 		try {
-			Process process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			Process process;
+			if (isWindowsSystem())
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			else if (isLinuxSystem())
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			else {
+				System.out.println("Program is not compatibel with the Operating System");
+				return false;
+			}
+
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			String line;
 			while ((line = stream_reader.readLine()) != null) {
@@ -336,15 +443,15 @@ public class Test {
 			process.waitFor();
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "error";
+			return false;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		getMetrics(src_meter_folder);
-		return "ok";
+
+		return true;
 	}
 
-	public void getMetrics(File src_meter_folder) {
+	public boolean getMetrics(File src_meter_folder) {
 		File[] java_folder = new File(src_meter_folder, "java").listFiles(); //$NON-NLS-1$
 
 		if (java_folder.length > 0) {
@@ -374,7 +481,7 @@ public class Test {
 							}
 							metric_reader.close();
 						}
-						// Durchschnitt bilden
+
 						double sum = 0;
 						for (int i = 0; i < class_values.size(); i++) {
 							sum += class_values.get(i);
@@ -399,14 +506,14 @@ public class Test {
 				}
 				file_reader.close();
 				// clear(src_meter_folder);
-
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+				return true;
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.out.println("critical error");
+				return false;
 			}
 
 		}
+		return false;
 	}
 
 	public void initCSV(File metric_results, File time_log) {
@@ -422,6 +529,17 @@ public class Test {
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(time_log));
 			writer.write("Application Name," + "JADX_start," + "SourceMeter_start," + "AndroLyze," + "End");
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void initCSV(File metric_results) {
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(metric_results));
+			writer.write("Application Name," + "LOC," + "WMC," + "CBO," + "LCOM5," + "DIT," + "LDC," + "SumPermissions,"
+					+ "SumNotUsedPermissions");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -464,37 +582,63 @@ public class Test {
 		}
 	}
 
-	// private void clear(File file) {
-	// if (file.exists()) {
-	// for (File f : file.listFiles()) {
-	// if (f.isDirectory()) {
-	// clear(f);
-	// f.delete();
-	// } else {
-	// f.delete();
-	// }
-	// }
-	// }
-	// }
+	public void writeCSV(File metric_results, String apk) {
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(metric_results, true));
+			ListIterator<String> iterator = results.listIterator();
+			writer.newLine();
+			writer.write(apk + ", ");
+			while (iterator.hasNext()) {
+				String s = iterator.next();
+				if (iterator.hasNext()) {
+					writer.write(s + ", ");
+				} else
+					writer.write(s);
+			}
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-	// public boolean printAccessibilityMetric(File folder, NullProgressMonitor
-	// monitor) {
-	// for(IJavaProject p:apk_project){
-	// p.getProject().deleteMarkers(null, true, IResource.DEPTH_INFINITE);
-	// }
-	// try {
-	// Analysis accessAnalysis = AnalysisFactory.analyzer(apk_project,
-	// AnalysisMode.ACCESS_QUIET);
-	// accessAnalysis.run(monitor);
-	// ResultFormatter formatter =
-	// accessAnalysis.getResults().get(0).getFormatter();
-	// Files.write(new File(folder, "accessMetrics.txt").toPath(),
-	// ("igat = " + formatter.igat() + " igam = " +
-	// formatter.igam()).getBytes());
-	// } catch (AnalysisException | IOException e) {
-	// return false;
-	// }
-	// return true;
-	// }
+	public void getTimestamp() {
+		Date date = new Date();
+		long time = date.getTime();
+		Timestamp ts = new Timestamp(time);
+		timelog.add(ts.toString());
+	}
+
+	private void clear(File file) {
+		if (file.exists()) {
+			for (File f : file.listFiles()) {
+				if (f.isDirectory()) {
+					clear(f);
+					f.delete();
+				} else {
+					f.delete();
+				}
+			}
+		}
+	}
+
+	public boolean printAccessibilityMetric(File folder, NullProgressMonitor monitor) {
+		for (IJavaProject p : apk_project) {
+			try {
+				p.getProject().deleteMarkers(null, true, IResource.DEPTH_INFINITE);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			Analysis accessAnalysis = AnalysisFactory.analyzer(apk_project, AnalysisMode.ACCESS_QUIET);
+			accessAnalysis.run(monitor);
+			ResultFormatter formatter = accessAnalysis.getResults().get(0).getFormatter();
+			Files.write(new File(folder, "accessMetrics.txt").toPath(),
+					("igat = " + formatter.igat() + " igam = " + formatter.igam()).getBytes());
+		} catch (AnalysisException | IOException e) {
+			return false;
+		}
+		return true;
+	}
 
 }
