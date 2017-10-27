@@ -1,7 +1,5 @@
 package metricTool;
 
-import static org.junit.Assert.fail;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,21 +21,11 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-
-import de.uni_hamburg.informatik.swt.accessanalysis.Analysis;
-import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisFactory;
-import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisFactory.AnalysisMode;
-import de.uni_hamburg.informatik.swt.accessanalysis.results.ResultFormatter;
-import de.uni_hamburg.informatik.swt.accessanalysis.AnalysisException;
 
 import org.gravity.eclipse.exceptions.NoConverterRegisteredException;
 import org.gravity.hulk.HulkAPI;
@@ -47,6 +35,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+import org.gravity.eclipse.importer.GradleImport;
 
 public class Test {
 	public final String env_variable_name_jadx = "JADX"; //$NON-NLS-1$
@@ -59,12 +49,14 @@ public class Test {
 	private static final String SRC_METER_FOLDER = "SrcMeter"; //$NON-NLS-1$
 	public static List<IJavaProject> apk_project = new ArrayList<IJavaProject>();
 	public static File compiled_apk;
+	public static final String result_dir = "C:\\Users\\Biggi\\Documents\\strategie2\\";
 
 	@org.junit.Test
 	public void execute() {
 
-		File src_location = new File("C:\\Users\\Biggi\\Documents\\strategie2\\Sourcecode");
-		File metric_results = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\results\\NewMetricResults.csv");
+		// File src_location = new File(result_dir + "Sourcecode");
+		// File metric_results = new File(result_dir +
+		// "results\\NewMetricResults.csv");
 		// mainProcess(src_location, metric_results);
 		importProject();
 	}
@@ -72,9 +64,10 @@ public class Test {
 	public static void main(String[] args) {
 
 		Test t = new Test();
-		File srcCode = new File("C:\\Users\\Biggi\\Documents\\strategie2\\Sourcecode");
-		File metric_results = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\results\\TestResults.csv");
-		// t.mainProcess(srcCode, metric_results);
+		File srcCode = new File(result_dir + "Test");
+		File metric_results = new File(result_dir + "results\\TestResults1.csv");
+		t.mainProcess(srcCode, metric_results);
+		t.startDatabase();
 
 	}
 
@@ -88,56 +81,37 @@ public class Test {
 		return osName.indexOf("linux") >= 0;
 	}
 
-	/*
-	 * TODO MongoDB parallel laufen lassen
-	 */
-
 	public void startDatabase() {
 		String mongod = System.getenv(this.env_variable_name_mongod);
 		String cmd = "cd " + mongod + " && mongod";
 		System.out.println("MONGOD: " + mongod);
 		Runtime run = Runtime.getRuntime();
 		try {
-			Process process = run.exec("cmd /c \"" + cmd);
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
-			}
+			Process process = run.exec("cmd /c \"" + cmd);		
 			process.waitFor();
 			process.destroy();
-			stream_reader.close();
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void importProject() {
-		 IProject appProject0 =
-		 ResourcesPlugin.getWorkspace().getRoot().getProject("app");
-		 IJavaProject p0 = JavaCore.create(appProject0);
-		 apk_project.add(p0);
-		 getAntipatterns(p0);
 
-//		IProject appProject1 = ResourcesPlugin.getWorkspace().getRoot().getProject("OIFileManager");
-//		IJavaProject p1 = JavaCore.create(appProject1);
-//		getAntipatterns(p1);
-//		apk_project.add(p1);
+		String gradle = "C:\\Users\\Biggi\\.gradle";
+		String android = "\"C:\\Program Files\\sdk-tools-windows-3859397\"";
 
-//		for (IJavaProject i : apk_project) {
-//			if (!createGradleSrcFolder(i, null)) {
-//				fail("Adding src folder to classpath failed.");
-//			}
-//			getAntipatterns(i);
-//		}
-		
-		File folder = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\results");
-		NullProgressMonitor monitor = new NullProgressMonitor();
-		printAccessibilityMetric(folder, monitor);
+		GradleImport gradleImport = new GradleImport(gradle, android);
+		File location = new File(result_dir + "Test\\iosched");
+		IJavaProject p;
+		try {
+			p = gradleImport.importGradleProject(location, "Iosched", new NullProgressMonitor());
+			getAntipatterns(p);
+		} catch (Exception e) {
+
+			e.printStackTrace();
+		}
 
 	}
-
-	// Input Sourcecode mainProcess
 
 	public void mainProcess(File src_location, File metric_results) {
 		initCSV(metric_results);
@@ -146,35 +120,42 @@ public class Test {
 			if (app_string[0] != null) {
 				Arrays.stream(app_string).forEach(System.out::println);
 				for (String s : app_string) {
+					System.out.println(s);
 					File app_file = new File(src_location, s);
-					File srcmeter_out = new File("C:\\Users\\Biggi\\Documents\\strategie2\\SourceMeter\\" + s);
+					File srcmeter_out = new File(result_dir + "SourceMeter\\" + s);
 					if (!srcmeter_out.exists()) {
 						calculateMetrics(app_file, srcmeter_out);
 					}
 					File src_meter_folder = new File(srcmeter_out, SRC_METER_FOLDER);
 					if (!getMetrics(src_meter_folder)) {
-						for (int i = 0; i < 6; i++)
+						for (int i = 0; i < 7; i++)
 							results.add(null);
 					}
-					if (buildApk(app_file)) {
-						getApkFile(app_file);
-						if (compiled_apk != null) {
-							System.out.println(compiled_apk);
-							getPermissions(compiled_apk);
-
-						} else {
-							System.out.println(s + ": No Apk built!");
-							apks_not_built.add(s);
+					File andro_results = new File(result_dir + "androlyze\\" + s);
+					if (!andro_results.exists()) {
+						if (buildApk(app_file)) {
+							getApkFile(app_file);
+							if (compiled_apk != null) {
+								System.out.println(compiled_apk);
+								if (getPermissions(compiled_apk, andro_results))
+									parseJsonFile(andro_results);
+							} else {
+								System.err.println(s + ": Build failed!");
+								apks_not_built.add(s);
+							}
 						}
-
-					}
+					} else
+						parseJsonFile(andro_results);
 					writeCSV(metric_results, s);
 					results.clear();
 				}
 			} else
 				System.err.println("Sourcecode-Directory is empty!");
 		}
-		System.out.println(apks_not_built);
+		if (apks_not_built.isEmpty())
+			System.out.println("No Problems occured!");
+		else
+			System.out.println(apks_not_built);
 	}
 
 	public boolean buildApk(File srcCode) {
@@ -197,9 +178,6 @@ public class Test {
 			String line;
 			while ((line = stream_reader.readLine()) != null) {
 				System.out.println("> " + line); //$NON-NLS-1$
-				/*
-				 * TODO if(line == "BUILD SUCCESSFUL") apk_build = true; else...
-				 */
 			}
 			process.waitFor();
 			process.destroy();
@@ -246,24 +224,25 @@ public class Test {
 		return false;
 	}
 
-	public boolean getAntipatterns(IJavaProject p) {
-		List<HAntiPattern> hulkResults;
+	public int getAntipatterns(IJavaProject p) {
+		List<HAntiPattern> hulkResults = null;
+
 		try {
-			hulkResults = HulkAPI.detect(p, new NullProgressMonitor(), AntiPatternNames.Blob);
+			hulkResults = HulkAPI.detect(p, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM,
+					AntiPatternNames.IGAT);
 			System.out.println("Antipatterns: " + hulkResults.size());
-			hulkResults.size();
 
 		} catch (NoConverterRegisteredException e) {
 
 			e.printStackTrace();
 		}
-		return false;
+		return hulkResults.size();
 	}
 
 	/*
 	 * TODO für Linux cmd-Befehl testen
 	 */
-	public boolean getPermissions(File apk) {
+	public boolean getPermissions(File apk, File andro_results) {
 
 		String andro = System.getenv(this.env_variable_name_androlyze);
 
@@ -302,10 +281,10 @@ public class Test {
 					f = new File(jsonPath);
 
 				}
-				if (parseJsonFile(jsonPath)) {
-					clear(location);
-					return true;
-				}
+				Files.move(f.toPath(), andro_results.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+						java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+				clear(location);
+				return true;
 			}
 
 			return false;
@@ -315,12 +294,12 @@ public class Test {
 		}
 	}
 
-	public boolean parseJsonFile(String jsonPath) {
+	public boolean parseJsonFile(File andro_results) {
 
 		JSONParser parser = new JSONParser();
 		Object obj;
 		try {
-			FileReader reader = new FileReader(jsonPath);
+			FileReader reader = new FileReader(andro_results);
 			obj = parser.parse(reader);
 			JSONObject jsonObject = (JSONObject) obj;
 			Object name = jsonObject.get("code permissions");
@@ -340,8 +319,11 @@ public class Test {
 					sumNotUsedPermissions++;
 				}
 			}
-			results.add(String.valueOf(sumPermissions));
-			results.add(String.valueOf(sumNotUsedPermissions));
+			DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
+			dfs.setDecimalSeparator('.');
+			DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
+			double permission_metric = (double) sumNotUsedPermissions / (double) sumPermissions;
+			results.add(String.valueOf(dFormat.format(permission_metric)));
 			System.out.println("All: " + sumPermissions + ", NotUsed: " + sumNotUsedPermissions);
 			System.out.println(results);
 			reader.close();
@@ -469,6 +451,7 @@ public class Test {
 
 				for (String s : metric_names) {
 					int metric_index = Arrays.asList(names).indexOf(s);
+					System.out.println(s + ": " + metric_index);
 					try {
 						String[] files = { "SrcMeter-Class.csv", "SrcMeter-Enum.csv" };
 						for (String f : files) {
@@ -486,12 +469,15 @@ public class Test {
 						for (int i = 0; i < class_values.size(); i++) {
 							sum += class_values.get(i);
 						}
+						DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
+						dfs.setDecimalSeparator('.');
+						DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 						if (s == "LOC") {
 							results.add(String.valueOf(sum));
+							double average = sum / class_values.size();
+							results.add(dFormat.format(average).toString());
 						} else {
-							DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
-							dfs.setDecimalSeparator('.');
-							DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
+
 							double average = sum / class_values.size();
 							results.add(dFormat.format(average).toString());
 						}
@@ -519,8 +505,8 @@ public class Test {
 	public void initCSV(File metric_results, File time_log) {
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(metric_results));
-			writer.write("Application Name," + "LOC," + "WMC," + "CBO," + "LCOM5," + "DIT," + "LDC," + "SumPermissions,"
-					+ "SumNotUsedPermissions");
+			writer.write("Application Name," + "LOC," + "LOCpC," + "WMC," + "CBO," + "LCOM5," + "DIT," + "LDC,"
+					+ "Permissions");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -538,8 +524,8 @@ public class Test {
 	public void initCSV(File metric_results) {
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(metric_results));
-			writer.write("Application Name," + "LOC," + "WMC," + "CBO," + "LCOM5," + "DIT," + "LDC," + "SumPermissions,"
-					+ "SumNotUsedPermissions");
+			writer.write("Application Name," + "LOC," + "LOCpC," + "WMC," + "CBO," + "LCOM5," + "DIT," + "LDC,"
+					+ "Permissions");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -619,26 +605,6 @@ public class Test {
 				}
 			}
 		}
-	}
-
-	public boolean printAccessibilityMetric(File folder, NullProgressMonitor monitor) {
-		for (IJavaProject p : apk_project) {
-			try {
-				p.getProject().deleteMarkers(null, true, IResource.DEPTH_INFINITE);
-			} catch (CoreException e) {
-				e.printStackTrace();
-			}
-		}
-		try {
-			Analysis accessAnalysis = AnalysisFactory.analyzer(apk_project, AnalysisMode.ACCESS_QUIET);
-			accessAnalysis.run(monitor);
-			ResultFormatter formatter = accessAnalysis.getResults().get(0).getFormatter();
-			Files.write(new File(folder, "accessMetrics.txt").toPath(),
-					("igat = " + formatter.igat() + " igam = " + formatter.igam()).getBytes());
-		} catch (AnalysisException | IOException e) {
-			return false;
-		}
-		return true;
 	}
 
 }
