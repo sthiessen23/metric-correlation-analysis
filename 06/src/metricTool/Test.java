@@ -66,8 +66,9 @@ public class Test {
 		Test t = new Test();
 		File srcCode = new File(result_dir + "Test");
 		File metric_results = new File(result_dir + "results\\TestResults1.csv");
-		t.mainProcess(srcCode, metric_results);
-		t.startDatabase();
+//		t.mainProcess(srcCode, metric_results);
+//		t.startDatabase();
+		System.out.println(srcCode.getParent());
 
 	}
 

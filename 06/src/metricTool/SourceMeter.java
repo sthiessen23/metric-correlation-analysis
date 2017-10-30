@@ -58,6 +58,42 @@ public class SourceMeter implements MetricCalculator {
 
 		return true;
 	}
+	
+	public boolean calculateMetric(File in, File out) {
+		String src_meter = System.getenv(this.env_variable_name_srcmeter);
+		String src_meter_out = Executor.result_dir + "SourceMeter\\" + in.getName();
+		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
+				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
+				" -resultsDir=" + out.toPath(); //$NON-NLS-1$
+
+		Runtime run = Runtime.getRuntime();
+		try {
+			Process process;
+			if (windows)
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			else if (linux)
+				process = run.exec(cmd + " && exit\"");
+			else {
+				System.err.println("Program is not compatibel with the Operating System");
+				return false;
+			}
+
+			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line;
+			while ((line = stream_reader.readLine()) != null) {
+				System.out.println("> " + line); //$NON-NLS-1$
+			}
+			stream_reader.close();
+			process.waitFor();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		return true;
+	}
 
 	@Override
 	public LinkedHashMap<String, Double> getResults(File in) {

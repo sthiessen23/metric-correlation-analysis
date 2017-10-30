@@ -70,7 +70,7 @@ public class Androlyze implements MetricCalculator {
 				}
 				Files.move(f.toPath(), in.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE,
 						java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-				clear(location);
+				Executor.clear(location);
 				return true;
 			}
 
@@ -125,17 +125,6 @@ public class Androlyze implements MetricCalculator {
 		}
 	}
 
-	private void clear(File file) {
-		if (file.exists()) {
-			for (File f : file.listFiles()) {
-				if (f.isDirectory()) {
-					clear(f);
-					f.delete();
-				} else {
-					f.delete();
-				}
-			}
-		}
-	}
+	
 
 }

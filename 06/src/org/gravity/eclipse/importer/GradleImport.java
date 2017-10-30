@@ -44,12 +44,21 @@ import org.eclipse.jdt.launching.LibraryLocation;
 
 public class GradleImport {
 
+<<<<<<< Upstream, based on branch 'master' of https://github.com/biggiwiebe/metric-correlation-analysis.git
 	private String gradle = "/home/speldszus/.gradle";
 	private String android = "/home/speldszus/Android/Sdk";
+=======
+	private String gradle = "C:\\Users\\Biggi\\.gradle";
+	private String android = "\"C:\\Program Files\\sdk-tools-windows-3859397\"";
+>>>>>>> 38ecd04 add download functionality
 
 	private final static String gradleCache = "caches/modules-2/files-2.1";
 	private final static String androidSdkPlatforms = "platforms";
+<<<<<<< Upstream, based on branch 'master' of https://github.com/biggiwiebe/metric-correlation-analysis.git
 
+=======
+	
+>>>>>>> 38ecd04 add download functionality
 	public GradleImport(String gradleHome, String androidHome) {
 		this.gradle = gradleHome;
 		this.android = androidHome;
@@ -260,8 +269,12 @@ public class GradleImport {
 					if (iFile.getLocation().toFile().getAbsolutePath().equals(location.toFile().getAbsolutePath())) {
 						continue;
 					} else {
+<<<<<<< Upstream, based on branch 'master' of https://github.com/biggiwiebe/metric-correlation-analysis.git
 						throw new RuntimeException(
 								"Duplicate: \n\t" + iFile.getLocation().toString() + "\n\t" + location.toString());
+=======
+						throw new RuntimeException("Duplicate:\n\t"+(iFile.getLocation().toFile().getAbsolutePath()+"\n\t"+location.toFile().getAbsolutePath()));
+>>>>>>> 38ecd04 add download functionality
 					}
 				}
 				iFile.createLink(location, IResource.NONE, monitor);
