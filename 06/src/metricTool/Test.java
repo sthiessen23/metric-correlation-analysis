@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
@@ -59,6 +61,9 @@ public class Test {
 		// "results\\NewMetricResults.csv");
 		// mainProcess(src_location, metric_results);
 		importProject();
+//		IProject myProject0 = ResourcesPlugin.getWorkspace().getRoot().getProject("Silence");
+//		IJavaProject p0 = JavaCore.create(myProject0);
+//		getAntipatterns(p0);
 	}
 
 	public static void main(String[] args) {
@@ -102,10 +107,10 @@ public class Test {
 		String android = "\"C:\\Program Files\\sdk-tools-windows-3859397\"";
 
 		GradleImport gradleImport = new GradleImport(gradle, android);
-		File location = new File(result_dir + "Test\\iosched");
+		File location = new File(result_dir + "Sourcecode\\NewPipe");
 		IJavaProject p;
 		try {
-			p = gradleImport.importGradleProject(location, "Iosched", new NullProgressMonitor());
+			p = gradleImport.importGradleProject(location, "NewPipe2", new NullProgressMonitor());
 			getAntipatterns(p);
 		} catch (Exception e) {
 

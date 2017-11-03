@@ -10,22 +10,36 @@ import org.junit.Test;
 
 public class Executor {
 
-	public static boolean windows = System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0;
-	public static boolean linux = System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0;
-	public static List<String> timelog = new ArrayList<String>();
-	public static LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
-	public static String result_dir = "C:\\Users\\Biggi\\Documents\\Strategie3\\";
-	public List<String> apks_not_built = new ArrayList<String>();
-	public final String env_variable_name_mongod = "MONGOD";
-	public List<String> downloadURLs = new ArrayList<String>();
+	protected static boolean windows = System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0;
+	protected static boolean linux = System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0;
+	protected static List<String> timelog = new ArrayList<String>();
+	protected static LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
+	protected static String result_dir = "C:\\Users\\Biggi\\Documents\\Strategie3\\";
+	private List<String> apks_not_built = new ArrayList<String>();
+	private final String env_variable_name_mongod = "MONGOD";
+	 
 
 	public static void main(String[] args) {
 		Executor exe = new Executor();
 		Download d = new Download();
-		String url = "https://github.com/siacs/Conversations.git";
-		File src_location = new File(result_dir + "VersionTemp\\Sourcecode\\Conversations");
+		List<String> downloadURLs = new ArrayList<String>();
+		downloadURLs.add("https://github.com/android10/Android-CleanArchitecture.git");
+		downloadURLs.add("https://github.com/florent37/TutoShowcase.git");
+		downloadURLs.add("https://github.com/amitshekhariitbhu/FlatBuffer.git");
+		downloadURLs.add("https://github.com/yaa110/Piclice.git");
+		downloadURLs.add("https://github.com/gitskarios/Gitskarios.git");
+		downloadURLs.add("https://github.com/pestrada/android-tdd-playground.git");
+		
+//		d.organizeDownloads(downloadURLs);
+//		File src_location = new File(result_dir + "Sourcecode");
+//		File result_file = new File(result_dir + "results\\MetricResults.csv");
+//		exe.mainProcess(src_location, result_file);
+		
+		
+//		String url = "https://github.com/siacs/Conversations.git";
+		File src_location = new File(result_dir + "VersionTemp\\Sourcecode\\Tinfoil-Facebook");
 		File version_ids = new File(result_dir + "VersionTemp\\VersionIds.csv");
-		File result_file = new File(result_dir + "VersionTemp\\results\\Test3.csv");
+		File result_file = new File(result_dir + "VersionTemp\\results\\Test.csv");
 		d.changeVersion(src_location, version_ids);
 //		if (d.gitClone(url)) {
 //			System.out.println("Successfully cloned");
@@ -35,14 +49,14 @@ public class Executor {
 	}
 
 	@Test
-	public void execute() {
+	private void execute() {
 		File src_location = new File(result_dir + "Sourcecode");
 		File result_file = new File(result_dir + "results\\Test3.csv");
 		mainProcess(src_location, result_file);
 
 	}
 
-	public void mainProcess(File src_location, int id, File result_file) {
+	protected void mainProcess(File src_location, int id, File result_file) {
 		System.out.println("Started");
 		Storage store = new Storage();
 		SourceMeter srcmeter = new SourceMeter("SOURCE_METER_JAVA");
@@ -51,7 +65,7 @@ public class Executor {
 		startDatabase();
 		System.out.println(src_location.toPath());
 		if (src_location.exists()) {
-			File src_meter_out = new File(result_dir + "VersionTemp\\SourceMeter\\" + src_location.getName());
+			File src_meter_out = new File(result_dir + "SourceMeter\\" + src_location.getName());
 			File src_meter_folder = new File(src_meter_out, "SrcMeter");
 			System.out.println(src_meter_folder);
 			
@@ -67,7 +81,7 @@ public class Executor {
 					metric_results.putAll(temp);
 			}
 			metric_results.putAll(temp);
-			File andro_results = new File(result_dir + "VersionTemp\\androlyze\\" + src_location.getName() + "id");
+			File andro_results = new File(result_dir + "androlyze\\" + src_location.getName() + id);
 			
 			
 			if (build.buildApk(src_location)) {
@@ -102,7 +116,7 @@ public class Executor {
 
 	}
 
-	public void mainProcess(File src_location, File result_file) {
+	private void mainProcess(File src_location, File result_file) {
 		System.out.println("Started");
 		Storage store = new Storage();
 		SourceMeter srcmeter = new SourceMeter("SOURCE_METER_JAVA");
@@ -164,7 +178,7 @@ public class Executor {
 			System.out.println("APKs not built: " + apks_not_built);
 	}
 
-	public void startDatabase() {
+	private void startDatabase() {
 		String mongod = System.getenv(this.env_variable_name_mongod);
 		String cmd = "cd " + mongod + " && mongod";
 		Runtime run = Runtime.getRuntime();
@@ -184,7 +198,7 @@ public class Executor {
 		}
 	}
 
-	public static void clear(File file) {
+	protected static void clear(File file) {
 		if (file.exists()) {
 			for (File f : file.listFiles()) {
 				if (f.isDirectory()) {

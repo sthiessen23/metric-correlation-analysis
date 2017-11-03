@@ -15,7 +15,7 @@ import java.util.List;
 
 public class SourceMeter implements MetricCalculator {
 
-	public String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
+	private String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
 
 
 	public SourceMeter(String env_name) {
@@ -33,9 +33,9 @@ public class SourceMeter implements MetricCalculator {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (windows)
+			if (Executor.windows)
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			else if (linux)
+			else if (Executor.linux)
 				process = run.exec(cmd + " && exit\"");
 			else {
 				System.err.println("Program is not compatibel with the Operating System");
@@ -59,19 +59,19 @@ public class SourceMeter implements MetricCalculator {
 		return true;
 	}
 	
-	public boolean calculateMetric(File in, File out) {
+	protected boolean calculateMetric(File src_code, File result) {
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executor.result_dir + "SourceMeter\\" + in.getName();
+		String src_meter_out = Executor.result_dir + "SourceMeter\\" + src_code.getName();
 		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
-				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
-				" -resultsDir=" + out.toPath(); //$NON-NLS-1$
+				" -projectBaseDir=" + src_code.toString() + //$NON-NLS-1$
+				" -resultsDir=" + result.toPath(); //$NON-NLS-1$
 
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (windows)
+			if (Executor.windows)
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			else if (linux)
+			else if (Executor.linux)
 				process = run.exec(cmd + " && exit\"");
 			else {
 				System.err.println("Program is not compatibel with the Operating System");

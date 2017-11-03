@@ -10,21 +10,20 @@ import java.util.List;
 public class Download {
 	
 
-	public void organizeDownloads(List<String> downloadURLs){
+	protected void organizeDownloads(List<String> downloadURLs){
 		for(String url : downloadURLs){
 			if(!gitClone(url))
 				System.err.println(url + ": not successfully cloned");
 		}
 	}
 	
-	public boolean gitClone(String url){
-		String cmd = "cd " + Executor.result_dir + "VersionTemp\\Sourcecode" + " && " + "git clone --recursive " + url;
+	protected boolean gitClone(String url){
+		String cmd = "cd " + Executor.result_dir + "Sourcecode" + " && " + "git clone --recursive " + url;
 		System.out.println(cmd);
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
 			if(Executor.windows){
-				System.out.println("windows");
 				process = run.exec("cmd /c \"" + cmd );
 				// + " && exit\""
 				BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -54,9 +53,14 @@ public class Download {
 		}
 	}
 	
-	public boolean changeVersion(File src_code, File version_ids){
+	protected boolean changeVersion(File src_code, File version_ids){
 		Executor executor = new Executor();
-		File result_file = new File(Executor.result_dir + "VersionTemp\\results\\VersionResult.csv");
+		GradleBuild gb = new GradleBuild();
+		Executor.result_dir = "C:\\Users\\Biggi\\Documents\\Strategie3\\VersionTemp\\";
+		File result_file = new File(Executor.result_dir + "results\\VersionResult.csv");
+		
+		gitClone("https://github.com/velazcod/Tinfoil-Facebook.git");
+		
 		try {
 			String[] ids = new String[3];
 			BufferedReader reader = new BufferedReader(new FileReader(version_ids));
@@ -70,11 +74,14 @@ public class Download {
 			}			
 			reader.close();
 			File build = new File(src_code, "build");
-			if(build.exists())
+			if(build.exists()){
 				Executor.clear(build);
+				build.delete();
+			}
 			int count = 1;
 			for(String id : ids){
 				System.out.println(id);
+				gb.cleanBuild(src_code);
 				if(build.exists())
 					Executor.clear(build);
 				String cmd = "cd " + src_code.getPath() + " && " + "git checkout " + id + " .";

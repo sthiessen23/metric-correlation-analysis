@@ -18,7 +18,7 @@ import org.json.simple.parser.ParseException;
 
 public class Androlyze implements MetricCalculator {
 
-	public String env_variable_name_androlyze = "ANDROLYZE";
+	private String env_variable_name_androlyze = "ANDROLYZE";
 
 	public Androlyze(String env_name) {
 		this.env_variable_name_androlyze = env_name;
@@ -34,9 +34,9 @@ public class Androlyze implements MetricCalculator {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (windows)
+			if (Executor.windows)
 				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
-			else if (linux)
+			else if (Executor.linux)
 				process = run.exec(andro_cmd + " && exit\"");
 			else
 				return false;
@@ -64,8 +64,9 @@ public class Androlyze implements MetricCalculator {
 						f = new File(jsonPath);
 
 					}
-				} catch (NullPointerException e) {
+				} catch (ArrayIndexOutOfBoundsException e) {
 					System.err.println("Androlyze could't store JSON file.");
+					Executor.clear(location);
 					return false;
 				}
 				Files.move(f.toPath(), in.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE,

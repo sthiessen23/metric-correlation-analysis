@@ -10,9 +10,7 @@ import java.util.Set;
 
 public class Storage {
 	
-	
-
-	public void initCSV(File result_file, File time_log_file) {
+	protected void initCSV(File result_file, File time_log_file) {
 		try {
 			Object[] obj = Executor.metric_results.keySet().toArray();
 			BufferedWriter writer = new BufferedWriter(new FileWriter(result_file));
@@ -34,7 +32,7 @@ public class Storage {
 		}
 	}
 
-	public void initCSV(File result_file) {
+	protected void initCSV(File result_file) {
 		try {
 			Object[] obj = Executor.metric_results.keySet().toArray();
 			BufferedWriter writer = new BufferedWriter(new FileWriter(result_file));
@@ -48,7 +46,7 @@ public class Storage {
 		}
 	}
 
-	public void writeCSV(File result_file, File time_log_file, String apk) {
+	protected void writeCSV(File result_file, File time_log_file, String apk) {
 		try {
 			Set<String> set = Executor.metric_results.keySet();
 			Iterator<String> iterator = set.iterator();
@@ -81,13 +79,13 @@ public class Storage {
 		}
 	}
 
-	public void writeCSV(File result_file, String apk) {
+	protected void writeCSV(File result_file, String apk_name) {
 		try {
 			Set<String> set = Executor.metric_results.keySet();
 			Iterator<String> iterator = set.iterator();
 			BufferedWriter writer = new BufferedWriter(new FileWriter(result_file, true));
 			writer.newLine();
-			writer.write(apk);
+			writer.write(apk_name);
 			while (iterator.hasNext()) {
 				writer.write("," + Executor.metric_results.get(iterator.next()));
 			}

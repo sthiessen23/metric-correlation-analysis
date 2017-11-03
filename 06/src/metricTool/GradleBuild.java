@@ -8,14 +8,14 @@ import java.io.InputStreamReader;
 
 public class GradleBuild {
 		
-	public static File compiled_apk;
+	protected static File compiled_apk;
 
-	public boolean buildApk(File in) {
-		if (new File(in, "build").exists()) {
+	protected boolean buildApk(File src_code) {
+		if (new File(src_code, "build").exists()) {
 			System.out.println("Build already exists!");
 			return true;
 		}		
-		String cmd = "cd " + in.getPath() + " && gradlew assembleDebug";
+		String cmd = "cd " + src_code.getPath() + " && gradlew assembleDebug";
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
@@ -42,9 +42,9 @@ public class GradleBuild {
 		return false;
 	}
 
-	public boolean getApk(File in) {
+	protected boolean getApk(File project) {
 		compiled_apk = null;
-		File[] list = in.listFiles();
+		File[] list = project.listFiles();
 		// Arrays.stream(list).forEach(System.out::println);
 		if (list != null) {
 			for (File fil : list) {
@@ -72,6 +72,35 @@ public class GradleBuild {
 			return true;
 		} else
 			System.out.println("Directory is empty!");
+		return false;
+	}
+	
+	protected boolean cleanBuild(File src_code){
+		String cmd = "cd " + src_code.getPath() + " && gradlew clean";
+		Runtime run = Runtime.getRuntime();
+		try {
+			Process process;
+			if (System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0) {
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			} else if (System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0)
+				process = run.exec(cmd + " && exit\"");
+			else
+				return false;
+			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line;
+			while ((line = stream_reader.readLine()) != null) {
+				System.out.println("> " + line); //$NON-NLS-1$
+			}
+			process.waitFor();
+			process.destroy();
+			stream_reader.close();
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		return false;
 	}
 
