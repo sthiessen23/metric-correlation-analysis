@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+
 import org.junit.Test;
 
 public class Executor {
@@ -17,41 +18,12 @@ public class Executor {
 	protected static String result_dir = "C:\\Users\\Biggi\\Documents\\Strategie3\\";
 	private List<String> apks_not_built = new ArrayList<String>();
 	private final String env_variable_name_mongod = "MONGOD";
-	 
-
-	public static void main(String[] args) {
-		Executor exe = new Executor();
-		Download d = new Download();
-		List<String> downloadURLs = new ArrayList<String>();
-		downloadURLs.add("https://github.com/android10/Android-CleanArchitecture.git");
-		downloadURLs.add("https://github.com/florent37/TutoShowcase.git");
-		downloadURLs.add("https://github.com/amitshekhariitbhu/FlatBuffer.git");
-		downloadURLs.add("https://github.com/yaa110/Piclice.git");
-		downloadURLs.add("https://github.com/gitskarios/Gitskarios.git");
-		downloadURLs.add("https://github.com/pestrada/android-tdd-playground.git");
-		
-//		d.organizeDownloads(downloadURLs);
-//		File src_location = new File(result_dir + "Sourcecode");
-//		File result_file = new File(result_dir + "results\\MetricResults.csv");
-//		exe.mainProcess(src_location, result_file);
-		
-		
-//		String url = "https://github.com/siacs/Conversations.git";
-		File src_location = new File(result_dir + "VersionTemp\\Sourcecode\\Tinfoil-Facebook");
-		File version_ids = new File(result_dir + "VersionTemp\\VersionIds.csv");
-		File result_file = new File(result_dir + "VersionTemp\\results\\Test.csv");
-		d.changeVersion(src_location, version_ids);
-//		if (d.gitClone(url)) {
-//			System.out.println("Successfully cloned");
-//
-//		}
-//		exe.mainProcess(src_location, 1, result_file);
-	}
+//	private final String workspace = "C:\\Users\\Biggi\\junit-workspace\\";
 
 	@Test
-	private void execute() {
+	public void execute() {
 		File src_location = new File(result_dir + "Sourcecode");
-		File result_file = new File(result_dir + "results\\Test3.csv");
+		File result_file = new File(result_dir + "results\\MetricResults.csv");
 		mainProcess(src_location, result_file);
 
 	}
@@ -68,7 +40,7 @@ public class Executor {
 			File src_meter_out = new File(result_dir + "SourceMeter\\" + src_location.getName());
 			File src_meter_folder = new File(src_meter_out, "SrcMeter");
 			System.out.println(src_meter_folder);
-			
+
 			if (src_meter_folder.exists())
 				clear(src_meter_folder);
 
@@ -82,8 +54,7 @@ public class Executor {
 			}
 			metric_results.putAll(temp);
 			File andro_results = new File(result_dir + "androlyze\\" + src_location.getName() + id);
-			
-			
+
 			if (build.buildApk(src_location)) {
 				build.getApk(src_location);
 
@@ -117,13 +88,15 @@ public class Executor {
 	}
 
 	private void mainProcess(File src_location, File result_file) {
-		System.out.println("Started");
+
+		Hulk hulk = new Hulk();
 		Storage store = new Storage();
 		SourceMeter srcmeter = new SourceMeter("SOURCE_METER_JAVA");
 		GradleBuild build = new GradleBuild();
 		Androlyze andro = new Androlyze("ANDROLYZE");
+		
 		startDatabase();
-		System.out.println(src_location.toPath());
+
 		if (src_location.isDirectory()) {
 			String[] app_string = src_location.list();
 			if (app_string[0] != null) {
@@ -131,19 +104,26 @@ public class Executor {
 				for (String s : app_string) {
 					System.out.println(s);
 					File project_src = new File(src_location, s);
+
+					hulk.calculateMetric(project_src);
+					LinkedHashMap<String, Double> hulk_results = hulk.getResults(project_src);
+
 					File srcmeter_out = new File(result_dir + "SourceMeter\\" + s);
 					if (!srcmeter_out.exists()) {
+//						File imported_project = new File(workspace + s);
 						srcmeter.calculateMetric(project_src);
 					}
 					File src_meter_folder = new File(srcmeter_out, "SrcMeter");
 					System.out.println(src_meter_folder);
-					LinkedHashMap<String, Double> temp = srcmeter.getResults(src_meter_folder);
-					System.out.println("After SourceMeter: " + temp);
-					if (temp == null) {
+					LinkedHashMap<String, Double> oo_metrics = srcmeter.getResults(src_meter_folder);
+					System.out.println("After SourceMeter: " + oo_metrics);
+					if (oo_metrics == null) {
 						for (int i = 0; i < 7; i++)
-							metric_results.putAll(temp);
+							metric_results.putAll(oo_metrics);
 					}
-					metric_results.putAll(temp);
+					metric_results.putAll(oo_metrics);
+					metric_results.putAll(hulk_results);
+
 					File andro_results = new File(result_dir + "androlyze\\" + s);
 
 					if (!andro_results.exists() && build.buildApk(project_src)) {
@@ -151,23 +131,24 @@ public class Executor {
 
 						if (GradleBuild.compiled_apk != null && andro.calculateMetric(andro_results)) {
 							System.out.println(GradleBuild.compiled_apk);
-							temp = andro.getResults(andro_results);
-							metric_results.putAll(temp);
+							LinkedHashMap<String, Double> permission = andro.getResults(andro_results);
+							metric_results.putAll(permission);
 						} else {
 							System.err.println(s + ": Build failed!");
 							apks_not_built.add(s);
-							metric_results.put("PERMISSIONS", -1.0);
+							metric_results.put("Permissions", -1.0);
 						}
 
 					} else {
-						temp = andro.getResults(andro_results);
-						metric_results.putAll(temp);
+						LinkedHashMap<String, Double> permission = andro.getResults(andro_results);
+						metric_results.putAll(permission);
 					}
 
 					if (!result_file.exists())
 						store.initCSV(result_file);
 					store.writeCSV(result_file, s);
 					metric_results.clear();
+
 				}
 			} else
 				System.err.println("Sourcecode-Directory is empty!");
