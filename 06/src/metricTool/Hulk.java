@@ -17,12 +17,11 @@ import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
 import org.gravity.hulk.antipatterngraph.metrics.HInappropriateGenerosityWithAccessibilityOfMethodMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HInappropriateGenerosityWithAccessibilityOfTypesMetric;
+import org.gravity.typegraph.basic.TypeGraph;
 
 public class Hulk implements MetricCalculator {
 
 	private List<HAnnotation> hulk_results = null;
-	private List<Double> igam_values = new ArrayList<Double>();
-	private List<Double> igat_values = new ArrayList<Double>();
 	private boolean hulk_ok = false;
 
 	public boolean calculateMetric(File in) {
@@ -46,9 +45,11 @@ public class Hulk implements MetricCalculator {
 	public LinkedHashMap<String, Double> getResults(File in) {
 		
 		LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
+		double igam = 0.0;
+		double igat = 0.0;
 		
 		if(!hulk_ok){
-			metric_results.put("BLOB", -1.0);
+			metric_results.put("BLOB-Antipattern", -1.0);
 			metric_results.put("IGAM", -1.0);
 			metric_results.put("IGAT", -1.0);
 			return metric_results;
@@ -56,37 +57,25 @@ public class Hulk implements MetricCalculator {
 		double blob = 0.0;
 		
 		for(HAnnotation ha : hulk_results){
-			
+			System.out.println(ha);
 			if(ha instanceof HBlobAntiPattern)
 				blob++;	
 			
 			if(ha instanceof HInappropriateGenerosityWithAccessibilityOfMethodMetric){
-				double temp = ((HMetric) ha).getValue();
-				if(!Double.isNaN(temp))
-					igam_values.add(temp);
+				if (ha.getTAnnotated() instanceof TypeGraph) {
+					igam = ((HMetric) ha).getValue();		
+				}
 			}				
 			if(ha instanceof HInappropriateGenerosityWithAccessibilityOfTypesMetric){
-				double temp = ((HMetric) ha).getValue();
-				if(!Double.isNaN(temp))
-					igat_values.add(temp);
+				if (ha.getTAnnotated() instanceof TypeGraph) {
+					igat = ((HMetric) ha).getValue();	
+				}
 			}
 		}	
-		metric_results.put("BLOB", blob);
-		metric_results.put("IGAM", calculateAverage(igam_values));
-		metric_results.put("IGAT", calculateAverage(igat_values));
+		metric_results.put("BLOB-Antipattern", blob);
+		metric_results.put("IGAM", igam);
+		metric_results.put("IGAT", igat);
 
 		return metric_results;
 	}
-	
-	private double calculateAverage(List<Double> list){
-		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
-		dfs.setDecimalSeparator('.');
-		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
-		double sum = 0.0;
-		for(double d : list)
-			sum += d;
-		sum = sum / list.size();
-		return Double.parseDouble(dFormat.format(sum));
-	}
-
 }
