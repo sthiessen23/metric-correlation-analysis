@@ -77,12 +77,12 @@ public class SourceMeter implements MetricCalculator {
 				return false;
 			}
 
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
+			try(BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))){
+				String line;
+				while((line = stream.readLine()) != null) {
+					System.err.println("SOURCEMETER: " + line);
+				}
 			}
-			stream_reader.close();
 			process.waitFor();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -102,6 +102,13 @@ public class SourceMeter implements MetricCalculator {
 		File[] java_folder = new File(in, "java").listFiles(); //$NON-NLS-1$
 		String[] metric_names = { "LOC", "WMC", "CBO", "LCOM5", "DIT", "LDC" };
 
+		if(java_folder == null) {
+			for(String name : metric_names) {
+				metric_results.put(name, -1.0);
+			}
+			return metric_results;
+		}
+		
 		if (java_folder.length > 0) {
 			try {
 				File metrics = new File(java_folder[0], "SrcMeter-Class.csv"); // $NON-NLS-1$
@@ -131,9 +138,10 @@ public class SourceMeter implements MetricCalculator {
 								return metric_results;
 							}
 								
-							while ((m_line = metric_reader.readLine()) != null) {
+							while (m_line != null) {
 								String[] values = m_line.substring(1, m_line.length() - 1).split("\",\""); //$NON-NLS-1$
 								class_values.add(Double.parseDouble(values[metric_index]));
+								metric_reader.readLine();
 							}
 							metric_reader.close();
 						}

@@ -109,7 +109,11 @@ public class Executor {
 			if (app_string[0] != null) {
 				Arrays.stream(app_string).forEach(System.out::println);
 				for (String s : app_string) {
+					System.out.println("\n\n\n#############################");
+					System.out.println("### "+new SimpleDateFormat().format(new Date())+" ###");
+					System.out.println("#############################");
 					System.out.println(s);
+					System.out.println("#############################\n");
 					File project_src = new File(src_location, s);
 
 					if(!hulk.calculateMetric(project_src)) {
