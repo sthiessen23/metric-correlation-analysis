@@ -19,9 +19,8 @@ Require-Bundle: org.eclipse.core.resources;bundle-version="3.11.0",
  org.gravity.hulk,
  org.gravity.eclipse,
  org.gravity.hulk.antipatterngraph,
- org.eclipse.buildship.core,
- com.gradleware.tooling.model,
  org.moflon.tgg.language;bundle-version="2.1.0",
- de.uni_hamburg.informatik.swt.accessanalysis;bundle-version="1.1.20120420",
  org.eclipse.jdt.launching,
- org.eclipse.core.runtime;bundle-version="3.12.0"
+ org.eclipse.core.runtime;bundle-version="3.12.0",
+ org.gravity.typegraph.basic;bundle-version="1.0.0",
+ org.gravity.tgg.modisco;bundle-version="1.0.0"

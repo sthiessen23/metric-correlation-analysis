@@ -19,10 +19,10 @@ public class GradleBuild {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0) {
+			if (Executor.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0)
-				process = run.exec(cmd + " && exit\"");
+			} else if (Executor.linux)
+				process = run.exec(cmd);
 			else
 				return false;
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -69,6 +69,7 @@ public class GradleBuild {
 				} else
 					getApk(fil);
 			}
+
 			return true;
 		} else
 			System.out.println("Directory is empty!");
@@ -80,9 +81,9 @@ public class GradleBuild {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0) {
+			if (Executor.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0)
+			} else if (Executor.linux)
 				process = run.exec(cmd + " && exit\"");
 			else
 				return false;

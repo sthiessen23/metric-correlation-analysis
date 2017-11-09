@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,13 +43,17 @@ import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.LibraryLocation;
 
+import metricTool.Executor;
+
 public class GradleImport {
 
-	private String gradle = "C:\\Users\\Biggi\\.gradle";
-	private String android = "\"C:\\Program Files\\sdk-tools-windows-3859397\"";
+	private String gradle;
+	private String android;
 
-	private final static String gradleCache = "caches/modules-2/files-2.1";
+	private final static String gradleCache = "caches" + File.separator + "modules-2" + File.separator
+			+ "files-2.1";
 	private final static String androidSdkPlatforms = "platforms";
+	private static final boolean LINKONPROJECT = false;
 
 	public GradleImport(String gradleHome, String androidHome) {
 		this.gradle = gradleHome;
@@ -56,11 +61,6 @@ public class GradleImport {
 	}
 
 	public IJavaProject importGradleProject(File folder, String name, IProgressMonitor monitor) throws Exception {
-		File gradleFolder = new File(gradle);
-		if (!gradleFolder.exists()) {
-			return null;
-		}
-
 		if (monitor == null) {
 			monitor = new NullProgressMonitor();
 		}
@@ -73,15 +73,15 @@ public class GradleImport {
 		IJavaProject project = createJavaProject(name, monitor, java, gradle);
 
 		// build gradle project
-		buildGradleProject(folder);
+		if(!buildGradleProject(folder)) {
+			return null;
+		}
 
 		IFolder libFolder = project.getProject().getFolder("lib");
 		libFolder.create(true, true, monitor);
+		
+		List<IClasspathEntry> entries = new LinkedList<>();
 		List<Path> libs = getLibs(gradle);
-		IClasspathEntry[] oldEntries = project.getRawClasspath();
-		int i = oldEntries.length;
-		IClasspathEntry[] newEntries = new IClasspathEntry[libs.size() + i];
-		System.arraycopy(oldEntries, 0, newEntries, 0, i);
 		for (Path libPath : libs) {
 			IFile jarFile = null;
 			String libName = libPath.toFile().getName();
@@ -94,15 +94,23 @@ public class GradleImport {
 					ZipEntry entry;
 					while ((entry = zipStream.getNextEntry()) != null) {
 						if (entry.getName().endsWith(".jar")) {
-							jarFile = libFolder
+								jarFile = libFolder
 									.getFile(libName.substring(0, libName.length() - "aar".length()) + "jar");
-							jarFile.create(zipStream, true, monitor);
-							// zipStream.closeEntry();
-							break;
+							if(!jarFile.exists()) {
+								jarFile.create(zipStream, true, monitor);
+								// zipStream.closeEntry();
+								break;
+							}
+							else {
+								jarFile = null;
+							}
 						}
 						zipStream.closeEntry();
 					}
 				}
+			}
+			if(jarFile == null) {
+				continue;
 			}
 			IClasspathEntry entry = new ClasspathEntry(IPackageFragmentRoot.K_BINARY, IClasspathEntry.CPE_LIBRARY,
 					jarFile.getFullPath(), ClasspathEntry.INCLUDE_ALL, // inclusion
@@ -113,8 +121,17 @@ public class GradleImport {
 					ClasspathEntry.NO_ACCESS_RULES, false, // no access rules to
 															// combine
 					ClasspathEntry.NO_EXTRA_ATTRIBUTES);
+			entries.add(entry);
+		}
+		
+		IClasspathEntry[] oldEntries = project.getRawClasspath();
+		int i = oldEntries.length;
+		IClasspathEntry[] newEntries = new IClasspathEntry[entries.size() + i];
+		System.arraycopy(oldEntries, 0, newEntries, 0, i);
+		for(IClasspathEntry entry : entries) {
 			newEntries[i++] = entry;
 		}
+		
 		project.setRawClasspath(newEntries, monitor);
 
 		return project;
@@ -126,13 +143,31 @@ public class GradleImport {
 			return false;
 		}
 		gradlew.setExecutable(true);
-		Process p = Runtime.getRuntime().exec("cmd /c \"" + gradlew.getAbsolutePath());
-		try (InputStream in = p.getInputStream()) {
-			byte[] buffer = new byte[1024];
-			while (in.read(buffer, 0, buffer.length) > 0) {
-				System.out.write(buffer);
+		Process p = null;
+		if(Executor.windows) {
+			p = Runtime.getRuntime().exec("cmd /c \"" + "gradlew assembleDebug",null, folder);
+		}
+		else if(Executor.linux) {
+			p = Runtime.getRuntime().exec("./gradlew assembleDebug", null, folder);
+		}
+		else {
+			System.err.println("Unsupported OS");
+			return false;
+		}
+		
+//		try(BufferedReader stream = new BufferedReader(new InputStreamReader(p.getInputStream()))){
+//			String line;
+//			while((line = stream.readLine()) != null) {
+//				System.out.println("GRADLE: " + line);
+//			}
+//		}
+		try(BufferedReader stream = new BufferedReader(new InputStreamReader(p.getErrorStream()))){
+			String line;
+			while((line = stream.readLine()) != null) {
+				System.err.println("GRADLE: " + line);
 			}
 		}
+		
 		p.waitFor();
 		return p.exitValue() == 0;
 	}
@@ -268,9 +303,13 @@ public class GradleImport {
 
 					}
 				}
-				iFile.createLink(location, IResource.NONE, monitor);
-				// ICompilationUnit cu =
-				// JavaCore.createCompilationUnitFrom(iFile);
+				if(LINKONPROJECT) {
+					iFile.createLink(location, IResource.NONE, monitor);
+				}
+				else {
+					Files.createSymbolicLink(iFile.getLocation().toFile().toPath(), location.toFile().toPath());
+				}
+				
 			}
 		}
 		return javaProject;

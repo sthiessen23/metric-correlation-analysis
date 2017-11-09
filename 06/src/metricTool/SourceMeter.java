@@ -17,7 +17,6 @@ public class SourceMeter implements MetricCalculator {
 
 	private String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
 
-
 	public SourceMeter(String env_name) {
 		this.env_variable_name_srcmeter = env_name;
 	}
@@ -25,7 +24,7 @@ public class SourceMeter implements MetricCalculator {
 	@Override
 	public boolean calculateMetric(File in) {
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executor.result_dir + "SourceMeter\\" + in.getName();
+		String src_meter_out = Executor.result_dir + "SourceMeter" + File.separator + in.getName();
 		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
 				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
 				" -resultsDir=" + src_meter_out; //$NON-NLS-1$
@@ -36,7 +35,7 @@ public class SourceMeter implements MetricCalculator {
 			if (Executor.windows)
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
 			else if (Executor.linux)
-				process = run.exec(cmd + " && exit\"");
+				process = run.exec(cmd);
 			else {
 				System.err.println("Program is not compatibel with the Operating System");
 				return false;
@@ -58,10 +57,10 @@ public class SourceMeter implements MetricCalculator {
 
 		return true;
 	}
-	
+
 	protected boolean calculateMetric(File src_code, File result) {
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executor.result_dir + "SourceMeter\\" + src_code.getName();
+		String src_meter_out = Executor.result_dir + "SourceMeter" + File.separator + src_code.getName();
 		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
 				" -projectBaseDir=" + src_code.toString() + //$NON-NLS-1$
 				" -resultsDir=" + result.toPath(); //$NON-NLS-1$
@@ -72,7 +71,7 @@ public class SourceMeter implements MetricCalculator {
 			if (Executor.windows)
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
 			else if (Executor.linux)
-				process = run.exec(cmd + " && exit\"");
+				process = run.exec(cmd);
 			else {
 				System.err.println("Program is not compatibel with the Operating System");
 				return false;
@@ -99,10 +98,10 @@ public class SourceMeter implements MetricCalculator {
 	public LinkedHashMap<String, Double> getResults(File in) {
 
 		LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
-		
+
 		File[] java_folder = new File(in, "java").listFiles(); //$NON-NLS-1$
 		String[] metric_names = { "LOC", "WMC", "CBO", "LCOM5", "DIT", "LDC" };
-		
+
 		if (java_folder.length > 0) {
 			try {
 				File metrics = new File(java_folder[0], "SrcMeter-Class.csv"); // $NON-NLS-1$
@@ -113,9 +112,9 @@ public class SourceMeter implements MetricCalculator {
 					System.err.println("Sourcemeter metric file is empty");
 				}
 				String[] names = line.substring(1, line.length() - 1).split("\",\""); //$NON-NLS-1$
-				
+
 				List<Double> class_values = new ArrayList<Double>();
-				
+
 				for (String s : metric_names) {
 					int metric_index = Arrays.asList(names).indexOf(s);
 					try {
@@ -124,6 +123,14 @@ public class SourceMeter implements MetricCalculator {
 							metrics = new File(java_folder[0], f); // $NON-NLS-1$
 							BufferedReader metric_reader = new BufferedReader(new FileReader(metrics));
 							String m_line = metric_reader.readLine();
+							if((m_line = metric_reader.readLine())==null) {
+								for (String name : metric_names) {
+									metric_results.put(name, -1.0);
+								}
+								metric_reader.close();
+								return metric_results;
+							}
+								
 							while ((m_line = metric_reader.readLine()) != null) {
 								String[] values = m_line.substring(1, m_line.length() - 1).split("\",\""); //$NON-NLS-1$
 								class_values.add(Double.parseDouble(values[metric_index]));
@@ -139,39 +146,38 @@ public class SourceMeter implements MetricCalculator {
 						DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 						if (s == "LOC") {
 							metric_results.put(s, Double.parseDouble(dFormat.format(sum)));
-							
+
 							double average = sum / class_values.size();
 							metric_results.put("LOCpC", Double.parseDouble(dFormat.format(average)));
-							
-						} else {							
+
+						} else {
 							double average = sum / class_values.size();
-							metric_results.put(s, Double.parseDouble(dFormat.format(average)));							
+							metric_results.put(s, Double.parseDouble(dFormat.format(average)));
 						}
-						
+
 						class_values.clear();
-						
+
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
 					} catch (IOException e) {
 						e.printStackTrace();
-					}					
+					}
 				}
-				
+
 				file_reader.close();
 				return metric_results;
-				
+
 			} catch (IOException e) {
 				System.err.println("critical error");
-				for(String s : metric_names){
+				for (String s : metric_names) {
 					metric_results.put(s, -1.0);
 				}
 				return metric_results;
 			}
-		}
-		else{
-			for(String s : metric_names){
+		} else {
+			for (String s : metric_names) {
 				metric_results.put(s, -1.0);
-			}			
+			}
 		}
 		return metric_results;
 	}

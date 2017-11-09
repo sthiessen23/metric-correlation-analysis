@@ -3,7 +3,6 @@ package metricTool;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -23,14 +22,19 @@ public class Hulk implements MetricCalculator {
 
 	private List<HAnnotation> hulk_results = null;
 	private boolean hulk_ok = false;
+	private File location = null;
 
 	public boolean calculateMetric(File in) {
 
-		String gradle = "C:\\Users\\Biggi\\.gradle";
-		String android = "C:\\Programme\\sdk-tools-windows-3859397";
+		String gradle = System.getenv("GRADLE_HOME");
+		String android = System.getenv("ANDROID_HOME");
 		GradleImport gradleImport = new GradleImport(gradle, android);
 		try {
 			IJavaProject project = gradleImport.importGradleProject(in, in.getName(), new NullProgressMonitor());
+			if(project==null) {
+				return false;
+			}
+			location  = project.getProject().getLocation().toFile();
 			hulk_results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM, AntiPatternNames.IGAT);
 			hulk_ok = true;
 			return true;
@@ -57,25 +61,40 @@ public class Hulk implements MetricCalculator {
 		double blob = 0.0;
 		
 		for(HAnnotation ha : hulk_results){
-			System.out.println(ha);
+
 			if(ha instanceof HBlobAntiPattern)
 				blob++;	
 			
 			if(ha instanceof HInappropriateGenerosityWithAccessibilityOfMethodMetric){
 				if (ha.getTAnnotated() instanceof TypeGraph) {
-					igam = ((HMetric) ha).getValue();		
+					igam = ((HMetric) ha).getValue();
+					System.out.println(igam);
 				}
 			}				
 			if(ha instanceof HInappropriateGenerosityWithAccessibilityOfTypesMetric){
 				if (ha.getTAnnotated() instanceof TypeGraph) {
-					igat = ((HMetric) ha).getValue();	
+					igat = ((HMetric) ha).getValue();
+					System.out.println(igat);
 				}
 			}
+			
 		}	
 		metric_results.put("BLOB-Antipattern", blob);
-		metric_results.put("IGAM", igam);
-		metric_results.put("IGAT", igat);
+		metric_results.put("IGAM", roundDouble(igam));
+		metric_results.put("IGAT", roundDouble(igat));
 
 		return metric_results;
+	}
+	
+	private double roundDouble(double d) {
+		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
+		dfs.setDecimalSeparator('.');
+		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
+		
+		return Double.parseDouble(dFormat.format(d));
+	}
+
+	public File getLocation() {
+		return location;
 	}
 }

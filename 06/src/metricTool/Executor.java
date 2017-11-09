@@ -1,29 +1,36 @@
 package metricTool;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.logging.SimpleFormatter;
 
 import org.junit.Test;
 
 public class Executor {
 
-	protected static boolean windows = System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0;
-	protected static boolean linux = System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0;
+	public static boolean windows = System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0;
+	public static boolean linux = System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0;
 	protected static List<String> timelog = new ArrayList<String>();
 	protected static LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
-	protected static String result_dir = "C:\\Users\\Biggi\\Documents\\Strategie3\\";
+	protected static String result_dir = "/home/bpede/Dokumente/ProgramData/";
 	private List<String> apks_not_built = new ArrayList<String>();
 	private final String env_variable_name_mongod = "MONGOD";
-//	private final String workspace = "C:\\Users\\Biggi\\junit-workspace\\";
+	// private final String workspace = "C:\\Users\\Biggi\\junit-workspace\\";
 
 	@Test
 	public void execute() {
 		File src_location = new File(result_dir + "Sourcecode");
-		File result_file = new File(result_dir + "results\\MetricResults.csv");
+		File result_file = new File(result_dir + "results" + File.separator + "MetricResults-"+new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date())+".csv");
 		mainProcess(src_location, result_file);
 
 	}
@@ -37,7 +44,7 @@ public class Executor {
 		startDatabase();
 		System.out.println(src_location.toPath());
 		if (src_location.exists()) {
-			File src_meter_out = new File(result_dir + "SourceMeter\\" + src_location.getName());
+			File src_meter_out = new File(result_dir + "SourceMeter" + File.separator + src_location.getName());
 			File src_meter_folder = new File(src_meter_out, "SrcMeter");
 			System.out.println(src_meter_folder);
 
@@ -53,7 +60,7 @@ public class Executor {
 					metric_results.putAll(temp);
 			}
 			metric_results.putAll(temp);
-			File andro_results = new File(result_dir + "androlyze\\" + src_location.getName() + id);
+			File andro_results = new File(result_dir + "androlyze" + File.separator + src_location.getName() + id);
 
 			if (build.buildApk(src_location)) {
 				build.getApk(src_location);
@@ -94,7 +101,7 @@ public class Executor {
 		SourceMeter srcmeter = new SourceMeter("SOURCE_METER_JAVA");
 		GradleBuild build = new GradleBuild();
 		Androlyze andro = new Androlyze("ANDROLYZE");
-		
+
 		startDatabase();
 
 		if (src_location.isDirectory()) {
@@ -105,13 +112,15 @@ public class Executor {
 					System.out.println(s);
 					File project_src = new File(src_location, s);
 
-					hulk.calculateMetric(project_src);
+					if(!hulk.calculateMetric(project_src)) {
+						System.err.println("Calculation Hulk Metric failed");
+					}
 					LinkedHashMap<String, Double> hulk_results = hulk.getResults(project_src);
 
-					File srcmeter_out = new File(result_dir + "SourceMeter\\" + s);
+					File srcmeter_out = new File(result_dir + "SourceMeter" + File.separator + s);
 					if (!srcmeter_out.exists()) {
-//						File imported_project = new File(workspace + s);
-						srcmeter.calculateMetric(project_src);
+						// File imported_project = new File(workspace + s);
+						srcmeter.calculateMetric(hulk.getLocation());
 					}
 					File src_meter_folder = new File(srcmeter_out, "SrcMeter");
 					System.out.println(src_meter_folder);
@@ -124,12 +133,14 @@ public class Executor {
 					metric_results.putAll(oo_metrics);
 					metric_results.putAll(hulk_results);
 
-					File andro_results = new File(result_dir + "androlyze\\" + s);
+					File andro_results = new File(result_dir + "androlyze" + File.separator + s);
 
 					if (!andro_results.exists() && build.buildApk(project_src)) {
 						build.getApk(project_src);
-
-						if (GradleBuild.compiled_apk != null && andro.calculateMetric(andro_results)) {
+						System.out.println(build.compiled_apk);
+						if (GradleBuild.compiled_apk != null) {
+							andro.calculateMetric(andro_results);
+						
 							System.out.println(GradleBuild.compiled_apk);
 							LinkedHashMap<String, Double> permission = andro.getResults(andro_results);
 							metric_results.putAll(permission);
@@ -160,23 +171,41 @@ public class Executor {
 	}
 
 	private void startDatabase() {
-		String mongod = System.getenv(this.env_variable_name_mongod);
-		String cmd = "cd " + mongod + " && mongod";
-		Runtime run = Runtime.getRuntime();
-		try {
-			Process process;
-			if (windows) {
-				process = run.exec("cmd /c \"" + cmd);
-				process.waitFor();
-			} else if (linux) {
-				process = run.exec(cmd);
-				process.waitFor();
-			} else
-				System.err.println("Program is not compatibel with the Operating System");
+//		Thread t = new Thread() {
+//			public void run() {
+				String mongod = System.getenv(env_variable_name_mongod);
+				String cmd = mongod + (mongod.endsWith(File.separator) ? "" : File.separator) + "mongod -f " + mongod
+						+ (mongod.endsWith(File.separator) ? "" : File.separator) + "../mongod.cfg";
+				Runtime run = Runtime.getRuntime();
+				try {
+					Process process = null;
+					if (windows) {
+						process = run.exec("cmd /c \"" + cmd);
+					} else if (linux) {
+						process = run.exec(cmd);
+					} else {
+						System.err.println("Program is not compatibel with the Operating System");
+						return;
+					}
 
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
+//					try(BufferedReader stream = new BufferedReader(new InputStreamReader(process.getInputStream()))){
+//						String line;
+//						while((line = stream.readLine()) != null) {
+//							System.out.println(line);
+//						}
+//					}
+//					try(BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))){
+//						String line;
+//						while((line = stream.readLine()) != null) {
+//							System.err.println(line);
+//						}
+//					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+//			};
+//		};
+//		t.run();
 	}
 
 	protected static void clear(File file) {
