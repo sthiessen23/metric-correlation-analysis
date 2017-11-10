@@ -70,6 +70,11 @@ public class GradleImport {
 		List<Path> gradle = new LinkedList<>();
 		scanDirctory(folder, java, gradle);
 
+		if(java.size() == 0) {
+			System.err.println("GRADLEIMPORT: Didn't find java source folders.");
+			return null;
+		}
+		
 		IJavaProject project = createJavaProject(name, monitor, java, gradle);
 
 		// build gradle project
@@ -88,6 +93,9 @@ public class GradleImport {
 			if (libName.endsWith(".jar")) {
 				jarFile = libFolder.getFile(libPath.getFileName().toString());
 				IPath jarPath = new org.eclipse.core.runtime.Path(libPath.toFile().getAbsolutePath());
+				if(jarFile.exists()) {
+					continue;
+				}
 				jarFile.createLink(jarPath, IResource.NONE, monitor);
 			} else if (libName.endsWith(".aar")) {
 				try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(libPath.toFile()))) {
@@ -148,7 +156,7 @@ public class GradleImport {
 			p = Runtime.getRuntime().exec("cmd /c \"" + "gradlew assembleDebug",null, folder);
 		}
 		else if(Executor.linux) {
-			p = Runtime.getRuntime().exec("./gradlew assembleDebug", null, folder);
+			p = Runtime.getRuntime().exec("./gradlew", null, folder);
 		}
 		else {
 			System.err.println("Unsupported OS");
@@ -181,8 +189,8 @@ public class GradleImport {
 
 		File settingsFile = new File(folder, "settings.gradle");
 		if (settingsFile.exists()) {
-			Pattern includePattern = Pattern.compile("(include)(\\s+)(((':)(\\w+)('))(\\s*,\\s+)?)+");
-			Pattern entryPattern = Pattern.compile("(':)(\\w+)(')");
+			Pattern includePattern = Pattern.compile("(include)(\\s+)((('(:)?)((\\w|-|_|\\d)+)('))(\\s*,\\s+)?)+");
+			Pattern entryPattern = Pattern.compile("('(:)?)((\\w|-|_|\\d)+)(')");
 			try (BufferedReader reader = new BufferedReader(new FileReader(settingsFile))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
@@ -191,7 +199,7 @@ public class GradleImport {
 						String match = m.group().substring("include".length() + 1);
 						Matcher mEntry = entryPattern.matcher(match);
 						while (mEntry.find()) {
-							scanDirctory(new File(folder, mEntry.group(2)), java, gradle);
+							scanDirctory(new File(folder, mEntry.group(3)), java, gradle);
 						}
 					}
 				}
@@ -395,7 +403,6 @@ public class GradleImport {
 				break;
 			}
 		}
-		System.out.println(platforms.listFiles());
 		if (!compAndroidSdk) {
 			System.err.println("WARNING: Install android SDK " + targetSdk);
 			for (File sdk : platforms.listFiles()) {
