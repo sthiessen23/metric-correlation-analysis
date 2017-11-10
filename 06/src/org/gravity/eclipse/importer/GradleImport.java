@@ -54,6 +54,7 @@ public class GradleImport {
 			+ "files-2.1";
 	private final static String androidSdkPlatforms = "platforms";
 	private static final boolean LINKONPROJECT = false;
+	private static final boolean IgnoreGradleResult = false;
 
 	public GradleImport(String gradleHome, String androidHome) {
 		this.gradle = gradleHome;
@@ -79,7 +80,12 @@ public class GradleImport {
 
 		// build gradle project
 		if(!buildGradleProject(folder)) {
-			return null;
+			if(IgnoreGradleResult) {
+				System.err.println("GRADLEIMPORT: Warning: Gradle-Import didn't succeed, trying to build Eclipse project anyways.");
+			}
+			else {
+				return null;
+			}
 		}
 
 		IFolder libFolder = project.getProject().getFolder("lib");
@@ -208,6 +214,10 @@ public class GradleImport {
 
 		File srcFolder = new File(folder, "src");
 		if (srcFolder.exists()) {
+			File main = new File(srcFolder, "main");
+			if(main.exists()) {
+				srcFolder = main;
+			}
 			Files.walkFileTree(srcFolder.toPath(), new SimpleFileVisitor<Path>() {
 
 				@Override
