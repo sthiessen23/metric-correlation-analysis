@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jfree.chart.ChartPanel;
-import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
@@ -22,7 +21,6 @@ import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
 import org.jfree.data.statistics.BoxAndWhiskerCategoryDataset;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.jfree.ui.ApplicationFrame;
-import org.jfree.ui.RefineryUtilities;
 import org.jfree.util.Log;
 import org.jfree.util.LogContext;
 import org.jfree.chart.ChartUtilities;
@@ -32,12 +30,12 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 	private static final long serialVersionUID = 1L;
 	/** Access to logging facilities. */
 	private static final LogContext LOGGER = Log.createContext(BoxAndWhiskerMetric.class);
-	
-	public BoxAndWhiskerMetric(final String title) {
+
+	public BoxAndWhiskerMetric(final String title, File folder, File result) {
 
 		super(title);
 
-		final BoxAndWhiskerCategoryDataset dataset = createDataset();
+		final BoxAndWhiskerCategoryDataset dataset = createDataset(folder);
 
 		final CategoryAxis xAxis = new CategoryAxis("");
 		final NumberAxis yAxis = new NumberAxis("Value");
@@ -47,32 +45,34 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 		renderer.setToolTipGenerator(new BoxAndWhiskerToolTipGenerator());
 		final CategoryPlot plot = new CategoryPlot(dataset, xAxis, yAxis, renderer);
 
-		final JFreeChart chart = new JFreeChart("Class Metrics of each Project", new Font("SansSerif", Font.BOLD, 20), plot,
-				true);
+		final JFreeChart chart = new JFreeChart("Class Metrics of each Project", new Font("SansSerif", Font.BOLD, 20),
+				plot, true);
 		final ChartPanel chartPanel = new ChartPanel(chart);
 		chartPanel.setPreferredSize(new java.awt.Dimension(900, 450));
 		setContentPane(chartPanel);
-//		File result = new File("");
-//		ChartRenderingInfo info = new ChartRenderingInfo();
-//		saveChartAsJPEG(result, chart, 900, 450);
+
+		try {
+			ChartUtilities.saveChartAsJPEG(result, chart, 900, 450);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 	}
-
 
 	/**
 	 * Creates a dataset.
 	 * 
 	 * @return a dataset.
 	 */
-	private BoxAndWhiskerCategoryDataset createDataset() {
-	
+	private BoxAndWhiskerCategoryDataset createDataset(File folder) {
+
 		final DefaultBoxAndWhiskerCategoryDataset dataset = new DefaultBoxAndWhiskerCategoryDataset();
-		File srcMeterResults = new File("C:\\Users\\Biggi\\Documents\\Strategie2\\SourceMeter");
-		File[] resultList = srcMeterResults.listFiles();
-		
+
+		File[] resultList = folder.listFiles();
+
 		for (File r : resultList) {
 			String apkName = r.getName().replaceAll("SrcMeter", "");
-			File[] java_folder = new File(r, "SrcMeter\\java").listFiles();
+			File[] java_folder = new File(r, "SrcMeter" + File.separator + "java").listFiles();
 			if (java_folder.length > 0) {
 				try {
 					File metrics = new File(java_folder[0], "SrcMeter-Class.csv"); // $NON-NLS-1$
@@ -83,7 +83,6 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 					String[] metric_names = { "WMC", "CBO", "LCOM5", "DIT", "LDC" };
 
 					for (String s : metric_names) {
-						System.out.println(s);
 						List<Double> class_values = new ArrayList<Double>();
 						int metric_index = Arrays.asList(names).indexOf(s);
 						try {
@@ -98,14 +97,13 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 								}
 								metric_reader.close();
 							}
-							//class_values = normalize(class_values);
+							// class_values = normalize(class_values);
 						} catch (FileNotFoundException e) {
 							e.printStackTrace();
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
-						
-						
+
 						LOGGER.debug("Adding series " + r);
 						LOGGER.debug(class_values.toString());
 						dataset.add(class_values, s, apkName);
@@ -121,27 +119,15 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 		}
 		return dataset;
 	}
-	
-	public List<Double> normalize(List<Double> list){
+
+	public List<Double> normalize(List<Double> list) {
 		double maxValue = Collections.max(list);
-		List<Double> normalizedList = new ArrayList<Double>();		
-		for(double d : list){
+		List<Double> normalizedList = new ArrayList<Double>();
+		for (double d : list) {
 			d = (d / maxValue);
 			normalizedList.add(d);
 		}
 		return normalizedList;
-	}
-
-	
-	public static void main(final String[] args) {
-
-		// Log.getInstance().addTarget(new PrintStreamLogTarget(System.out));
-		final BoxAndWhiskerMetric demo = new BoxAndWhiskerMetric("Box-and-Whisker Project's Metrics");
-		demo.pack();
-		RefineryUtilities.centerFrameOnScreen(demo);
-		demo.setVisible(true);
-		
-
 	}
 
 }
