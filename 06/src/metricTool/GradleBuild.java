@@ -22,7 +22,7 @@ public class GradleBuild {
 			if (Executor.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
 			} else if (Executor.linux)
-				process = run.exec(cmd);
+				process = run.exec("./gradlew assembleDebug", null, src_code);
 			else
 				return false;
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -84,7 +84,7 @@ public class GradleBuild {
 			if (Executor.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
 			} else if (Executor.linux)
-				process = run.exec(cmd + " && exit\"");
+				process = run.exec("./gradlew clean", null, src_code);
 			else
 				return false;
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
