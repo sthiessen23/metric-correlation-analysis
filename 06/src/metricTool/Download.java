@@ -16,14 +16,14 @@ public class Download {
 	}
 
 	protected boolean gitClone(String url) {
-		String cmd = "cd " + Executor.result_dir + "Sourcecode" + " && " + "git clone --recursive " + url;
+		String cmd = "cd " + Executer.result_dir + "Sourcecode" + " && " + "git clone --recursive " + url;
 		System.out.println(cmd);
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows)
+			if (Executer.windows)
 				process = run.exec("cmd /c \"" + cmd);
-			else if (Executor.linux) {
+			else if (Executer.linux) {
 				process = run.exec(cmd);
 			} else {
 				System.err.println("Program is not compatibel with the Operating System");
@@ -53,15 +53,15 @@ public class Download {
 		File build_dir = new File(src_code, "build");
 		if (build_dir.exists()) {
 			gb.cleanBuild(src_code);
-			Executor.clear(build_dir);
+			Executer.clear(build_dir);
 		}
 		String cmd = "cd " + src_code.getPath() + " && " + "git checkout " + id + " .";
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows) {
+			if (Executer.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (Executor.linux) {
+			} else if (Executer.linux) {
 				cmd = "./git checkout " + id + " .";
 				process = run.exec(cmd, null, src_code);
 			} else {

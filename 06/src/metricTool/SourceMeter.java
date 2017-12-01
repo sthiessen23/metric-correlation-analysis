@@ -24,7 +24,7 @@ public class SourceMeter implements MetricCalculator {
 	@Override
 	public boolean calculateMetric(File in) {
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executor.result_dir + "SourceMeter" + File.separator + in.getName();
+		String src_meter_out = Executer.result_dir + "SourceMeter" + File.separator + in.getName();
 		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
 				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
 				" -resultsDir=" + src_meter_out; //$NON-NLS-1$
@@ -32,9 +32,9 @@ public class SourceMeter implements MetricCalculator {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows)
+			if (Executer.windows)
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			else if (Executor.linux)
+			else if (Executer.linux)
 				process = run.exec(cmd);
 			else {
 				System.err.println("Program is not compatibel with the Operating System");

@@ -19,9 +19,9 @@ public class GradleBuild {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows) {
+			if (Executer.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (Executor.linux)
+			} else if (Executer.linux)
 				process = run.exec("./gradlew assembleDebug", null, src_code);
 			else
 				return false;
@@ -81,9 +81,9 @@ public class GradleBuild {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows) {
+			if (Executer.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (Executor.linux)
+			} else if (Executer.linux)
 				process = run.exec("./gradlew clean", null, src_code);
 			else
 				return false;
