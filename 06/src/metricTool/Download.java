@@ -24,22 +24,23 @@ public class Download {
 				process = run.exec("cmd /c \"" + cmd);
 			else if (Executer.linux) {
 				File folder = new File(Executer.result_dir, "Sourcecode");
-				cmd = "git clone --recursive" + url;
+				cmd = "git clone --recursive " + url;
 				process = run.exec(cmd, null, folder);
 			} else {
 				System.err.println("Program is not compatibel with the Operating System");
 				return false;
 			}
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
+			try (BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+				String line;
+				while ((line = stream_reader.readLine()) != null) {
+					System.err.println("> " + line); //$NON-NLS-1$
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			process.waitFor();
 			process.destroy();
-			stream_reader.close();
-			return true;
-
+			return process.exitValue() == 0;
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 			return false;
