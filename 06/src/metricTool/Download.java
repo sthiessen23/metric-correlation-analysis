@@ -2,7 +2,6 @@ package metricTool;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
@@ -17,15 +16,16 @@ public class Download {
 	}
 
 	protected boolean gitClone(String url) {
-		String cmd = "cd " + Executor.result_dir + "Sourcecode" + " && " + "git clone --recursive " + url;
-		System.out.println(cmd);
+		String cmd = "cd " + Executer.result_dir + "Sourcecode" + " && " + "git clone --recursive " + url;
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows)
+			if (Executer.windows)
 				process = run.exec("cmd /c \"" + cmd);
-			else if (Executor.linux) {
-				process = run.exec(cmd);
+			else if (Executer.linux) {
+				File folder = new File(Executer.result_dir, "Sourcecode");
+				cmd = "git clone --recursive" + url;
+				process = run.exec(cmd, null, folder);
 			} else {
 				System.err.println("Program is not compatibel with the Operating System");
 				return false;
@@ -46,67 +46,41 @@ public class Download {
 		}
 	}
 
-	protected boolean changeVersion(File src_code, File version_ids) {
-		Executor executor = new Executor();
+	protected boolean changeVersion(File src_code, String id) {
+
 		GradleBuild gb = new GradleBuild();
-		Executor.result_dir = "C:\\Users\\Biggi\\Documents\\Strategie3\\VersionTemp\\";
-		File result_file = new File(Executor.result_dir + "results\\VersionResult.csv");
 
-		gitClone("https://github.com/velazcod/Tinfoil-Facebook.git");
-
+		System.out.println(id);
+		File build_dir = new File(src_code, "build");
+		if (build_dir.exists()) {
+			gb.cleanBuild(src_code);
+			Executer.clear(build_dir);
+		}
+		String cmd = "cd " + src_code.getPath() + " && " + "git checkout " + id + " .";
+		Runtime run = Runtime.getRuntime();
 		try {
-			String[] ids = new String[3];
-			BufferedReader reader = new BufferedReader(new FileReader(version_ids));
-			String line = reader.readLine();
-			System.out.println(line);
-			int index = 0;
-			while (line != null) {
-				ids[index] = line;
-				line = reader.readLine();
-				index++;
-			}
-			reader.close();
-			File build = new File(src_code, "build");
-			if (build.exists()) {
-				Executor.clear(build);
-				build.delete();
-			}
-			int count = 1;
-			for (String id : ids) {
-				System.out.println(id);
-				gb.cleanBuild(src_code);
-				if (build.exists())
-					Executor.clear(build);
-				String cmd = "cd " + src_code.getPath() + " && " + "git checkout " + id + " .";
-				Runtime run = Runtime.getRuntime();
-				try {
-					Process process;
-					if (Executor.windows) {
-						process = run.exec("cmd /c \"" + cmd + " && exit\"");
-					} else if (Executor.linux) {
-						process = run.exec(cmd);
-					} else {
-						System.err.println("Program is not compatibel with the Operating System");
-						return false;
-					}
-
-					BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-					while ((line = stream_reader.readLine()) != null) {
-						System.out.println("> " + line); //$NON-NLS-1$
-					}
-					process.waitFor();
-					process.destroy();
-					stream_reader.close();
-
-				} catch (IOException | InterruptedException e) {
-					e.printStackTrace();
-				}
-
-				executor.mainProcess(src_code, count, result_file);
-				count++;
+			Process process;
+			if (Executer.windows) {
+				process = run.exec("cmd /c \"" + cmd + " && exit\"");
+			} else if (Executer.linux) {
+				cmd = "./git checkout " + id + " .";
+				process = run.exec(cmd, null, src_code);
+			} else {
+				System.err.println("Program is not compatibel with the Operating System");
+				return false;
 			}
 
-		} catch (IOException e) {
+			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line;
+			while ((line = stream_reader.readLine()) != null) {
+				System.out.println("> " + line); //$NON-NLS-1$
+			}
+			process.waitFor();
+			process.destroy();
+			stream_reader.close();
+			return true;
+
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 

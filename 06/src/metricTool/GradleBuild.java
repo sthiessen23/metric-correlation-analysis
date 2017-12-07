@@ -19,10 +19,10 @@ public class GradleBuild {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows) {
+			if (Executer.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (Executor.linux)
-				process = run.exec(cmd);
+			} else if (Executer.linux)
+				process = run.exec("./gradlew assembleDebug", null, src_code);
 			else
 				return false;
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -81,10 +81,10 @@ public class GradleBuild {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows) {
+			if (Executer.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			} else if (Executor.linux)
-				process = run.exec(cmd + " && exit\"");
+			} else if (Executer.linux)
+				process = run.exec("./gradlew clean", null, src_code);
 			else
 				return false;
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

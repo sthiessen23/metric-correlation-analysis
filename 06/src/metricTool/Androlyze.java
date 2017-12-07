@@ -34,9 +34,9 @@ public class Androlyze implements MetricCalculator {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows)
+			if (Executer.windows)
 				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
-			else if (Executor.linux) {
+			else if (Executer.linux) {
 				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks "
 						+ GradleBuild.compiled_apk;
 				process = run.exec(andro_cmd, null, new File(andro));
@@ -68,12 +68,12 @@ public class Androlyze implements MetricCalculator {
 					}
 				} catch (ArrayIndexOutOfBoundsException e) {
 					System.err.println("Androlyze could't store JSON file.");
-					Executor.clear(location);
+					Executer.clear(location);
 					return false;
 				}
 				Files.move(f.toPath(), in.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE,
 						java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-				Executor.clear(location);
+				Executer.clear(location);
 				return true;
 			}
 

@@ -10,15 +10,15 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math.stat.correlation.SpearmansCorrelation;
 
-public class StatisticExecutor {
+public class StatisticExecuter {
 
-	private static StatisticExecutor executor;
+	private static StatisticExecuter executer;
 	public static String result_dir = "C:\\Users\\Biggi\\Documents\\strategie2\\";
 
 	public static void main(String[] args) {
 		File dataFile = new File(result_dir + "results" + File.separator + "ResultsOk.csv");
-		executor = new StatisticExecutor();
-		executor.calculateStatistics(dataFile);
+		executer = new StatisticExecuter();
+		executer.calculateStatistics(dataFile);
 	}
 
 	private Correlation correlation;
@@ -26,10 +26,10 @@ public class StatisticExecutor {
 
 	public void calculateStatistics(File dataFile) {
 		normalityTest = new NormalDistribution();
-		executor = new StatisticExecutor();
+		executer = new StatisticExecuter();
 		correlation = new Correlation();
 
-		String[] metricNames = executor.getMetricNames(dataFile);
+		String[] metricNames = executer.getMetricNames(dataFile);
 
 		File folder = new File(result_dir + "Boxplotauswahl");
 		File boxplot_result = new File(result_dir + "StatisticResults" + File.separator + "Boxplot.jpeg");

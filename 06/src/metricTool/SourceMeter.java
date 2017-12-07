@@ -24,7 +24,7 @@ public class SourceMeter implements MetricCalculator {
 	@Override
 	public boolean calculateMetric(File in) {
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executor.result_dir + "SourceMeter" + File.separator + in.getName();
+		String src_meter_out = Executer.result_dir + "SourceMeter" + File.separator + in.getName();
 		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
 				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
 				" -resultsDir=" + src_meter_out; //$NON-NLS-1$
@@ -32,9 +32,9 @@ public class SourceMeter implements MetricCalculator {
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executor.windows)
+			if (Executer.windows)
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			else if (Executor.linux)
+			else if (Executer.linux)
 				process = run.exec(cmd);
 			else {
 				System.err.println("Program is not compatibel with the Operating System");
@@ -58,49 +58,15 @@ public class SourceMeter implements MetricCalculator {
 		return true;
 	}
 
-	protected boolean calculateMetric(File src_code, File result) {
-		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executor.result_dir + "SourceMeter" + File.separator + src_code.getName();
-		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
-				" -projectBaseDir=" + src_code.toString() + //$NON-NLS-1$
-				" -resultsDir=" + result.toPath(); //$NON-NLS-1$
-
-		Runtime run = Runtime.getRuntime();
-		try {
-			Process process;
-			if (Executor.windows)
-				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			else if (Executor.linux)
-				process = run.exec(cmd);
-			else {
-				System.err.println("Program is not compatibel with the Operating System");
-				return false;
-			}
-
-			try(BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))){
-				String line;
-				while((line = stream.readLine()) != null) {
-					System.err.println("SOURCEMETER: " + line);
-				}
-			}
-			process.waitFor();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		return true;
-	}
 
 	@Override
 	public LinkedHashMap<String, Double> getResults(File in) {
+		System.out.println("SourceMeter started");
 
 		LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
 
 		File[] java_folder = new File(in, "java").listFiles(); //$NON-NLS-1$
-		String[] metric_names = { "LOC", "WMC", "CBO", "LCOM5", "DIT", "LDC" };
+		String[] metric_names = { "LLOC", "WMC", "CBO", "LCOM5", "DIT", "LDC" };
 
 		if(java_folder == null) {
 			for(String name : metric_names) {
@@ -111,6 +77,7 @@ public class SourceMeter implements MetricCalculator {
 		
 		if (java_folder.length > 0) {
 			try {
+
 				File metrics = new File(java_folder[0], "SrcMeter-Class.csv"); // $NON-NLS-1$
 				BufferedReader file_reader = new BufferedReader(new FileReader(metrics));
 				String line = file_reader.readLine();
@@ -121,27 +88,38 @@ public class SourceMeter implements MetricCalculator {
 				String[] names = line.substring(1, line.length() - 1).split("\",\""); //$NON-NLS-1$
 
 				List<Double> class_values = new ArrayList<Double>();
-
+				int lloc_index = 0;
+				int lloc_all = 0;
 				for (String s : metric_names) {
+					System.out.println(s);
 					int metric_index = Arrays.asList(names).indexOf(s);
+					System.out.println(metric_index);
 					try {
 						String[] files = { "SrcMeter-Class.csv", "SrcMeter-Enum.csv" };
+						boolean temp = false;
 						for (String f : files) {
+							System.out.println(f);
 							metrics = new File(java_folder[0], f); // $NON-NLS-1$
 							BufferedReader metric_reader = new BufferedReader(new FileReader(metrics));
 							String m_line = metric_reader.readLine();
-							if((m_line = metric_reader.readLine())==null) {
+							if((m_line = metric_reader.readLine())==null && !temp) {
 								for (String name : metric_names) {
 									metric_results.put(name, -1.0);
 								}
 								metric_reader.close();
 								return metric_results;
 							}
-								
+							temp = true;
 							while (m_line != null) {
 								String[] values = m_line.substring(1, m_line.length() - 1).split("\",\""); //$NON-NLS-1$
+								if(s == "LLOC") {
 								class_values.add(Double.parseDouble(values[metric_index]));
-								metric_reader.readLine();
+								
+								} else {
+									double lloc = Double.parseDouble(values[lloc_index]);
+									class_values.add(Double.parseDouble(values[metric_index])*lloc);
+								}
+								m_line = metric_reader.readLine();
 							}
 							metric_reader.close();
 						}
@@ -152,14 +130,16 @@ public class SourceMeter implements MetricCalculator {
 						DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
 						dfs.setDecimalSeparator('.');
 						DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
-						if (s == "LOC") {
+						if (s == "LLOC") {
 							metric_results.put(s, Double.parseDouble(dFormat.format(sum)));
-
+							
 							double average = sum / class_values.size();
 							metric_results.put("LOCpC", Double.parseDouble(dFormat.format(average)));
+							lloc_index = metric_index;
+							lloc_all = (int) sum;
 
 						} else {
-							double average = sum / class_values.size();
+							double average = sum / lloc_all;
 							metric_results.put(s, Double.parseDouble(dFormat.format(average)));
 						}
 

@@ -43,7 +43,7 @@ import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.LibraryLocation;
 
-import metricTool.Executor;
+import metricTool.Executer;
 
 public class GradleImport {
 
@@ -71,21 +71,11 @@ public class GradleImport {
 		List<Path> gradle = new LinkedList<>();
 		scanDirctory(folder, java, gradle);
 
-		if(java.size() == 0) {
-			System.err.println("GRADLEIMPORT: Didn't find java source folders.");
-			return null;
-		}
-		
 		IJavaProject project = createJavaProject(name, monitor, java, gradle);
 
 		// build gradle project
 		if(!buildGradleProject(folder)) {
-			if(IgnoreGradleResult) {
-				System.err.println("GRADLEIMPORT: Warning: Gradle-Import didn't succeed, trying to build Eclipse project anyways.");
-			}
-			else {
-				return null;
-			}
+			return null;
 		}
 
 		IFolder libFolder = project.getProject().getFolder("lib");
@@ -158,10 +148,10 @@ public class GradleImport {
 		}
 		gradlew.setExecutable(true);
 		Process p = null;
-		if(Executor.windows) {
+		if(Executer.windows) {
 			p = Runtime.getRuntime().exec("cmd /c \"" + "gradlew assembleDebug",null, folder);
 		}
-		else if(Executor.linux) {
+		else if(Executer.linux) {
 			p = Runtime.getRuntime().exec("./gradlew", null, folder);
 		}
 		else {
