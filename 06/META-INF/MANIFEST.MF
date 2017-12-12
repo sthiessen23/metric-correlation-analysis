@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: 06
-Bundle-SymbolicName: 06;singleton:=true
+Bundle-SymbolicName: Metric-Correlation-Analysis;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: .,
  lib/json-simple-1.1.jar,
