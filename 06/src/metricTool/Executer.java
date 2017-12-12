@@ -186,6 +186,20 @@ public class Executer {
 			LinkedHashMap<String, Double> permission = androlyze.getResults(andro_results);
 			metric_results.putAll(permission);
 		}
+		
+		/*
+		 * Here the tool can be extended by further metrics or metric-tools.
+		 * 
+		 * For this purpose you have to call:
+		 * newClass.calculateMetric();
+		 * 
+		 * and:
+		 * newClass.getResults();
+		 * 
+		 * The new Metric results must be added to class variable
+		 * LinkedHashMap<String, Double> metric_results
+		 * 
+		 */
 
 		if (!result_file.exists())
 			storage.initCSV(result_file);
