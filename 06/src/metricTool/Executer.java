@@ -18,7 +18,7 @@ public class Executer {
 	public static boolean windows = System.getProperty("os.name").toLowerCase().indexOf("windows") >= 0;
 	public static boolean linux = System.getProperty("os.name").toLowerCase().indexOf("linux") >= 0;
 	protected static LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
-	protected static String result_dir ="/home/bpede/Dokumente/ProgramData";
+	protected static String result_dir ="path to directory where Metric-Correlation-Analysis should store all results";
 	private List<String> apks_not_built = new ArrayList<String>();
 	private final String env_variable_name_mongod = "MONGOD";
 	private Storage storage;
@@ -36,27 +36,62 @@ public class Executer {
 		androlyze = new Androlyze("ANDROLYZE");
 		downloader = new Download();
 		hulk = new Hulk();
-
-//		File src_location = new File(result_dir + File.separator + "Sourcecode");
-		File result_file = new File(result_dir + File.separator + "results" + File.separator + "Results-"
-				+ new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date()) + ".csv");
-//		mainProcess(src_location, result_file);
-		String gitUrl = "https://github.com/velazcod/Tinfoil-Facebook.git";
-
-		mainProcess(gitUrl, result_file);
+		
+				
+		/*
+		 * for calculating one version of many projects you have to
+		 * 
+		 * define the class variable String result_dir,
+		 * 
+		 * define the file with the git-urls of all projects you want to analyze:
+		 * File downloadURLs = new File("...");
+		 * 
+		 * download all projects you want to analyze:
+		 * organizeDownloads(downloadURLs)
+		 * 
+		 * define the location where all projects are downloaded:
+		 * File src_location = new File(result_dir + File.separator + "Sourcecode");
+		 * 
+		 * define the location where the results should be stored:
+		 * File result_file = new File(result_dir + File.separator + "results");
+		 * 
+		 * and call:
+		 * mainProcess(src_location, result_file);
+		 */
+		
+		/* 
+		 * for calculating multiple version you have to
+		 * 
+		 * change result_dir in:
+		 * result_dir = result_dir + File.separator + "VersionTemp";
+		 * 		 
+		 * define the git-url of that project you want to analyze:
+		 * String gitUrl = "...";
+		 * 
+		 * define the file with the commit-ids of that project you want to check:
+		 * File version_ids = new File(result_dir + File.separator + "VersionIds.csv");
+		 * 
+		 * and call:
+		 * mainProcess(gitUrl, version_ids);
+		 * 
+		*/
 
 	}
-
-	protected void mainProcess(String gitUrl, File result_file) {
+	
+	// main process for calculating metrics for multiple versions of one project
+	protected void mainProcess(String gitUrl, File version_ids) {
 
 		startDatabase();
-		result_dir = result_dir + File.separator + "VersionTemp";
-		File version_ids = new File(result_dir + File.separator + "VersionIds.csv");
-
+		
+		File result_file = new File(result_dir + File.separator + "results" + File.separator + "Results-"
+				+ new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date()) + ".csv");
+		
 		downloader.gitClone(gitUrl);
 		File temp1[] = new File(result_dir + File.separator + "Sourcecode").listFiles();
 		File src_location = temp1[0];
 
+		String name = "Tinfoil-Facebook";
+		calculateMetrics(result_file, name, src_location);
 		BufferedReader reader;
 		try {
 			reader = new BufferedReader(new FileReader(version_ids));
@@ -71,9 +106,10 @@ public class Executer {
 				System.out.println("#############################\n");
 				
 				downloader.changeVersion(src_location, id);
-				String name = "Tinfoil-Facebook";
+				
+				File srcmeter_out = new File(result_dir + File.separator + "SourceMeter");
+				clear(srcmeter_out);			
 				calculateMetrics(result_file, name, src_location);
-
 			}
 
 		} catch (IOException e) {
@@ -81,7 +117,8 @@ public class Executer {
 		}
 
 	}
-
+	
+	//main process for calculating metrics for one version of many projects
 	private void mainProcess(File src_location, File result_file) {
 
 		startDatabase();
@@ -99,15 +136,14 @@ public class Executer {
 					
 					File project_src = new File(src_location, s);
 					calculateMetrics(result_file, s, project_src);
-
-				}
+					}
 			} else
 				System.err.println("Sourcecode-Directory is empty!");
 		}
 		if (apks_not_built.isEmpty())
 			System.out.println("No Problems occured!");
 		else
-			System.out.println("APKs not built: " + apks_not_built);
+			System.err.println("APKs not built: " + apks_not_built);
 	}
 
 	private void calculateMetrics(File result_file, String s, File project_src) {
@@ -123,7 +159,7 @@ public class Executer {
 		File src_meter_folder = new File(srcmeter_out, "SrcMeter");
 		System.out.println(src_meter_folder);
 		LinkedHashMap<String, Double> oo_metrics = srcmeter.getResults(src_meter_folder);
-		System.out.println("After SourceMeter: " + oo_metrics);
+
 		if (oo_metrics == null) {
 			for (int i = 0; i < 7; i++)
 				metric_results.putAll(oo_metrics);
@@ -135,11 +171,9 @@ public class Executer {
 
 		if (!andro_results.exists() && build.buildApk(project_src)) {
 			build.getApk(project_src);
-			System.out.println(GradleBuild.compiled_apk);
+
 			if (GradleBuild.compiled_apk != null) {
 				androlyze.calculateMetric(andro_results);
-
-				System.out.println(GradleBuild.compiled_apk);
 				LinkedHashMap<String, Double> permission = androlyze.getResults(andro_results);
 				metric_results.putAll(permission);
 			} else {
