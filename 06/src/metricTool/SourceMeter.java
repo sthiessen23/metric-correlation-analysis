@@ -24,7 +24,7 @@ public class SourceMeter implements MetricCalculator {
 	@Override
 	public boolean calculateMetric(File in) {
 		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executer.result_dir + "SourceMeter" + File.separator + in.getName();
+		String src_meter_out = Executer.result_dir + File.separator + "SourceMeter" + File.separator + in.getName();
 		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
 				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
 				" -resultsDir=" + src_meter_out; //$NON-NLS-1$
@@ -91,14 +91,13 @@ public class SourceMeter implements MetricCalculator {
 				int lloc_index = 0;
 				int lloc_all = 0;
 				for (String s : metric_names) {
-					System.out.println(s);
+
 					int metric_index = Arrays.asList(names).indexOf(s);
-					System.out.println(metric_index);
+
 					try {
 						String[] files = { "SrcMeter-Class.csv", "SrcMeter-Enum.csv" };
 						boolean temp = false;
 						for (String f : files) {
-							System.out.println(f);
 							metrics = new File(java_folder[0], f); // $NON-NLS-1$
 							BufferedReader metric_reader = new BufferedReader(new FileReader(metrics));
 							String m_line = metric_reader.readLine();
