@@ -2,16 +2,27 @@ package metricTool;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 
 public class Download {
 
-	protected void organizeDownloads(List<String> downloadURLs) {
-		for (String url : downloadURLs) {
-			if (!gitClone(url))
+	protected void organizeDownloads(File downloadURLs) {
+		BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(downloadURLs));
+			String line = reader.readLine();
+			String[] git_urls = line.substring(0, line.length()).split(",");
+			reader.close();
+			for (String url : git_urls) {
+				if (!gitClone(url))
 				System.err.println(url + ": not successfully cloned");
+			}
+			
+		}catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -64,7 +75,7 @@ public class Download {
 			if (Executer.windows) {
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
 			} else if (Executer.linux) {
-				cmd = "./git checkout " + id + " .";
+				cmd = "git checkout " + id + " .";
 				process = run.exec(cmd, null, src_code);
 			} else {
 				System.err.println("Program is not compatibel with the Operating System");
