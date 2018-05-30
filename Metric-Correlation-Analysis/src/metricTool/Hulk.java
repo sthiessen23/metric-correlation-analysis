@@ -8,14 +8,14 @@ import java.util.List;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
-import org.gravity.eclipse.importer.GradleImport;
+import gradle.GradleImport;
 import org.gravity.hulk.HulkAPI;
 import org.gravity.hulk.HulkAPI.AntiPatternNames;
 import org.gravity.hulk.antipatterngraph.HAnnotation;
 import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
-import org.gravity.hulk.antipatterngraph.metrics.HInappropriateGenerosityWithAccessibilityOfMethodMetric;
-import org.gravity.hulk.antipatterngraph.metrics.HInappropriateGenerosityWithAccessibilityOfTypesMetric;
+import org.gravity.hulk.antipatterngraph.metrics.HIGAMMetric;
+import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
 import org.gravity.typegraph.basic.TypeGraph;
 
 public class Hulk implements MetricCalculator {
@@ -65,13 +65,13 @@ public class Hulk implements MetricCalculator {
 			if(ha instanceof HBlobAntiPattern)
 				blob++;	
 			
-			if(ha instanceof HInappropriateGenerosityWithAccessibilityOfMethodMetric){
+			if(ha instanceof HIGAMMetric){
 				if (ha.getTAnnotated() instanceof TypeGraph) {
 					igam = ((HMetric) ha).getValue();
 					System.out.println(igam);
 				}
 			}				
-			if(ha instanceof HInappropriateGenerosityWithAccessibilityOfTypesMetric){
+			if(ha instanceof HIGATMetric){
 				if (ha.getTAnnotated() instanceof TypeGraph) {
 					igat = ((HMetric) ha).getValue();
 					System.out.println(igat);

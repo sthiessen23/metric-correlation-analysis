@@ -27,6 +27,8 @@ public class Download {
 	}
 
 	protected boolean gitClone(String url) {
+		File folder = new File(Executer.result_dir, "Sourcecode");
+		folder.mkdirs();
 		String cmd = "cd " + Executer.result_dir + "Sourcecode" + " && " + "git clone --recursive " + url;
 		Runtime run = Runtime.getRuntime();
 		try {
@@ -34,7 +36,6 @@ public class Download {
 			if (Executer.windows)
 				process = run.exec("cmd /c \"" + cmd);
 			else if (Executer.linux) {
-				File folder = new File(Executer.result_dir, "Sourcecode");
 				cmd = "git clone --recursive " + url;
 				process = run.exec(cmd, null, folder);
 			} else {

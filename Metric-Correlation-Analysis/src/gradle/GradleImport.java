@@ -1,4 +1,4 @@
-package org.gravity.eclipse.importer;
+package gradle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,6 +18,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -50,8 +51,7 @@ public class GradleImport {
 	private String gradle;
 	private String android;
 
-	private final static String gradleCache = "caches" + File.separator + "modules-2" + File.separator
-			+ "files-2.1";
+	private final static String gradleCache = "caches" + File.separator + "modules-2" + File.separator + "files-2.1";
 	private final static String androidSdkPlatforms = "platforms";
 	private static final boolean LINKONPROJECT = false;
 	private static final boolean IgnoreGradleResult = false;
@@ -74,13 +74,13 @@ public class GradleImport {
 		IJavaProject project = createJavaProject(name, monitor, java, gradle);
 
 		// build gradle project
-		if(!buildGradleProject(folder)) {
+		if (!buildGradleProject(folder)) {
 			return null;
 		}
 
 		IFolder libFolder = project.getProject().getFolder("lib");
 		libFolder.create(true, true, monitor);
-		
+
 		List<IClasspathEntry> entries = new LinkedList<>();
 		List<Path> libs = getLibs(gradle);
 		for (Path libPath : libs) {
@@ -89,7 +89,7 @@ public class GradleImport {
 			if (libName.endsWith(".jar")) {
 				jarFile = libFolder.getFile(libPath.getFileName().toString());
 				IPath jarPath = new org.eclipse.core.runtime.Path(libPath.toFile().getAbsolutePath());
-				if(jarFile.exists()) {
+				if (jarFile.exists()) {
 					continue;
 				}
 				jarFile.createLink(jarPath, IResource.NONE, monitor);
@@ -98,14 +98,13 @@ public class GradleImport {
 					ZipEntry entry;
 					while ((entry = zipStream.getNextEntry()) != null) {
 						if (entry.getName().endsWith(".jar")) {
-								jarFile = libFolder
+							jarFile = libFolder
 									.getFile(libName.substring(0, libName.length() - "aar".length()) + "jar");
-							if(!jarFile.exists()) {
+							if (!jarFile.exists()) {
 								jarFile.create(zipStream, true, monitor);
 								// zipStream.closeEntry();
 								break;
-							}
-							else {
+							} else {
 								jarFile = null;
 							}
 						}
@@ -113,7 +112,7 @@ public class GradleImport {
 					}
 				}
 			}
-			if(jarFile == null) {
+			if (jarFile == null) {
 				continue;
 			}
 			IClasspathEntry entry = new ClasspathEntry(IPackageFragmentRoot.K_BINARY, IClasspathEntry.CPE_LIBRARY,
@@ -127,15 +126,15 @@ public class GradleImport {
 					ClasspathEntry.NO_EXTRA_ATTRIBUTES);
 			entries.add(entry);
 		}
-		
+
 		IClasspathEntry[] oldEntries = project.getRawClasspath();
 		int i = oldEntries.length;
 		IClasspathEntry[] newEntries = new IClasspathEntry[entries.size() + i];
 		System.arraycopy(oldEntries, 0, newEntries, 0, i);
-		for(IClasspathEntry entry : entries) {
+		for (IClasspathEntry entry : entries) {
 			newEntries[i++] = entry;
 		}
-		
+
 		project.setRawClasspath(newEntries, monitor);
 
 		return project;
@@ -147,31 +146,44 @@ public class GradleImport {
 			return false;
 		}
 		gradlew.setExecutable(true);
-		Process p = null;
+		
+		List<String> lines = Files.readAllLines(gradlew.toPath());
 		if(Executer.windows) {
-			p = Runtime.getRuntime().exec("cmd /c \"" + "gradlew assembleDebug",null, folder);
+			for(String s : lines) {
+				s.replaceAll("(?<!\\r)\\n", "\\r\\n");
+			}
 		}
-		else if(Executer.linux) {
+		if(Executer.linux) {
+			for(String s : lines) {
+				s.replaceAll("\\r\\n?", "\\r\\n");
+			}
+		}
+		Files.write(gradlew.toPath(), lines);
+		
+		Process p = null;
+		if (Executer.windows) {
+			p = Runtime.getRuntime().exec("cmd /c \"" + "gradlew assembleDebug", null, folder);
+		} else if (Executer.linux) {
 			p = Runtime.getRuntime().exec("./gradlew", null, folder);
-		}
-		else {
+		} else {
 			System.err.println("Unsupported OS");
 			return false;
 		}
-		
-//		try(BufferedReader stream = new BufferedReader(new InputStreamReader(p.getInputStream()))){
-//			String line;
-//			while((line = stream.readLine()) != null) {
-//				System.out.println("GRADLE: " + line);
-//			}
-//		}
-		try(BufferedReader stream = new BufferedReader(new InputStreamReader(p.getErrorStream()))){
+
+		// try(BufferedReader stream = new BufferedReader(new
+		// InputStreamReader(p.getInputStream()))){
+		// String line;
+		// while((line = stream.readLine()) != null) {
+		// System.out.println("GRADLE: " + line);
+		// }
+		// }
+		try (BufferedReader stream = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
 			String line;
-			while((line = stream.readLine()) != null) {
+			while ((line = stream.readLine()) != null) {
 				System.err.println("GRADLE: " + line);
 			}
 		}
-		
+
 		p.waitFor();
 		return p.exitValue() == 0;
 	}
@@ -205,7 +217,7 @@ public class GradleImport {
 		File srcFolder = new File(folder, "src");
 		if (srcFolder.exists()) {
 			File main = new File(srcFolder, "main");
-			if(main.exists()) {
+			if (main.exists()) {
 				srcFolder = main;
 			}
 			Files.walkFileTree(srcFolder.toPath(), new SimpleFileVisitor<Path>() {
@@ -226,9 +238,14 @@ public class GradleImport {
 		// Create new project with given name
 		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 		IProject project = workspaceRoot.getProject(name);
-		project.create(monitor);
-		project.open(monitor);
-
+		if (project.exists()) {
+			if (project.hasNature(JavaCore.NATURE_ID)) {
+				return JavaCore.create(project);
+			}
+		} else {
+			project.create(monitor);
+			project.open(monitor);
+		}
 		// Add Java-Nature
 		IProjectDescription description = project.getDescription();
 		String[] oldNatures = description.getNatureIds();
@@ -311,13 +328,12 @@ public class GradleImport {
 
 					}
 				}
-				if(LINKONPROJECT) {
+				if (LINKONPROJECT) {
 					iFile.createLink(location, IResource.NONE, monitor);
-				}
-				else {
+				} else {
 					Files.createSymbolicLink(iFile.getLocation().toFile().toPath(), location.toFile().toPath());
 				}
-				
+
 			}
 		}
 		return javaProject;
