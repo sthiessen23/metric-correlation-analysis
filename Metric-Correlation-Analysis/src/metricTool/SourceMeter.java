@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -13,30 +14,53 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class SourceMeter implements MetricCalculator {
+import org.eclipse.jdt.core.IJavaProject;
+import org.gravity.eclipse.os.OperationSystem;
 
-	private String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
+public class SourceMeter implements IMetricCalculator {
 
-	public SourceMeter(String env_name) {
-		this.env_variable_name_srcmeter = env_name;
+	private static final String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
+
+	private final File sourceMeterExecutable;
+	private final File tmpResultDir;
+
+	public SourceMeter() throws MetricCalculatorInitializationException {
+		String src_meter = System.getenv(env_variable_name_srcmeter);
+		if (src_meter == null) {
+			throw new MetricCalculatorInitializationException("SourceMeterJava environment variable not set!");
+		} else {
+			sourceMeterExecutable = new File(src_meter);
+			if (!sourceMeterExecutable.exists()) {
+				throw new MetricCalculatorInitializationException(
+						"SourceMeterJava executable not found at: \"" + src_meter + "\"!");
+			}
+		}
+		try {
+			tmpResultDir = Files.createTempDirectory("SourceMeter").toFile();
+		} catch (IOException e1) {
+			throw new MetricCalculatorInitializationException(e1);
+		}
 	}
 
 	@Override
-	public boolean calculateMetric(File in) {
-		String src_meter = System.getenv(this.env_variable_name_srcmeter);
-		String src_meter_out = Executer.result_dir + File.separator + "SourceMeter" + File.separator + in.getName();
-		String cmd = src_meter + " -projectName=SrcMeter" + //$NON-NLS-1$
-				" -projectBaseDir=" + in.toString() + //$NON-NLS-1$
-				" -resultsDir=" + src_meter_out; //$NON-NLS-1$
+	public boolean calculateMetric(IJavaProject project) {
+		File in = project.getProject().getLocation().toFile();
+
+		String cmd = sourceMeterExecutable + " -projectName=" + project.getProject().getName() + //$NON-NLS-1$
+				" -projectBaseDir=" + in.getAbsolutePath() + //$NON-NLS-1$
+				" -resultsDir=" + tmpResultDir.getAbsolutePath(); //$NON-NLS-1$
 
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executer.windows)
+			switch (OperationSystem.getCurrentOS()) {
+			case WINDOWS:
 				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-			else if (Executer.linux)
+				break;
+			case LINUX:
 				process = run.exec(cmd);
-			else {
+				break;
+			default:
 				System.err.println("Program is not compatibel with the Operating System");
 				return false;
 			}
@@ -58,23 +82,20 @@ public class SourceMeter implements MetricCalculator {
 		return true;
 	}
 
-
 	@Override
-	public LinkedHashMap<String, Double> getResults(File in) {
-		System.out.println("SourceMeter started");
-
+	public LinkedHashMap<String, Double> getResults() {
 		LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
 
-		File[] java_folder = new File(in, "java").listFiles(); //$NON-NLS-1$
 		String[] metric_names = { "LLOC", "WMC", "CBO", "LCOM5", "DIT", "LDC" };
 
-		if(java_folder == null) {
-			for(String name : metric_names) {
+		File[] java_folder = new File(tmpResultDir.getAbsolutePath(), "java").listFiles(); //$NON-NLS-1$
+		if (java_folder == null) {
+			for (String name : metric_names) {
 				metric_results.put(name, -1.0);
 			}
 			return metric_results;
 		}
-		
+
 		if (java_folder.length > 0) {
 			try {
 
@@ -101,7 +122,7 @@ public class SourceMeter implements MetricCalculator {
 							metrics = new File(java_folder[0], f); // $NON-NLS-1$
 							BufferedReader metric_reader = new BufferedReader(new FileReader(metrics));
 							String m_line = metric_reader.readLine();
-							if((m_line = metric_reader.readLine())==null && !temp) {
+							if ((m_line = metric_reader.readLine()) == null && !temp) {
 								for (String name : metric_names) {
 									metric_results.put(name, -1.0);
 								}
@@ -111,12 +132,12 @@ public class SourceMeter implements MetricCalculator {
 							temp = true;
 							while (m_line != null) {
 								String[] values = m_line.substring(1, m_line.length() - 1).split("\",\""); //$NON-NLS-1$
-								if(s == "LLOC") {
-								class_values.add(Double.parseDouble(values[metric_index]));
-								
+								if (s == "LLOC") {
+									class_values.add(Double.parseDouble(values[metric_index]));
+
 								} else {
 									double lloc = Double.parseDouble(values[lloc_index]);
-									class_values.add(Double.parseDouble(values[metric_index])*lloc);
+									class_values.add(Double.parseDouble(values[metric_index]) * lloc);
 								}
 								m_line = metric_reader.readLine();
 							}
@@ -131,7 +152,7 @@ public class SourceMeter implements MetricCalculator {
 						DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 						if (s == "LLOC") {
 							metric_results.put(s, Double.parseDouble(dFormat.format(sum)));
-							
+
 							double average = sum / class_values.size();
 							metric_results.put("LOCpC", Double.parseDouble(dFormat.format(average)));
 							lloc_index = metric_index;

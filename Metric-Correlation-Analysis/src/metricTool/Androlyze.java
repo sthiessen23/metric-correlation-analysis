@@ -5,95 +5,140 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
+import org.eclipse.jdt.core.IJavaProject;
+import org.gravity.eclipse.os.OperationSystem;
+import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class Androlyze implements MetricCalculator {
+public class Androlyze implements IMetricCalculator {
 
-	private String env_variable_name_androlyze = "ANDROLYZE";
+	public static final String env_variable_name_androlyze = "ANDROLYZE";
+	public static final String env_variable_name_mongod = "MONGOD";
+	
+	private final File androlyzeDir;
 
-	public Androlyze(String env_name) {
-		this.env_variable_name_androlyze = env_name;
+	public Androlyze() throws MetricCalculatorInitializationException {
+		String andro = System.getenv(env_variable_name_androlyze);
+		if (andro == null) {
+			throw new MetricCalculatorInitializationException("Androlyze environment variable not set!");
+		}
+		File androlyzeDir = new File(andro);
+		if (!androlyzeDir.exists()) {
+			throw new MetricCalculatorInitializationException(
+					"The location \"" + androlyzeDir.getAbsolutePath() + "\" doesn't exist.");
+		}
+		if(androlyzeDir.isFile()) {
+			androlyzeDir = androlyzeDir.getParentFile();
+		}
+		if(!new File(androlyzeDir, "androanalyze").exists()) {
+			throw new MetricCalculatorInitializationException(
+					"Androlyze executable not found in \"" + androlyzeDir.getAbsolutePath() + "\".");
+		}
+		this.androlyzeDir = androlyzeDir;
+		
+		startDatabase();
 	}
 
-	@Override
-	public boolean calculateMetric(File in) {
+	private boolean startDatabase() throws MetricCalculatorInitializationException {
 
-		String andro = System.getenv(this.env_variable_name_androlyze);
-		String andro_cmd = "cd " + andro + " && " + "androlyze.py " + "analyze " + "CodePermissions.py " + "--apks "
-				+ GradleBuild.compiled_apk + " -pm  non-parallel";
+		String mongod = System.getenv(env_variable_name_mongod);
+		if (mongod == null) {
+			throw new MetricCalculatorInitializationException("Environment variable \"" + env_variable_name_mongod + "\" not set.");
+		}
+		File mongodFile = new File(mongod);
+		if(!mongodFile.exists()) {
+			throw new MetricCalculatorInitializationException("Location \"" + env_variable_name_mongod + "\" not found.");
+		}
+		if(mongodFile.isDirectory()) {
+			mongodFile = new File(mongodFile, "mongod");
+			if(!mongodFile.exists()) {
+				throw new MetricCalculatorInitializationException("Location \"" + env_variable_name_mongod + "\" not found.");
+			}
+		}
+		Runtime run = Runtime.getRuntime();
+		try {
+			Process process;
+			switch(OperationSystem.getCurrentOS()) {
+				case WINDOWS:
+					process = run.exec("cmd /c \"" + mongodFile.getAbsolutePath());
+				break;
+				case LINUX:
+					process = run.exec(mongodFile.getAbsolutePath());
+				break;
+				default:
+					throw new MetricCalculatorInitializationException("Program is not compatibel with the Operating System");		
+			}
+			try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))){
+				String line;
+				while((line = reader.readLine())!= null){
+					System.err.println("MONGO_DB: "+line);
+				}
+			}
+		} catch (IOException e) {
+			throw new MetricCalculatorInitializationException(e);
+		}
+		return true;
+	}
+
+	
+	@Override
+	public boolean calculateMetric(IJavaProject project) {
+		File compiled_apk;
+		try {
+			compiled_apk = GradleBuild.buildApk(project.getProject().getLocation().toFile());
+		} catch (UnsupportedOperationSystemException e1) {
+			e1.printStackTrace();
+			return false;
+		}
+		String andro_cmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
+				+ "--apks " + compiled_apk + " -pm  non-parallel";
 
 		Runtime run = Runtime.getRuntime();
 		try {
 			Process process;
-			if (Executer.windows)
-				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
-			else if (Executer.linux) {
-				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks "
-						+ GradleBuild.compiled_apk;
-				process = run.exec(andro_cmd, null, new File(andro));
-			} else
-				return false;
+			switch (OperationSystem.getCurrentOS()) { case WINDOWS:
+				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");break;
+			case LINUX:
+				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiled_apk;
+				process = run.exec(andro_cmd, null, androlyzeDir);
+			break;
+			default:
+				return false;}
 
-			try(BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))){
+			try (BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
-				while((line = stream.readLine()) != null) {
+				while ((line = stream.readLine()) != null) {
 					System.err.println("ANDROLYZE: " + line);
 				}
 			}
 			process.waitFor();
 			process.destroy();
 
-			File location = new File(andro + File.separator + "storage" + File.separator + "res");
-			String[] fileList = location.list();
-			if (fileList.length > 0) {
-				String jsonPath = andro + File.separator + "storage" + File.separator + "res"
-						+ File.separator + fileList[0];
-				File f = new File(jsonPath);
-
-				try {
-					while (!f.isFile()) {
-						String[] s = f.list();
-						jsonPath = jsonPath + File.separator + s[0];
-						f = new File(jsonPath);
-
-					}
-				} catch (ArrayIndexOutOfBoundsException e) {
-					System.err.println("Androlyze could't store JSON file.");
-					Executer.clear(location);
-					return false;
-				}
-				Files.move(f.toPath(), in.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-						java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-				Executer.clear(location);
-				return true;
-			}
-
-			return false;
+			return true;
 
 		} catch (IOException | InterruptedException e) {
 			return false;
 		}
 	}
-	
 
 	@Override
-	public LinkedHashMap<String, Double> getResults(File in) {
-
+	public LinkedHashMap<String, Double> getResults() {
+		File resultsLocation = new File(androlyzeDir, "storage" + File.separator + "res");
+		
 		LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
 
 		JSONParser parser = new JSONParser();
 		Object obj;
 		try {
-			FileReader reader = new FileReader(in);
+			FileReader reader = new FileReader(resultsLocation);
 			obj = parser.parse(reader);
 			JSONObject jsonObject = (JSONObject) obj;
 			Object name = jsonObject.get("code permissions");
@@ -112,7 +157,7 @@ public class Androlyze implements MetricCalculator {
 				if (jsonArray.isEmpty()) {
 					sumNotUsedPermissions++;
 				}
-				
+
 			}
 			DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
 			dfs.setDecimalSeparator('.');
@@ -120,10 +165,10 @@ public class Androlyze implements MetricCalculator {
 
 			double permission_metric = (double) sumNotUsedPermissions / (double) sumPermissions;
 			metric_results.put("PERMISSIONS", Double.parseDouble(dFormat.format(permission_metric)));
-			
+
 			System.out.println(sumPermissions);
 			System.out.println(sumNotUsedPermissions);
-			
+
 			reader.close();
 			return metric_results;
 

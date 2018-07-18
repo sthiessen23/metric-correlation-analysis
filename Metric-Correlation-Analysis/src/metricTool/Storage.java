@@ -4,40 +4,51 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.List;
 
 public class Storage {
+
+	private final List<String> keys;
+	private final File output;
 	
-	protected void initCSV(File result_file) {
-		try {
-			Object[] obj = Executer.metric_results.keySet().toArray();
-			BufferedWriter writer = new BufferedWriter(new FileWriter(result_file));
-			writer.write("Application Name");
-			for(int i=0; i< obj.length; i++){
-				writer.write("," + obj[i].toString());
+	public Storage(File result_file, Collection<String> keys) throws IOException {
+		this.output = result_file;
+		if (keys instanceof List) {
+			this.keys = (List<String>) keys;
+			
+		}
+		else {
+			this.keys = new ArrayList<String>(keys);
+		}
+		
+		if(!result_file.exists()) {
+			result_file.getParentFile().mkdirs();
+			result_file.createNewFile();
+		}
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(result_file))){
+			writer.write("Application-Name");
+			for (String key : keys) {
+				writer.write("," + key);
 			}
 			writer.close();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
-
-	protected void writeCSV(File result_file, String apk_name) {
-		try {
-			Set<String> set = Executer.metric_results.keySet();
-			Iterator<String> iterator = set.iterator();
-			BufferedWriter writer = new BufferedWriter(new FileWriter(result_file, true));
+	protected boolean writeCSV(String name, Hashtable<String, Double> results) {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output, true))) {
 			writer.newLine();
-			writer.write(apk_name);
-			while (iterator.hasNext()) {
-				writer.write("," + Executer.metric_results.get(iterator.next()));
+			writer.write(name);
+			for(String key : keys) {
+				writer.write("," + results.get(key));
 			}
-			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
+		return true;
 	}
-	
+
 }
