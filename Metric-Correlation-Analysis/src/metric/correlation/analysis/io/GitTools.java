@@ -1,48 +1,28 @@
-package metricTool;
+package metric.correlation.analysis.io;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.util.Stack;
 
 import org.gravity.eclipse.os.OperationSystem;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
-public class Download {
+import metric.correlation.analysis.GradleBuild;
 
-	protected static void organizeDownloads(File downloadURLs, File destination) throws UnsupportedOperationSystemException {
-		BufferedReader reader;
-		try {
-			reader = new BufferedReader(new FileReader(downloadURLs));
-			String line = reader.readLine();
-			String[] git_urls = line.substring(0, line.length()).split(",");
-			reader.close();
-			for (String url : git_urls) {
-				try {
-					gitClone(url, destination);
-				} catch (GitCloneException e) {
-					System.err.println(url + ": not successfully cloned");
-					e.printStackTrace();
-				}
-			}
+public class GitTools {
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 	protected static boolean gitClone(String url, File destination) throws UnsupportedOperationSystemException, GitCloneException {
 		return gitClone(url, destination, false);
 	}
 
-	protected static boolean gitClone(String url, File destination, boolean replace) throws UnsupportedOperationSystemException, GitCloneException {
+	public static boolean gitClone(String url, File destination, boolean replace) throws UnsupportedOperationSystemException, GitCloneException {
 		if (!destination.exists()) {
 			destination.mkdirs();
 		}
-		String name = url.substring(url.lastIndexOf('/') + 1, url.length() - 4);
-		File repository = new File(destination, name);
+		String productName = url.substring(url.lastIndexOf('/') + 1, url.length() - 4);
+		File repository = new File(destination, productName);
 		if(repository.exists()) {
 			if(replace) {
 				Stack<File> files = new Stack<>();
@@ -66,7 +46,7 @@ public class Download {
 				}
 			}
 			else {
-				throw new GitCloneException("There is already a repository with the name \""+name+ "\".");
+				throw new GitCloneException("There is already a repository with the name \""+productName+ "\".");
 			}
 		}
 		String cmd = "cd " + destination.getAbsolutePath() + " && " + "git clone --recursive " + url;
@@ -102,13 +82,13 @@ public class Download {
 		}
 	}
 
-	protected static boolean changeVersion(File src_code, String id) throws UnsupportedOperationSystemException {
+	public static boolean changeVersion(File src_code, String id) throws UnsupportedOperationSystemException {
 
 		System.out.println(id);
 		File build_dir = new File(src_code, "build");
 		if (build_dir.exists()) {
 			GradleBuild.cleanBuild(src_code);
-			Executer.clear(build_dir);
+			FileUtils.recursiveDelete(build_dir);
 		}
 		String cmd = "cd " + src_code.getPath() + " && " + "git checkout " + id + " .";
 		Runtime run = Runtime.getRuntime();

@@ -1,0 +1,97 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "projects"
+  ],
+  "properties": {
+    "projects": {
+      "$id": "#/properties/projects",
+      "type": "array",
+      "title": "The Projects",
+      "default": null,
+      "items": {
+        "$id": "#/properties/projects/items",
+        "type": "object",
+        "title": "The Items Schema",
+        "required": [
+          "productName",
+          "vendorName",
+          "url"
+        ],
+        "properties": {
+          "productName": {
+            "$id": "#/properties/projects/items/properties/productName",
+            "type": "string",
+            "title": "The Productname Schema",
+            "default": "",
+            "examples": [
+              "Example"
+            ],
+            "pattern": "^(.+)$"
+          },
+          "vendorName": {
+            "$id": "#/properties/projects/items/properties/vendorName",
+            "type": "string",
+            "title": "The Vendorname Schema",
+            "default": "",
+            "examples": [
+              "Vendor"
+            ],
+            "pattern": "^(.+)$"
+          },
+          "url": {
+            "$id": "#/properties/projects/items/properties/url",
+            "type": "string",
+            "title": "The GIT Repository URL",
+            "default": "",
+            "examples": [
+              "https://github.com/GRaViTY-Tool/gravity-tool.git"
+             ],
+             "pattern": "[A-Za-z][A-Za-z0-9+.-]*"
+          },
+          "commits": {
+            "$id": "#/properties/projects/items/properties/commits",
+            "type": "array",
+            "title": "The Commits Schema",
+            "default": null,
+            "items": {
+              "$id": "#/properties/projects/items/properties/commits/items",
+              "type": "object",
+              "title": "The Items Schema",
+              "required": [
+                "commitId",
+                "version"
+              ],
+              "properties": {
+                "commitId": {
+                  "$id": "#/properties/projects/items/properties/commits/items/properties/commitId",
+                  "type": "string",
+                  "title": "The Commitid Schema",
+                  "default": "",
+                  "examples": [
+                    "225648e16028af05ab2be93553abef1126e6dbfe"
+                  ],
+                  "pattern": "^([a-fA-F0-9]+)$"
+                },
+                "version": {
+                  "$id": "#/properties/projects/items/properties/commits/items/properties/version",
+                  "type": "string",
+                  "title": "The Version Schema",
+                  "default": "",
+                  "examples": [
+                    "V1"
+                  ],
+                  "pattern": "^(.+)$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

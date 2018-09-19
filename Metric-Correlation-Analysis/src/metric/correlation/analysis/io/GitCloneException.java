@@ -1,4 +1,4 @@
-package metricTool;
+package metric.correlation.analysis.io;
 
 public class GitCloneException extends Exception {
 

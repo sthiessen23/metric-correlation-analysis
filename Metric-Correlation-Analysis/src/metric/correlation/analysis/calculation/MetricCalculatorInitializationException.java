@@ -1,4 +1,4 @@
-package metricTool;
+package metric.correlation.analysis.calculation;
 
 public class MetricCalculatorInitializationException extends Exception {
 

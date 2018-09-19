@@ -1,4 +1,4 @@
-package metricTool;
+package metric.correlation.analysis.calculation.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,14 +17,17 @@ import java.util.List;
 import org.eclipse.jdt.core.IJavaProject;
 import org.gravity.eclipse.os.OperationSystem;
 
-public class SourceMeter implements IMetricCalculator {
+import metric.correlation.analysis.calculation.IMetricCalculator;
+import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
+
+public class SourceMeterMetrics implements IMetricCalculator {
 
 	private static final String env_variable_name_srcmeter = "SOURCE_METER_JAVA"; //$NON-NLS-1$
 
 	private final File sourceMeterExecutable;
 	private final File tmpResultDir;
 
-	public SourceMeter() throws MetricCalculatorInitializationException {
+	public SourceMeterMetrics() throws MetricCalculatorInitializationException {
 		String src_meter = System.getenv(env_variable_name_srcmeter);
 		if (src_meter == null) {
 			throw new MetricCalculatorInitializationException("SourceMeterJava environment variable not set!");
@@ -43,7 +46,7 @@ public class SourceMeter implements IMetricCalculator {
 	}
 
 	@Override
-	public boolean calculateMetric(IJavaProject project) {
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
 		File in = project.getProject().getLocation().toFile();
 
 		String cmd = sourceMeterExecutable + " -projectName=" + project.getProject().getName() + //$NON-NLS-1$

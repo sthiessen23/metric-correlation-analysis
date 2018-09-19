@@ -1,0 +1,34 @@
+{
+  "projects": [
+    {
+      "productName": "Example",
+      "vendorName": "Vendor",
+      "url": "https://github.com/TommyLemon/APIJSON.git",
+      "commits": [
+        {
+          "commitId": "225648e16028af05ab2be93553abef1126e6dbfe",
+          "version": "V1"
+        },
+        {
+          "commitId": "225648e16028af05ab2be93553abef1126e6dbfe",
+          "version": "V1"
+        }
+      ]
+    },
+    {
+      "productName": "Example",
+      "vendorName": "Vendor",
+      "url": "https://github.com/TommyLemon/APIJSON.git",
+      "commits": [
+        {
+          "commitId": "225648e16028af05ab2be93553abef1126e6dbfe",
+          "version": "V1"
+        },
+        {
+          "commitId": "225648e16028af05ab2be93553abef1126e6dbfe",
+          "version": "V1"
+        }
+      ]
+    }
+  ]
+}
