@@ -31,9 +31,6 @@ import metric.correlation.analysis.io.Storage;
 
 public class MetricCalculation {
 
-	// private static final Logger LOGGER =
-	// Logger.getLogger(MetricCalculation.class);
-
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final File RESULTS = new File("results");
 	private static final File REPOSITORIES = new File("repositories");
@@ -108,12 +105,12 @@ public class MetricCalculation {
 		GradleImport gradleImport;
 		try {
 			gradleImport = new GradleImport(src);
-		} catch (NoGradleRootFolderException | IOException e) {
+		} catch (NoGradleRootFolderException e) {
 			return false;
 		}
 		IJavaProject project;
 		try {
-			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
+			project = gradleImport.importGradleProject(new NullProgressMonitor());
 		} catch (IOException | CoreException | InterruptedException | NoGradleRootFolderException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
