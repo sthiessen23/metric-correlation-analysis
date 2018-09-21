@@ -1,26 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-math3-3.6.1.jar"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="src" output="target/test-classes" path="test">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/classes" path="src">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry exported="true" kind="lib" path="lib/flanagan.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-core-2.9.6.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-coreutils-1.8.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-databind-2.9.7.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jcommon-1.0.24.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jfreechart-1.5.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/json-schema-core-1.2.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/json-schema-validator-2.2.6.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/msg-simple-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/btf-1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-annotations-2.9.6.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/guava-26.0-jre.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/joda-time-2.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax.mail-api-1.6.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/libphonenumber-8.9.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/uri-template-0.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javascript-1.0.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>
