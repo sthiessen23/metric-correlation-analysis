@@ -9,13 +9,14 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
-import org.gravity.eclipse.importer.gradle.GradleImport;
-import org.gravity.eclipse.importer.gradle.NoGradleRootFolderException;
+import org.gravity.eclipse.importer.GradleImport;
+import org.gravity.eclipse.importer.NoGradleRootFolderException;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
@@ -30,13 +31,14 @@ import metric.correlation.analysis.io.Storage;
 
 public class MetricCalculation {
 
-	private static final Logger LOGGER = Logger.getLogger(MetricCalculation.class);
-	
+	// private static final Logger LOGGER =
+	// Logger.getLogger(MetricCalculation.class);
+
+	private static final Logger LOGGER = LogManager.getLogger();
 	private static final File RESULTS = new File("results");
 	private static final File REPOSITORIES = new File("repositories");
 
 	private static final Collection<IMetricCalculator> METRIC_CALCULATORS = new ArrayList<>(3);
-	
 
 	public MetricCalculation() {
 		METRIC_CALCULATORS.add(new HulkMetrics());
@@ -58,7 +60,8 @@ public class MetricCalculation {
 	 * 
 	 * This method has to be called from a running eclipse workspace!
 	 * 
-	 * @param configurations The project configurations which should be considered
+	 * @param configurations
+	 *            The project configurations which should be considered
 	 * 
 	 * @throws UnsupportedOperationSystemException
 	 */
