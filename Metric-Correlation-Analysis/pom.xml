@@ -5,10 +5,21 @@
 	<groupId>Metric-Correlation-Analysis</groupId>
 	<artifactId>Metric-Correlation-Analysis</artifactId>
 	<version>1.2</version>
+
+	<properties>
+		<tycho-version>1.2.0</tycho-version>
+	</properties>
+
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<testSourceDirectory>test</testSourceDirectory>
 		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<extensions>true</extensions>
+			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
@@ -19,6 +30,7 @@
 			</plugin>
 		</plugins>
 	</build>
+
 	<repositories>
 		<repository>
 			<id>elastic-lucene-snapshots</id>
@@ -32,6 +44,7 @@
 			</snapshots>
 		</repository>
 	</repositories>
+
 	<dependencies>
 		<!-- DEPENDENCIES FROM VERSION 2.0 -->
 		<dependency>
@@ -44,6 +57,13 @@
 			<artifactId>elasticsearch-rest-high-level-client</artifactId>
 			<version>6.3.2</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.elasticsearch.client/elasticsearch-rest-client -->
+		<dependency>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-client</artifactId>
+			<version>6.4.1</version>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
 		<dependency>
 			<groupId>org.mongodb</groupId>
@@ -191,9 +211,5 @@
 			<artifactId>javascript</artifactId>
 			<version>1.0</version>
 		</dependency>
-
-
-
-
 	</dependencies>
 </project>
