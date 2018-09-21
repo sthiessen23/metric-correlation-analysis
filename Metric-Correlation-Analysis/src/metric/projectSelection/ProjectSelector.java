@@ -1,4 +1,4 @@
-package projectSelection;
+package metric.projectSelection;
 
 import java.io.IOException;
 import java.util.ArrayList;

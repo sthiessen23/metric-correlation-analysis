@@ -1,4 +1,4 @@
-package projectSelection;
+package metric.projectSelection;
 
 /**
  * @author Antoniya Ivanova Represents a GitHub repository.
