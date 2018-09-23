@@ -1,13 +1,10 @@
 package metric.projectSelection;
 
-import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -17,13 +14,14 @@ import org.elasticsearch.search.SearchHit;
 import org.junit.Test;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import metric.correlation.analysis.io.FileUtils;
 
 public class ProjectsOutputCreator {
+	
+	public static String projectsDataOutputFilePath = "Resources/projectsReleaseData.json";
 
 	/**
 	 * @author Antoniya Ivanova - prepares the JSON output for the repository
@@ -92,8 +90,6 @@ public class ProjectsOutputCreator {
 					request.addHeader("content-type", "application/json");
 
 					HttpResponse result = httpClient.execute(request);
-					HttpEntity entity = result.getEntity();
-
 					String json = EntityUtils.toString(result.getEntity(), "UTF-8");
 					JsonArray jarray = new JsonParser().parse(json).getAsJsonArray();
 
@@ -122,7 +118,7 @@ public class ProjectsOutputCreator {
 			FileUtils fileUtils = new FileUtils();
 			fileUtils.createDirectory("Resources");
 			
-			FileWriter fileWriter = new FileWriter("Resources/projectsReleaseData.json");
+			FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath);
 			
 			fileWriter.write(resultJSON.toString());
 			fileWriter.close();

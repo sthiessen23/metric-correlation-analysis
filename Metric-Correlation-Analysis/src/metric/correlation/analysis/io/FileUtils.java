@@ -103,4 +103,17 @@ public class FileUtils {
 		}
 	}
 
+	public static void clear(File file) {
+		if (file.exists()) {
+			for (File f : file.listFiles()) {
+				if (f.isDirectory()) {
+					clear(f);
+					f.delete();
+				} else {
+					f.delete();
+				}
+			}
+		}
+	}
+
 }

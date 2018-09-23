@@ -51,7 +51,7 @@ public class ProjectConfiguration {
 	}
 
 	/**
-	 * A getter for the url of the ggit repository
+	 * A getter for the url of the git repository
 	 * 
 	 * @return The git url
 	 */
