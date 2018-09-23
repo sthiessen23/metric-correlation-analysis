@@ -1,19 +1,7 @@
 package metric.correlation.analysis.calculation.impl;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.HashSet;
-
-import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaProject;
-import org.elasticsearch.search.SearchHit;
-import org.gravity.eclipse.os.OperationSystem;
-import org.gravity.eclipse.os.UnsupportedOperationSystemException;
-
-import metric.correlation.analysis.GradleBuild;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.vulnerabilities.VulnerabilityDataQueryHandler;
 

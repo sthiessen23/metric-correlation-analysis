@@ -27,8 +27,6 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.metrics.avg.Avg;
 import org.elasticsearch.search.aggregations.metrics.avg.AvgAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.junit.Test;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -48,6 +46,10 @@ public class ProjectSelector {
 	// Change this to your own OAuthToken
 	protected static String OAuthToken = "183c10a9725ad6c00195df59c201040e1b3d1d07";
 	protected static String repositoryDatabaseName = "repositories_database_extended";
+	
+	public void initializeProjectElasticDatabase(){
+		addDocumentsToElastic(searchForJavaRepositoryNames());
+	}
 
 	/**
 	 * Searches for Java + Gradle repositories on GitHub.
