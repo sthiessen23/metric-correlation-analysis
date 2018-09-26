@@ -15,8 +15,8 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
-import org.gravity.eclipse.importer.GradleImport;
-import org.gravity.eclipse.importer.NoGradleRootFolderException;
+import org.gravity.eclipse.importer.gradle.GradleImport;
+import org.gravity.eclipse.importer.gradle.NoGradleRootFolderException;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
@@ -118,14 +118,14 @@ public class MetricCalculation {
 		
 		try {
 			gradleImport = new GradleImport(src);
-		} catch (NoGradleRootFolderException e) {
+		} catch (NoGradleRootFolderException | IOException e) {
 			return false;
 		}
 		
 		IJavaProject project;
 		
 		try {
-			project = gradleImport.importGradleProject(new NullProgressMonitor());
+			project = gradleImport.importGradleProject(false, new NullProgressMonitor());
 		} catch (IOException | CoreException | InterruptedException | NoGradleRootFolderException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;

@@ -25,6 +25,7 @@ import com.google.gson.stream.JsonReader;
 
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
+import projectSelection.ProjectsOutputCreator;
 
 public class ExecutionTest {
 
@@ -34,7 +35,7 @@ public class ExecutionTest {
 	public void execute() throws UnsupportedOperationSystemException {
 		try {
 			File projectsReleaseDataJSON = new File(
-					metric.projectSelection.ProjectsOutputCreator.projectsDataOutputFilePath);
+					ProjectsOutputCreator.projectsDataOutputFilePath);
 
 			JsonNode configurationNode = JsonLoader.fromFile(projectsReleaseDataJSON);
 			JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
@@ -51,7 +52,7 @@ public class ExecutionTest {
 			return;
 		}
 
-		String projectsReleaseData = metric.projectSelection.ProjectsOutputCreator.projectsDataOutputFilePath;
+		String projectsReleaseData = ProjectsOutputCreator.projectsDataOutputFilePath;
 		Gson gson = new Gson();
 		JsonReader reader;
 
