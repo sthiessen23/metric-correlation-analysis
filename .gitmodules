@@ -1,4 +1,4 @@
-[submodule "Metric-Correlation-Analysis/repositories/APIJSON"]
+[submodule "metric.correlation.analysis/repositories/APIJSON"]
 	url = https://github.com/TommyLemon/APIJSON.git
-[submodule "Metric-Correlation-Analysis/repositories/prey-android-client"]
+[submodule "metric.correlation.analysis/repositories/prey-android-client"]
 	url = https://github.com/prey/prey-android-client.git
