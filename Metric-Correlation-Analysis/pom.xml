@@ -2,12 +2,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>Metric-Correlation-Analysis</groupId>
-	<artifactId>Metric-Correlation-Analysis</artifactId>
-	<version>1.2</version>
+	<groupId>metric.correlation.analysis</groupId>
+	<artifactId>metric.correlation.analysis</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 
 	<properties>
 		<tycho-version>1.2.0</tycho-version>
+        <junit-version>4.11</junit-version>
 	</properties>
 
 	<build>
@@ -16,11 +17,17 @@
 		<plugins>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
+				<artifactId>tycho-compiler-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<extensions>true</extensions>
 			</plugin>
 			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<extensions>true</extensions>
+			</plugin>
+			<!-- <plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
 				<configuration>
@@ -28,10 +35,69 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<version>${tycho-version}</version>
+				<configuration>
+					<environments>
+						<environment>
+							<os>linux</os>
+							<ws>gtk</ws>
+							<arch>x86</arch>
+						</environment>
+						<environment>
+							<os>linux</os>
+							<ws>gtk</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86</arch>
+						</environment>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<environment>
+							<os>macosx</os>
+							<ws>cocoa</ws>
+							<arch>x86_64</arch>
+						</environment>
+					</environments>
+				</configuration>
+			</plugin> -->
 		</plugins>
 	</build>
 
 	<repositories>
+		<repository>
+			<id>eMoflon Core</id>
+			<layout>p2</layout>
+			<url>https://raw.githubusercontent.com/eMoflon/emoflon-core-updatesite/master/stable/updatesite/</url>
+		</repository>
+		<repository>
+			<id>eMoflon</id>
+			<layout>p2</layout>
+			<url>http://emoflon.org/eclipse-plugin/beta/updatesite/</url>
+		</repository>
+		<repository>
+			<id>GRaViTY</id>
+			<layout>p2</layout>
+			<url>https://gravity-tool.github.io/updatesite</url>
+		</repository>
+		<repository>
+			<id>Eclipse Photon</id>
+			<layout>p2</layout>
+			<url>http://download.eclipse.org/releases/photon</url>
+		</repository>
+		<repository>
+			<id>Eclipse Oxy</id>
+			<layout>p2</layout>
+			<url>http://download.eclipse.org/releases/oxygen</url>
+		</repository>
 		<repository>
 			<id>elastic-lucene-snapshots</id>
 			<name>Elastic Lucene Snapshots</name>
@@ -205,4 +271,5 @@
 			<version>1.0</version>
 		</dependency>
 	</dependencies>
+	<packaging>eclipse-plugin</packaging>
 </project>
