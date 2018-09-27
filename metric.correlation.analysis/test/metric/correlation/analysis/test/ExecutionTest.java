@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +27,6 @@ import com.google.gson.stream.JsonReader;
 
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
-import projectSelection.ProjectsOutputCreator;
 
 public class ExecutionTest {
 
@@ -35,7 +36,7 @@ public class ExecutionTest {
 	public void execute() throws UnsupportedOperationSystemException {
 		try {
 			File projectsReleaseDataJSON = new File(
-					ProjectsOutputCreator.projectsDataOutputFilePath);
+					metric.projectSelection.ProjectsOutputCreator.projectsDataOutputFilePath);
 
 			JsonNode configurationNode = JsonLoader.fromFile(projectsReleaseDataJSON);
 			JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
@@ -52,7 +53,7 @@ public class ExecutionTest {
 			return;
 		}
 
-		String projectsReleaseData = ProjectsOutputCreator.projectsDataOutputFilePath;
+		String projectsReleaseData = metric.projectSelection.ProjectsOutputCreator.projectsDataOutputFilePath;
 		Gson gson = new Gson();
 		JsonReader reader;
 
@@ -66,6 +67,7 @@ public class ExecutionTest {
 		JsonObject projectsObject = gson.fromJson(reader, JsonObject.class);
 		JsonArray projects = projectsObject.get("projects").getAsJsonArray();
 
+		List<ProjectConfiguration> configs = new ArrayList<>(projects.size());
 		for (JsonElement project : projects) {
 
 			String productName = project.getAsJsonObject().get("productName").getAsString();
@@ -82,9 +84,10 @@ public class ExecutionTest {
 				commitsAndVersions.put(commitVersion, commitId);
 			}
 
-			ProjectConfiguration config = new ProjectConfiguration(productName, vendorName, gitURL, commitsAndVersions);
-			new MetricCalculation().calculateAll(Arrays.asList(config));
-
+			configs.add(new ProjectConfiguration(productName, vendorName, gitURL, commitsAndVersions));
+			
 		}
+		new MetricCalculation().calculateAll(configs);
+
 	}
 }
