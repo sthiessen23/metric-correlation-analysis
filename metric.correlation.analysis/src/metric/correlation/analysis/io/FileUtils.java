@@ -87,20 +87,22 @@ public class FileUtils {
 	/**
 	 * This method recursively deletes a file
 	 * 
-	 * @param file
-	 *            The file
+	 * @param file The file
+	 * @return true, iff the file has been deleted successfully
 	 */
-	public static void recursiveDelete(File file) {
+	public static boolean recursiveDelete(File file) {
+		boolean success = true;
 		if (file.exists()) {
 			for (File f : file.listFiles()) {
 				if (f.isDirectory()) {
-					recursiveDelete(f);
-					f.delete();
+					success &= recursiveDelete(f);
+					success &= f.delete();
 				} else {
-					f.delete();
+					success &= f.delete();
 				}
 			}
 		}
+		return success;
 	}
 
 	public static void clear(File file) {

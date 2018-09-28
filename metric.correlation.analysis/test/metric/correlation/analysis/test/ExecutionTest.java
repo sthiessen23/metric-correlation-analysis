@@ -1,93 +1,108 @@
 package metric.correlation.analysis.test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
-
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.model.InitializationError;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.fge.jackson.JsonLoader;
 import com.github.fge.jsonschema.exceptions.ProcessingException;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonReader;
-
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
+import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
 
+@RunWith(Parameterized.class)
 public class ExecutionTest {
 
-	private static final Logger LOGGER = LogManager.getLogger();
+	/**
+	 * The maximum amount of projects which sould be considered
+	 */
+	private static final int MAX_NUMBER_OF_PROJECTS = 1;
 
-	@Test
-	public void execute() throws UnsupportedOperationSystemException {
-		try {
-			File projectsReleaseDataJSON = new File(
-					metric.projectSelection.ProjectsOutputCreator.projectsDataOutputFilePath);
+	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
+	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
 
-			JsonNode configurationNode = JsonLoader.fromFile(projectsReleaseDataJSON);
-			JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
+	private ProjectConfiguration config;
 
-			if (!JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, configurationNode).isSuccess()) {
-				LOGGER.log(Level.WARN,
-						"The project configuration is not valid: " + projectsReleaseDataJSON.getAbsolutePath());
-			} else {
-				System.out.println(configurationNode.getNodeType());
+	public ExecutionTest(String projectName, ProjectConfiguration config) {
+		this.config = config;
+	}
+
+	@Parameters(name="Analyze: {0}")
+	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
+		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.projectsDataOutputFilePath);
+
+		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
+//		JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
+//
+//		ProcessingReport report = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, configurationNode);
+//		if (!report.isSuccess()) {
+//			LOGGER.log(Level.WARN,
+//					"The project configuration is not valid: " + projectsReleaseDataJSON.getAbsolutePath());
+//		} else {
+//			LOGGER.log(Level.INFO, configurationNode.getNodeType());
+//		}
+
+		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
+
+		int counter = 0;
+		List<Object[]> configs = new ArrayList<>(Math.min(MAX_NUMBER_OF_PROJECTS, projects.size()));
+		for (JsonNode project : projects) {
+			if (counter++ >= MAX_NUMBER_OF_PROJECTS) {
+				break;
 			}
-
-		} catch (IOException | ProcessingException e) {
-			e.printStackTrace();
-			return;
-		}
-
-		String projectsReleaseData = metric.projectSelection.ProjectsOutputCreator.projectsDataOutputFilePath;
-		Gson gson = new Gson();
-		JsonReader reader;
-
-		try {
-			reader = new JsonReader(new FileReader(projectsReleaseData));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
-		}
-
-		JsonObject projectsObject = gson.fromJson(reader, JsonObject.class);
-		JsonArray projects = projectsObject.get("projects").getAsJsonArray();
-
-		List<ProjectConfiguration> configs = new ArrayList<>(projects.size());
-		for (JsonElement project : projects) {
-
-			String productName = project.getAsJsonObject().get("productName").getAsString();
-			String vendorName = project.getAsJsonObject().get("vendorName").getAsString();
-			String gitURL = project.getAsJsonObject().get("url").getAsString();
-			JsonArray commits = project.getAsJsonObject().get("commits").getAsJsonArray();
+			String productName = project.get("productName").asText();
+			String vendorName = project.get("vendorName").asText();
+			String gitURL = project.get("url").asText();
+			ArrayNode commits = (ArrayNode) project.get("commits");
 
 			Hashtable<String, String> commitsAndVersions = new Hashtable<String, String>();
 
-			for (JsonElement commit : commits) {
-				String commitId = commit.getAsJsonObject().get("commitId").getAsString();
-				String commitVersion = commit.getAsJsonObject().get("version").getAsString();
+			for (JsonNode commit : commits) {
+				String commitId = commit.get("commitId").asText();
+				String commitVersion = commit.get("version").asText();
 
 				commitsAndVersions.put(commitVersion, commitId);
 			}
 
-			configs.add(new ProjectConfiguration(productName, vendorName, gitURL, commitsAndVersions));
-			
-		}
-		new MetricCalculation().calculateAll(configs);
+			ProjectConfiguration projectConfiguration = new ProjectConfiguration(productName, vendorName, gitURL,
+					commitsAndVersions);
+			configs.add(new Object[] { vendorName + "-" + productName, projectConfiguration });
 
+		}
+		return configs;
+	}
+
+	@Test
+	public void execute() throws UnsupportedOperationSystemException {
+		assertTrue(METRIC_CALCULATION.calculate(config));
+	}
+
+	/**
+	 * Clean the repository folder before and after test execution
+	 * 
+	 * @throws InitializationError 
+	 */
+	@BeforeClass
+	@AfterClass
+	public static void cleanup() throws InitializationError {
+		if(!MetricCalculation.cleanupRepositories()) {
+			throw new InitializationError("Couldn't clean repositories");
+		}
 	}
 }

@@ -37,13 +37,6 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>flanagan</groupId>
-			<artifactId>flanagan</artifactId>
-			<version>1.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/flanagan.jar</systemPath>
-		</dependency>
-		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>transport</artifactId>
 			<version>6.3.1</version>
@@ -59,12 +52,6 @@
 			<artifactId>mongo-java-driver</artifactId>
 			<version>3.8.0</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.6</version>
-		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -76,12 +63,6 @@
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
 			<version>1.1.1</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.9.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/info.debatty/java-string-similarity -->
 		<dependency>
@@ -106,12 +87,6 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.6.1</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>26.0-jre</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
 		<dependency>
@@ -194,22 +169,11 @@
 			<artifactId>uri-template</artifactId>
 			<version>0.9</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.mozilla.javascript/javascript -->
+		<dependency>
+			<groupId>org.mozilla.javascript</groupId>
+			<artifactId>javascript</artifactId>
+			<version>1.0</version>
+		</dependency>
 	</dependencies>
-	<repositories>
-		<repository>
-			<id>eMoflon Core</id>
-			<layout>p2</layout>
-			<url>https://raw.githubusercontent.com/eMoflon/emoflon-core-updatesite/master/stable/updatesite/</url>
-		</repository>
-		<repository>
-			<id>eMoflon</id>
-			<layout>p2</layout>
-			<url>http://emoflon.org/eclipse-plugin/beta/updatesite/</url>
-		</repository>
-		<repository>
-			<id>GRaViTY</id>
-			<layout>p2</layout>
-			<url>https://gravity-tool.github.io/updatesite</url>
-		</repository>
-	</repositories>
 </project>

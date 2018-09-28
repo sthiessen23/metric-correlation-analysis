@@ -1,4 +1,4 @@
-package metric.projectSelection;
+package metric.correlation.analysis.projectSelection;
 
 import java.io.IOException;
 import java.util.ArrayList;

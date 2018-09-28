@@ -1,139 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="lib/com.google.gson-2.7.0.v20170129-0911.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/com.google.guava-21.0.0.v20170206-1425.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/com.google.inject-3.0.0.v201312141243.jar"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry exported="true" kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="src" path="src/"/>
-	<classpathentry kind="src" path="test/"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-math3-3.6.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/flanagan-1.0.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry exported="true" kind="lib" path="lib/btf-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/com.ibm.icu-58.2.0.v20170418-1837.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-rest-high-level-client-6.3.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-annotations-2.9.6.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-core-2.9.6.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-coreutils-1.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jackson-databind-2.8.11.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/java-string-similarity-1.1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/javax.inject-1.0.0.v20091030.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/javax.mail-api-1.6.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jcommon-1.0.24.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jfreechart-1.5.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/msg-simple-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/btf-1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/guava-26.0-jre.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax.mail-api-1.6.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/joda-time-2.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/json-schema-core-1.2.10.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/json-schema-validator-1.99.10.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/json-simple-1.1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/libphonenumber-8.9.9.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j-core-2.9.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j2-elasticsearch-jest-1.1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/MocaTree-2.0.0.201808131610.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/mongo-java-driver-3.8.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/msg-simple-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.hamcrest.core-1.3.0.v201303031735.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.junit-4.12.0.v201504281640-junit.jar.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.sat4j.core-2.3.5.v201308161310.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.sat4j.pb-2.3.5.v201404071733.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.tukaani.xz-1.5.0.v20170111-1717.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.w3c.css.sac-1.3.1.v200903091627.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/transport-6.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/uri-template-0.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-databind-2.8.11.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-6.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-cli-6.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-core-6.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-rest-client-6.3.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-rest-high-level-client-6.3.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-secure-sm-6.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch-x-content-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-io-2.6.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/gson-2.8.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/httpasyncclient-4.1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/httpclient-4.5.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/httpcore-4.4.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/httpcore-nio-4.4.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-buffer-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-codec-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-codec-http-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-common-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-handler-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-resolver-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-transport-4.1.16.Final.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/aggs-matrix-stats-client-6.3.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/animal-sniffer-annotations-1.14.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/checker-qual-2.5.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/com.google.guava-21.0.0.v20170206-1425.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/com.google.inject-3.0.0.v201312141243.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/com.ibm.icu-58.2.0.v20170418-1837.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-codec-1.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-lang3-3.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-logging-1.1.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/compiler-0.9.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/error_prone_annotations-2.1.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/flanagan.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/hamcrest-core-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/HdrHistogram-2.1.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/hppc-0.7.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/j2objc-annotations-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-coreutils-1.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-dataformat-cbor-2.8.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-dataformat-smile-2.8.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-dataformat-yaml-2.8.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/java-string-similarity-1.1.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax.inject-1.0.0.v20091030.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jcip-annotations-1.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jest-2.4.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jest-common-2.4.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jna-4.5.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/joda-time-2.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jopt-simple-5.0.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/json-schema-core-0.99.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/json-schema-core-1.2.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/json-schema-validator-1.99.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/json-simple-1.1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jsr305-2.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/junit-4.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lang-mustache-client-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/log4j-api-2.9.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/log4j-core-2.9.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/log4j2-elasticsearch-core-1.1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/log4j2-elasticsearch-jest-1.1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-analyzers-common-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-backward-codecs-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-core-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-grouping-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-highlighter-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-join-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-memory-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-misc-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-queries-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-queryparser-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-sandbox-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-spatial-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-spatial-extras-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-spatial3d-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-suggest-7.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/mailapi-1.4.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/MocaTree-2.0.0.201808131610.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/mongo-java-driver-3.8.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.batik.constants-1.9.1.v20180227-1645.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.batik.css-1.9.1.v20180313-1559.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.batik.i18n-1.9.1.v20180227-1645.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.batik.util-1.9.1.v20180227-1645.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.commons.cli-1.2.0.v201404270220.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.commons.io-2.6.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.commons.jxpath-1.3.0.v200911051830.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.commons.lang-2.6.0.v201404270220.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.commons.lang3-3.4.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.commons.logging-1.1.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.felix.scr-2.0.14.v20180117-1452.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.log4j-1.2.15.v201012070815.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.xmlgraphics-2.2.0.v20180410-1551.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.gervarro.eclipse.task-1.0.1.v20160830-1402.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.gervarro.eclipse.workspace.util-2.0.0.v20161231-0038.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.hamcrest.core-1.3.0.v20180420-1519.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.junit-4.12.0.v201504281640-junit.jar.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.moflon.core.dfs-2.0.0.201808131610.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.moflon.core.utilities-3.0.0.201809071205.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.sat4j.core-2.3.5.v201308161310.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.sat4j.pb-2.3.5.v201404071733.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.tukaani.xz-1.8.0.v20180207-1613.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.w3c.css.sac-1.3.1.v200903091627.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.w3c.dom.events-3.0.0.draft20060413_v201105210656.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.w3c.dom.smil-1.0.1.v200903091627.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.w3c.dom.svg-1.1.0.v201011041433.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/parent-join-client-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/percolator-client-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/rank-eval-client-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/reindex-client-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/rhino-1.7.7.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.7.21.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/snakeyaml-1.17.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/t-digest-3.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/transport-6.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/transport-netty4-client-6.3.1.jar"/>
-	<classpathentry kind="output" path="target/classes"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-math3-3.6.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="flanagan.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/javascript-1.0.jar"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>

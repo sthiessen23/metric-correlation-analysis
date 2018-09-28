@@ -16,6 +16,7 @@ import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
 import org.gravity.hulk.antipatterngraph.metrics.HIGAMMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
+import org.gravity.tgg.modisco.MoDiscoTGGActivator;
 import org.gravity.typegraph.basic.TypeGraph;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
@@ -25,6 +26,14 @@ public class HulkMetrics implements IMetricCalculator {
 	private List<HAnnotation> hulk_results = null;
 	private boolean hulk_ok = false;
 	
+	/**
+	 * A constructor initializing the dependencies
+	 */
+	public HulkMetrics() {
+		MoDiscoTGGActivator.getDefault();
+	}
+	
+	@Override
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
 
 		try {
