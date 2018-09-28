@@ -38,6 +38,10 @@ public class ExecutionTest {
 	 * The maximum amount of projects which should be considered
 	 */
 	private static final int MAX_NUMBER_OF_PROJECTS = 1;
+	/**
+	 * From which project should be started
+	 */
+	private static final int OFFSET_FOR_PROJECTS = 1;
 
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
@@ -48,7 +52,7 @@ public class ExecutionTest {
 		this.config = config;
 	}
 
-	@Parameters(name="Analyze: {0}")
+	@Parameters(name = "Analyze: {0}")
 	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
 		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.projectsDataOutputFilePath);
 
@@ -68,9 +72,14 @@ public class ExecutionTest {
 		int counter = 0;
 		List<Object[]> configs = new ArrayList<>(Math.min(MAX_NUMBER_OF_PROJECTS, projects.size()));
 		for (JsonNode project : projects) {
-			if (counter++ >= MAX_NUMBER_OF_PROJECTS) {
+			if (OFFSET_FOR_PROJECTS > counter) {
+				continue;
+			}
+			if (OFFSET_FOR_PROJECTS + counter >= MAX_NUMBER_OF_PROJECTS) {
 				break;
 			}
+			counter++;
+			
 			String productName = project.get("productName").asText();
 			String vendorName = project.get("vendorName").asText();
 			String gitURL = project.get("url").asText();
@@ -101,12 +110,12 @@ public class ExecutionTest {
 	/**
 	 * Clean the repository folder before and after test execution
 	 * 
-	 * @throws InitializationError 
+	 * @throws InitializationError
 	 */
 	@BeforeClass
 	@AfterClass
 	public static void cleanup() throws InitializationError {
-		if(!MetricCalculation.cleanupRepositories()) {
+		if (!MetricCalculation.cleanupRepositories()) {
 			throw new InitializationError("Couldn't clean repositories");
 		}
 	}
