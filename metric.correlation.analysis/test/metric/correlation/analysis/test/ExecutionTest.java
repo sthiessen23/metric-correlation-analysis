@@ -32,7 +32,7 @@ public class ExecutionTest {
 	/**
 	 * The maximum amount of projects which sould be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 1;
+	private static final int MAX_NUMBER_OF_PROJECTS = 3;
 
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();

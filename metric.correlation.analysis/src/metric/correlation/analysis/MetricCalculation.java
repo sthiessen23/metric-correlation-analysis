@@ -112,7 +112,10 @@ public class MetricCalculation {
 			LOGGER.log(Level.INFO, commitId);
 			LOGGER.log(Level.INFO, "#############################\n");
 
-			GitTools.changeVersion(srcLocation, commitId);
+			if(!GitTools.changeVersion(srcLocation, commitId)) {
+				LOGGER.log(Level.WARN, "Skipped commit: "+commitId);
+				continue;
+			}
 			FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
 			success &= calculateMetrics(resultFile, productName, vendorName, entry.getKey(), srcLocation);
 		}

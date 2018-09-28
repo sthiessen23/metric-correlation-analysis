@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Stack;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.gravity.eclipse.os.OperationSystem;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
 import metric.correlation.analysis.GradleBuild;
 
 public class GitTools {
+
+	private static final Logger LOGGER = Logger.getLogger(GitTools.class);
 
 	protected static boolean gitClone(String url, File destination) throws UnsupportedOperationSystemException, GitCloneException {
 		return gitClone(url, destination, false);
@@ -84,7 +88,7 @@ public class GitTools {
 
 	public static boolean changeVersion(File src_code, String id) throws UnsupportedOperationSystemException {
 
-		System.out.println(id);
+		LOGGER.log(Level.INFO, "Change version to commit: "+id);
 		File build_dir = new File(src_code, "build");
 		if (build_dir.exists()) {
 			GradleBuild.cleanBuild(src_code);
