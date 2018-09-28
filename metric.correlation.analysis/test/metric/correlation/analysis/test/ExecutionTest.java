@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
+
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -22,6 +24,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.fge.jackson.JsonLoader;
 import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.fge.jsonschema.report.ProcessingReport;
+
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
 import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
@@ -30,9 +35,9 @@ import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
 public class ExecutionTest {
 
 	/**
-	 * The maximum amount of projects which sould be considered
+	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 3;
+	private static final int MAX_NUMBER_OF_PROJECTS = 1;
 
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
@@ -50,12 +55,12 @@ public class ExecutionTest {
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
 //		JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
 //
-//		ProcessingReport report = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, configurationNode);
+//		ProcessingReport report = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, projectsJsonData);
 //		if (!report.isSuccess()) {
 //			LOGGER.log(Level.WARN,
 //					"The project configuration is not valid: " + projectsReleaseDataJSON.getAbsolutePath());
 //		} else {
-//			LOGGER.log(Level.INFO, configurationNode.getNodeType());
+//			LOGGER.log(Level.INFO, projectsJsonData.getNodeType());
 //		}
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
