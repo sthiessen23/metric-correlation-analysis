@@ -1,6 +1,7 @@
 package metric.correlation.analysis.test;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,11 +38,11 @@ public class ExecutionTest {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 1;
+	private static final int MAX_NUMBER_OF_PROJECTS = Integer.MAX_VALUE;
 	/**
 	 * From which project should be started
 	 */
-	private static final int OFFSET_FOR_PROJECTS = 1;
+	private static final int OFFSET_FOR_PROJECTS = 0;
 
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
@@ -72,13 +73,13 @@ public class ExecutionTest {
 		int counter = 0;
 		List<Object[]> configs = new ArrayList<>(Math.min(MAX_NUMBER_OF_PROJECTS, projects.size()));
 		for (JsonNode project : projects) {
-			if (OFFSET_FOR_PROJECTS > counter) {
+			counter++;
+			if (OFFSET_FOR_PROJECTS >= counter) {
 				continue;
 			}
-			if (OFFSET_FOR_PROJECTS + counter >= MAX_NUMBER_OF_PROJECTS) {
+			if (counter > MAX_NUMBER_OF_PROJECTS + OFFSET_FOR_PROJECTS) {
 				break;
 			}
-			counter++;
 			
 			String productName = project.get("productName").asText();
 			String vendorName = project.get("vendorName").asText();
@@ -104,6 +105,9 @@ public class ExecutionTest {
 
 	@Test
 	public void execute() throws UnsupportedOperationSystemException {
+		if(config.getGitCommitIds().isEmpty()) {
+			fail("No commits available");
+		}
 		assertTrue(METRIC_CALCULATION.calculate(config));
 	}
 
