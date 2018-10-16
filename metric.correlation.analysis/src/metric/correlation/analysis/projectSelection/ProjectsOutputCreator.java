@@ -62,7 +62,7 @@ public class ProjectsOutputCreator {
 
 				String productName = map.get("Product").toString();
 				String vendorName = map.get("Vendor").toString();
-				String URL = "http://www.github.com/" + vendorName + "/" + productName;
+				String URL = "http://www.github.com/" + vendorName + "/" + productName + ".git";
 
 				projectJSON.addProperty("productName", productName);
 				projectJSON.addProperty("vendorName", vendorName);
@@ -110,7 +110,13 @@ public class ProjectsOutputCreator {
 						break;
 					}
 				}
-				resultArray.add(projectJSON);
+
+				if (commits.size() == 0) {
+					continue;
+				} else {
+					resultArray.add(projectJSON);
+				}
+
 			}
 
 			httpClient.close();
