@@ -34,9 +34,9 @@ public class MetricCalculation {
 	private static final Logger LOGGER = LogManager.getLogger(MetricCalculation.class);
 	private static final File RESULTS = new File("results");
 	private static final File REPOSITORIES = new File("repositories");
-	
+
 	private static final Collection<IMetricCalculator> METRIC_CALCULATORS = new ArrayList<>(3);
-	
+
 	private String timestamp;
 
 	/**
@@ -44,13 +44,13 @@ public class MetricCalculation {
 	 */
 	public MetricCalculation() {
 		METRIC_CALCULATORS.add(new HulkMetrics());
-		
+
 		try {
 			METRIC_CALCULATORS.add(new SourceMeterMetrics());
 		} catch (MetricCalculatorInitializationException e) {
 			LOGGER.log(Level.WARN, e.getMessage(), e);
 		}
-		
+
 		try {
 			METRIC_CALCULATORS.add(new AndrolyzeMetrics());
 		} catch (MetricCalculatorInitializationException e) {
@@ -69,7 +69,7 @@ public class MetricCalculation {
 	public boolean calculateAll(Collection<ProjectConfiguration> configurations)
 			throws UnsupportedOperationSystemException {
 		for (ProjectConfiguration config : configurations) {
-			if(!calculate(config)) {
+			if (!calculate(config)) {
 				return false;
 			}
 		}
@@ -77,7 +77,7 @@ public class MetricCalculation {
 	}
 
 	/**
-	 * The main method for calculating metrics for multiple versions of a project. 
+	 * The main method for calculating metrics for multiple versions of a project.
 	 * This method has to be called from a running eclipse workspace!
 	 * 
 	 * @param configurations The project configuration which should be considered
@@ -88,7 +88,7 @@ public class MetricCalculation {
 		File resultFile = new File(RESULTS, resultFileName);
 
 		String gitUrl = config.getGitUrl();
-		
+
 		try {
 			if (!GitTools.gitClone(gitUrl, REPOSITORIES, true)) {
 				return false;
@@ -102,7 +102,7 @@ public class MetricCalculation {
 		String vendorName = config.getVendorName();
 
 		File srcLocation = new File(REPOSITORIES, productName);
-		
+
 		boolean success = true;
 		for (Entry<String, String> entry : config.getVersionCommitIdPairs()) {
 			String commitId = entry.getValue();
@@ -112,8 +112,8 @@ public class MetricCalculation {
 			LOGGER.log(Level.INFO, commitId);
 			LOGGER.log(Level.INFO, "#############################\n");
 
-			if(!GitTools.changeVersion(srcLocation, commitId)) {
-				LOGGER.log(Level.WARN, "Skipped commit: "+commitId);
+			if (!GitTools.changeVersion(srcLocation, commitId)) {
+				LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
 				continue;
 			}
 			FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
@@ -122,11 +122,11 @@ public class MetricCalculation {
 		return success;
 	}
 
-	
 	/**
 	 * Calculate the correlation metrics
+	 * 
 	 * @param results_dir
-	 * @param productName 
+	 * @param productName
 	 * @param vendorName
 	 * @param version
 	 * @param src
@@ -134,17 +134,17 @@ public class MetricCalculation {
 	 */
 	private boolean calculateMetrics(File results_dir, String productName, String vendorName, String version,
 			File src) {
-		
+
 		GradleImport gradleImport;
-		
+
 		try {
 			gradleImport = new GradleImport(src);
 		} catch (NoGradleRootFolderException | IOException e) {
 			return false;
 		}
-		
+
 		IJavaProject project;
-		
+
 		try {
 			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
 		} catch (IOException | CoreException | InterruptedException | NoGradleRootFolderException e) {
@@ -156,10 +156,14 @@ public class MetricCalculation {
 		}
 
 		Hashtable<String, Double> results = new Hashtable<>();
-		
+
 		for (IMetricCalculator calc : METRIC_CALCULATORS) {
-			if (calc.calculateMetric(project, productName, vendorName, version)) {
-				results.putAll(calc.getResults());
+			try {
+				if (calc.calculateMetric(project, productName, vendorName, version)) {
+					results.putAll(calc.getResults());
+				}
+			} catch (Exception e) {
+				LOGGER.log(Level.ERROR, "A detection failed with an Exception: "+e.getMessage(), e);
 			}
 		}
 
@@ -169,11 +173,11 @@ public class MetricCalculation {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
-		
+
 		results.clear();
 		return true;
 	}
-	
+
 	/**
 	 * Cleans the repositories folder
 	 * 

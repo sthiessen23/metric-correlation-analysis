@@ -5,10 +5,11 @@ import java.text.DecimalFormatSymbols;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 
-import org.gravity.eclipse.exceptions.NoConverterRegisteredException;
 import org.gravity.hulk.HulkAPI;
 import org.gravity.hulk.HulkAPI.AntiPatternNames;
 import org.gravity.hulk.antipatterngraph.HAnnotation;
@@ -16,6 +17,7 @@ import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
 import org.gravity.hulk.antipatterngraph.metrics.HIGAMMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
+import org.gravity.hulk.exceptions.DetectionFailedException;
 import org.gravity.tgg.modisco.MoDiscoTGGActivator;
 import org.gravity.typegraph.basic.TypeGraph;
 
@@ -23,46 +25,48 @@ import metric.correlation.analysis.calculation.IMetricCalculator;
 
 public class HulkMetrics implements IMetricCalculator {
 
-	private List<HAnnotation> hulk_results = null;
-	private boolean hulk_ok = false;
+	private static final Logger LOGGER = Logger.getLogger(HulkMetrics.class);
 	
+	private List<HAnnotation> results = null;
+	private boolean ok = false;
+
 	/**
 	 * A constructor initializing the dependencies
 	 */
 	public HulkMetrics() {
 		MoDiscoTGGActivator.getDefault();
 	}
-	
+
 	@Override
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
 
 		try {
-			hulk_results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM,
-					AntiPatternNames.IGAT);
-		} catch (NoConverterRegisteredException e) {
-			e.printStackTrace();
+			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob,
+					AntiPatternNames.IGAM, AntiPatternNames.IGAT);
+		} catch (DetectionFailedException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
-		hulk_ok = true;
+		ok = true;
 		return true;
 	}
 
 	@Override
 	public LinkedHashMap<String, Double> getResults() {
 
-		LinkedHashMap<String, Double> metric_results = new LinkedHashMap<String, Double>();
+		LinkedHashMap<String, Double> metrics = new LinkedHashMap<String, Double>();
 		double igam = 0.0;
 		double igat = 0.0;
 
-		if (!hulk_ok) {
-			metric_results.put("BLOB-Antipattern", -1.0);
-			metric_results.put("IGAM", -1.0);
-			metric_results.put("IGAT", -1.0);
-			return metric_results;
+		if (!ok) {
+			metrics.put("BLOB-Antipattern", -1.0);
+			metrics.put("IGAM", -1.0);
+			metrics.put("IGAT", -1.0);
+			return metrics;
 		}
 		double blob = 0.0;
 
-		for (HAnnotation ha : hulk_results) {
+		for (HAnnotation ha : results) {
 
 			if (ha instanceof HBlobAntiPattern)
 				blob++;
@@ -81,11 +85,11 @@ public class HulkMetrics implements IMetricCalculator {
 			}
 
 		}
-		metric_results.put("BLOB-Antipattern", blob);
-		metric_results.put("IGAM", roundDouble(igam));
-		metric_results.put("IGAT", roundDouble(igat));
+		metrics.put("BLOB-Antipattern", blob);
+		metrics.put("IGAM", roundDouble(igam));
+		metrics.put("IGAT", roundDouble(igat));
 
-		return metric_results;
+		return metrics;
 	}
 
 	private double roundDouble(double d) {

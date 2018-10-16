@@ -38,15 +38,27 @@ public class ExecutionTest {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = Integer.MAX_VALUE;
+	private static final int MAX_NUMBER_OF_PROJECTS = 1;
+	
 	/**
 	 * From which project should be started
 	 */
-	private static final int OFFSET_FOR_PROJECTS = 0;
+	private static final int OFFSET_FOR_PROJECTS = 1;
+	
 
+	/**
+	 * The maximum amount of versions per projects which should be considered
+	 */
+	private static final int MAX_VERSIONS_OF_PROJECTS = 1;
+
+	/**
+	 * If all data should be cleaned after an execution
+	 */
+	private static final boolean CLEAN = false;
+	
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
-
+	
 	private ProjectConfiguration config;
 
 	public ExecutionTest(String projectName, ProjectConfiguration config) {
@@ -70,14 +82,14 @@ public class ExecutionTest {
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
 
-		int counter = 0;
+		int projectCounter = 0;
 		List<Object[]> configs = new ArrayList<>(Math.min(MAX_NUMBER_OF_PROJECTS, projects.size()));
 		for (JsonNode project : projects) {
-			counter++;
-			if (OFFSET_FOR_PROJECTS >= counter) {
+			projectCounter++;
+			if (OFFSET_FOR_PROJECTS >= projectCounter) {
 				continue;
 			}
-			if (counter > MAX_NUMBER_OF_PROJECTS + OFFSET_FOR_PROJECTS) {
+			if (projectCounter > MAX_NUMBER_OF_PROJECTS + OFFSET_FOR_PROJECTS) {
 				break;
 			}
 			
@@ -88,7 +100,11 @@ public class ExecutionTest {
 
 			Hashtable<String, String> commitsAndVersions = new Hashtable<String, String>();
 
+			int commitCounter = 0;
 			for (JsonNode commit : commits) {
+				if(commitCounter++ >= MAX_VERSIONS_OF_PROJECTS) {
+					break;
+				}
 				String commitId = commit.get("commitId").asText();
 				String commitVersion = commit.get("version").asText();
 
@@ -112,13 +128,27 @@ public class ExecutionTest {
 	}
 
 	/**
-	 * Clean the repository folder before and after test execution
+	 * Clean the repository folder before test execution
 	 * 
 	 * @throws InitializationError
 	 */
 	@BeforeClass
+	public static void cleanupBefore() throws InitializationError {
+		if (!MetricCalculation.cleanupRepositories()) {
+			throw new InitializationError("Couldn't clean repositories");
+		}
+	}
+	
+	/**
+	 * Clean the repository folder after test execution if CLEAN == true
+	 * 
+	 * @throws InitializationError
+	 */
 	@AfterClass
-	public static void cleanup() throws InitializationError {
+	public static void cleanupAfter() throws InitializationError {
+		if(!CLEAN) {
+			return;
+		}
 		if (!MetricCalculation.cleanupRepositories()) {
 			throw new InitializationError("Couldn't clean repositories");
 		}
