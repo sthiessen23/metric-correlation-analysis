@@ -12,10 +12,9 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jackson.JsonLoader;
-import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import com.github.fge.jsonschema.main.JsonSchema;
+import com.github.fge.jsonschema.exceptions.ProcessingException;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-
+import com.github.fge.jsonschema.report.ProcessingReport;
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
 
@@ -30,8 +29,8 @@ public class ExecutionTest {
 				JsonNode configurationNode = JsonLoader.fromFile(jsonFile);
 	
 				JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
-				JsonSchema jsonSchema = JsonSchemaFactory.byDefault().getJsonSchema(schemaNode);
-				if(!jsonSchema.validate(configurationNode).isSuccess()) {
+				ProcessingReport validation = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, configurationNode);
+				if(!validation.isSuccess()) {
 					LOGGER.log(Level.WARN, "The project configuration is not valid: "+jsonFile.getAbsolutePath());
 				}
 				else {

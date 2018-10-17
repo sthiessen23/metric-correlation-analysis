@@ -8,7 +8,6 @@ import java.util.List;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 
-import org.gravity.eclipse.exceptions.NoConverterRegisteredException;
 import org.gravity.hulk.HulkAPI;
 import org.gravity.hulk.HulkAPI.AntiPatternNames;
 import org.gravity.hulk.antipatterngraph.HAnnotation;
@@ -16,6 +15,7 @@ import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
 import org.gravity.hulk.antipatterngraph.metrics.HIGAMMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
+import org.gravity.hulk.exceptions.DetectionFailedException;
 import org.gravity.typegraph.basic.TypeGraph;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
@@ -30,7 +30,7 @@ public class HulkMetrics implements IMetricCalculator {
 		try {
 			hulk_results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM,
 					AntiPatternNames.IGAT);
-		} catch (NoConverterRegisteredException e) {
+		} catch (DetectionFailedException e) {
 			e.printStackTrace();
 			return false;
 		}
