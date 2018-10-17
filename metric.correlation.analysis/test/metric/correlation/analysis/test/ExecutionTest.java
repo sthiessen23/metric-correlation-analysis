@@ -77,11 +77,14 @@ public class ExecutionTest {
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
 		if (VALIDATE_JSON) {
 			if (!checkDocument(projectsJsonData)) {
-				throw new IllegalArgumentException("The given JSON file doesn't compöy with the JSON Schema!");
+				throw new IllegalArgumentException("The given JSON file doesn't comply with the JSON Schema!");
 			}
 		}
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
+		if(projects.size() == 0) {
+			throw new IllegalArgumentException("There are no projects in the JSON documnet!");
+		}
 
 		int projectCounter = 0;
 		List<Object[]> configs = new ArrayList<>(Math.min(MAX_NUMBER_OF_PROJECTS, projects.size()));
