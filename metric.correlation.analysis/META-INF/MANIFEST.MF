@@ -43,7 +43,28 @@ Bundle-ClassPath: .,
  lib/json-schema-core-0.99.3.jar,
  lib/commons-math3-3.6.1.jar,
  flanagan.jar,
- lib/javascript-1.0.jar
+ lib/javascript-1.0.jar,
+ lib/rank-eval-client-6.3.1.jar,
+ lib/httpcore-nio-4.4.5.jar,
+ lib/httpasyncclient-4.1.2.jar,
+ lib/lucene-analyzers-common-7.3.1.jar,
+ lib/lucene-backward-codecs-7.3.1.jar,
+ lib/lucene-core-7.3.1.jar,
+ lib/lucene-grouping-7.3.1.jar,
+ lib/lucene-highlighter-7.3.1.jar,
+ lib/lucene-join-7.3.1.jar,
+ lib/lucene-memory-7.3.1.jar,
+ lib/lucene-misc-7.3.1.jar,
+ lib/lucene-queries-7.3.1.jar,
+ lib/lucene-queryparser-7.3.1.jar,
+ lib/lucene-sandbox-7.3.1.jar,
+ lib/lucene-spatial-7.3.1.jar,
+ lib/lucene-spatial-extras-7.3.1.jar,
+ lib/lucene-spatial3d-7.3.1.jar,
+ lib/lucene-suggest-7.3.1.jar,
+ lib/org.apache.log4j-1.2.15.v201012070815.jar,
+ lib/log4j-api-2.9.1.jar,
+ lib/log4j2-elasticsearch-core-1.1.1.jar
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.jdt.core;bundle-version="3.12.0",
@@ -62,5 +83,7 @@ Require-Bundle: org.eclipse.jdt.core;bundle-version="3.12.0",
  com.google.gson,
  com.google.guava,
  com.google.inject,
- org.apache.log4j
+ org.apache.log4j,
+ org.apache.commons.logging,
+ org.apache.commons.httpclient
 Automatic-Module-Name: Metric-Correlation-Analysis

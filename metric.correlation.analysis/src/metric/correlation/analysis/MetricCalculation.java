@@ -6,8 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -21,6 +23,7 @@ import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
 import metric.correlation.analysis.calculation.impl.AndrolyzeMetrics;
+import metric.correlation.analysis.calculation.impl.CVEMetrics;
 import metric.correlation.analysis.calculation.impl.HulkMetrics;
 import metric.correlation.analysis.calculation.impl.SourceMeterMetrics;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
@@ -37,7 +40,8 @@ public class MetricCalculation {
 
 	private static final Collection<IMetricCalculator> METRIC_CALCULATORS = new ArrayList<>(3);
 
-	private String timestamp;
+	private final String timestamp;
+	private Set<String> errors;
 
 	/**
 	 * Initialized the list of calculators
@@ -56,6 +60,7 @@ public class MetricCalculation {
 		} catch (MetricCalculatorInitializationException e) {
 			LOGGER.log(Level.WARN, e.getMessage(), e);
 		}
+		METRIC_CALCULATORS.add(new CVEMetrics());
 		timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
 	}
 
@@ -84,6 +89,7 @@ public class MetricCalculation {
 	 * @throws UnsupportedOperationSystemException
 	 */
 	public boolean calculate(ProjectConfiguration config) throws UnsupportedOperationSystemException {
+		errors = new HashSet<>();
 		String resultFileName = "Results-" + timestamp + ".csv";
 		File resultFile = new File(RESULTS, resultFileName);
 
@@ -125,14 +131,14 @@ public class MetricCalculation {
 	/**
 	 * Calculate the correlation metrics
 	 * 
-	 * @param results_dir
+	 * @param resultsDir
 	 * @param productName
 	 * @param vendorName
 	 * @param version
 	 * @param src
 	 * @return true if everything went okay, otherwise false
 	 */
-	private boolean calculateMetrics(File results_dir, String productName, String vendorName, String version,
+	private boolean calculateMetrics(File resultsDir, String productName, String vendorName, String version,
 			File src) {
 
 		GradleImport gradleImport;
@@ -148,6 +154,7 @@ public class MetricCalculation {
 		try {
 			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
 		} catch (IOException | CoreException | InterruptedException | NoGradleRootFolderException e) {
+			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
@@ -155,27 +162,33 @@ public class MetricCalculation {
 			return false;
 		}
 
+		boolean success = true;
 		Hashtable<String, Double> results = new Hashtable<>();
-
 		for (IMetricCalculator calc : METRIC_CALCULATORS) {
 			try {
 				if (calc.calculateMetric(project, productName, vendorName, version)) {
 					results.putAll(calc.getResults());
 				}
+				else {
+					errors.add(calc.getClass().getSimpleName());
+					success = false;
+				}
 			} catch (Exception e) {
+				success = false;
 				LOGGER.log(Level.ERROR, "A detection failed with an Exception: "+e.getMessage(), e);
 			}
 		}
 
 		try {
-			new Storage(new File(results_dir, "results.csv"), results.keySet()).writeCSV(productName, results);
+			new Storage(new File(resultsDir, "results.csv"), results.keySet()).writeCSV(productName, results);
 		} catch (IOException e) {
+			errors.add("Storage");
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
 
 		results.clear();
-		return true;
+		return success;
 	}
 
 	/**
@@ -185,6 +198,15 @@ public class MetricCalculation {
 	 */
 	public static boolean cleanupRepositories() {
 		return FileUtils.recursiveDelete(REPOSITORIES);
+	}
+	
+	/**
+	 * Returns the errors of the last run
+	 * 
+	 * @return A Set of error messages
+	 */
+	public Set<String> getLastErrors(){
+		return errors;
 	}
 
 }

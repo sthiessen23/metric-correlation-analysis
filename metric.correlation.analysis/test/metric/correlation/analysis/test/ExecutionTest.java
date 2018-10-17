@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -38,13 +39,12 @@ public class ExecutionTest {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 1;
-	
+	private static final int MAX_NUMBER_OF_PROJECTS = 100;
+
 	/**
 	 * From which project should be started
 	 */
-	private static final int OFFSET_FOR_PROJECTS = 1;
-	
+	private static final int OFFSET_FOR_PROJECTS = 0;
 
 	/**
 	 * The maximum amount of versions per projects which should be considered
@@ -55,10 +55,15 @@ public class ExecutionTest {
 	 * If all data should be cleaned after an execution
 	 */
 	private static final boolean CLEAN = false;
-	
+
+	/**
+	 * If the JSON project file should be validated against the given Schema
+	 */
+	private static final boolean VALIDATE_JSON = false;
+
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
-	
+
 	private ProjectConfiguration config;
 
 	public ExecutionTest(String projectName, ProjectConfiguration config) {
@@ -70,15 +75,11 @@ public class ExecutionTest {
 		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.projectsDataOutputFilePath);
 
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
-//		JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
-//
-//		ProcessingReport report = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, projectsJsonData);
-//		if (!report.isSuccess()) {
-//			LOGGER.log(Level.WARN,
-//					"The project configuration is not valid: " + projectsReleaseDataJSON.getAbsolutePath());
-//		} else {
-//			LOGGER.log(Level.INFO, projectsJsonData.getNodeType());
-//		}
+		if (VALIDATE_JSON) {
+			if (!checkDocument(projectsJsonData)) {
+				throw new IllegalArgumentException("The given JSON file doesn't compöy with the JSON Schema!");
+			}
+		}
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
 
@@ -92,7 +93,7 @@ public class ExecutionTest {
 			if (projectCounter > MAX_NUMBER_OF_PROJECTS + OFFSET_FOR_PROJECTS) {
 				break;
 			}
-			
+
 			String productName = project.get("productName").asText();
 			String vendorName = project.get("vendorName").asText();
 			String gitURL = project.get("url").asText();
@@ -102,7 +103,7 @@ public class ExecutionTest {
 
 			int commitCounter = 0;
 			for (JsonNode commit : commits) {
-				if(commitCounter++ >= MAX_VERSIONS_OF_PROJECTS) {
+				if (commitCounter++ >= MAX_VERSIONS_OF_PROJECTS) {
 					break;
 				}
 				String commitId = commit.get("commitId").asText();
@@ -119,12 +120,37 @@ public class ExecutionTest {
 		return configs;
 	}
 
+	/**
+	 * Checks the JSON document against the schema used by this application
+	 * 
+	 * @param projectsJsonData The JSON document the schema
+	 * @return true, iff the JSON document complies with the schema
+	 * @throws IOException         Iff the JSON Schema cannot be read
+	 * @throws ProcessingException Iff processing the validation had an error
+	 */
+	static boolean checkDocument(JsonNode projectsJsonData) throws IOException, ProcessingException {
+		ProcessingReport report = null;
+		JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
+
+		report = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, projectsJsonData);
+		if (!report.isSuccess()) {
+			LOGGER.log(Level.WARN, "The project configuration is not valid!");
+			return false;
+		}
+		return true;
+	}
+
 	@Test
 	public void execute() throws UnsupportedOperationSystemException {
-		if(config.getGitCommitIds().isEmpty()) {
+		if (config.getGitCommitIds().isEmpty()) {
 			fail("No commits available");
 		}
-		assertTrue(METRIC_CALCULATION.calculate(config));
+		boolean success = METRIC_CALCULATION.calculate(config);
+		if (!success) {
+			fail(METRIC_CALCULATION.getLastErrors().stream().map(Object::toString)
+					.collect(Collectors.joining(", ", "[", "]")));
+		}
+		assertTrue(success);
 	}
 
 	/**
@@ -138,7 +164,7 @@ public class ExecutionTest {
 			throw new InitializationError("Couldn't clean repositories");
 		}
 	}
-	
+
 	/**
 	 * Clean the repository folder after test execution if CLEAN == true
 	 * 
@@ -146,7 +172,7 @@ public class ExecutionTest {
 	 */
 	@AfterClass
 	public static void cleanupAfter() throws InitializationError {
-		if(!CLEAN) {
+		if (!CLEAN) {
 			return;
 		}
 		if (!MetricCalculation.cleanupRepositories()) {
