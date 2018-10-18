@@ -64,6 +64,7 @@ public class ExecutionTest {
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
 	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
 
+
 	private ProjectConfiguration config;
 
 	public ExecutionTest(String projectName, ProjectConfiguration config) {

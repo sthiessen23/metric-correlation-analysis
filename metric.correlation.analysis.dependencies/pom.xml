@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>metric.correlation.analysis.core</groupId>
+		<artifactId>tycho-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
+	<artifactId>metric.correlation.analysis.dependencies</artifactId>
+	<packaging>bundle</packaging>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<!-- <Embed-Dependency> elasticsearch-rest-high-level-client,transport,mongo-java-driver,commons-io,com.google.code.gson,json-simple,log4j-core,java-string-similarity,log4j2-elasticsearch-jest,commons-math3,guava,jackson-annotations,jackson-core,jackson-coreutils,jackson-databind,jcommon,jfreechart,json-schema-core,json-schema-validator,joda-time,javax.mail-api,libphonenumber,uri-template 
+							</Embed-Dependency> -->
+						<!-- embed all compile and runtime scope dependencies -->
+						<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+						<_exportcontents>*</_exportcontents>
+						<Bundle-ClassPath>{maven-dependencies}</Bundle-ClassPath>
+						<Embed-Transitive>true</Embed-Transitive>
+						<Embed-Directory>jars</Embed-Directory>
+						<_failok>true</_failok>
+						<_nouses>true</_nouses>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
