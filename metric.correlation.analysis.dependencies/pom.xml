@@ -31,7 +31,7 @@
 							<excludeTransitive>false</excludeTransitive>
 							<addParentPoms>false</addParentPoms>
 							<excludeScope>provided</excludeScope>
-                            <stripVersion>true</stripVersion>
+							<stripVersion>true</stripVersion>
 						</configuration>
 					</execution>
 				</executions>
@@ -43,6 +43,12 @@
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>transport</artifactId>
 			<version>6.3.1</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch -->
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>6.4.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
