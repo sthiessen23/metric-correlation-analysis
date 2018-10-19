@@ -164,6 +164,7 @@ public class MetricCalculation {
 			return false;
 		}
 		if (project == null) {
+			errors.add("Import as Eclipse project failed");
 			return false;
 		}
 
@@ -181,6 +182,7 @@ public class MetricCalculation {
 				}
 			} catch (Exception e) {
 				success = false;
+				errors.add(calc.getClass().getSimpleName());
 				LOGGER.log(Level.ERROR, "A detection failed with an Exception: "+e.getMessage(), e);
 			}
 		}
