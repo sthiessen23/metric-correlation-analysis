@@ -96,11 +96,14 @@ public class MetricCalculation {
 		String gitUrl = config.getGitUrl();
 
 		try {
+			LOGGER.log(Level.INFO, "Cloning repository: "+gitUrl);
 			if (!GitTools.gitClone(gitUrl, REPOSITORIES, true)) {
+				errors.add("gitClone()");
 				return false;
 			}
 		} catch (GitCloneException e1) {
 			LOGGER.log(Level.ERROR, e1.getMessage(), e1);
+			errors.add(e1.getLocalizedMessage());
 			return false;
 		}
 
@@ -115,7 +118,7 @@ public class MetricCalculation {
 			LOGGER.log(Level.INFO, "\n\n\n#############################");
 			LOGGER.log(Level.INFO, "### " + timestamp + " ###");
 			LOGGER.log(Level.INFO, "#############################");
-			LOGGER.log(Level.INFO, commitId);
+			LOGGER.log(Level.INFO, "Checkingout commit : "+commitId);
 			LOGGER.log(Level.INFO, "#############################\n");
 
 			if (!GitTools.changeVersion(srcLocation, commitId)) {
@@ -123,6 +126,7 @@ public class MetricCalculation {
 				continue;
 			}
 			FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
+			LOGGER.log(Level.INFO, "Start metric calculation");
 			success &= calculateMetrics(resultFile, productName, vendorName, entry.getKey(), srcLocation);
 		}
 		return success;
@@ -140,12 +144,13 @@ public class MetricCalculation {
 	 */
 	private boolean calculateMetrics(File resultsDir, String productName, String vendorName, String version,
 			File src) {
-
+		LOGGER.log(Level.INFO, "Importing Gradle project to Eclipse workspace");
 		GradleImport gradleImport;
 
 		try {
 			gradleImport = new GradleImport(src);
 		} catch (NoGradleRootFolderException | IOException e) {
+			errors.add("new GradleImport()");
 			return false;
 		}
 
@@ -165,6 +170,7 @@ public class MetricCalculation {
 		boolean success = true;
 		Hashtable<String, Double> results = new Hashtable<>();
 		for (IMetricCalculator calc : METRIC_CALCULATORS) {
+			LOGGER.log(Level.INFO, "Execure metric calculation: "+calc.getClass().getSimpleName());
 			try {
 				if (calc.calculateMetric(project, productName, vendorName, version)) {
 					results.putAll(calc.getResults());
