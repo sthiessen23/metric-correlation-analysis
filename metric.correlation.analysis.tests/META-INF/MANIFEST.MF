@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Tests
+Bundle-SymbolicName: metric.correlation.analysis.tests
+Bundle-Version: 0.0.1.qualifier
+Require-Bundle: metric.correlation.analysis;bundle-version="0.0.1",
+ org.junit
+Automatic-Module-Name: metric.correlation.analysis.tests
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
