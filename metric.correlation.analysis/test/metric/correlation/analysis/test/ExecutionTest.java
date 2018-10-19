@@ -25,9 +25,10 @@ import org.junit.runners.model.InitializationError;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.fge.jackson.JsonLoader;
-import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.github.fge.jsonschema.report.ProcessingReport;
+import com.github.fge.jsonschema.main.JsonValidator;
 
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
@@ -136,7 +137,8 @@ public class ExecutionTest {
 		ProcessingReport report = null;
 		JsonNode schemaNode = JsonLoader.fromFile(new File("schema.json"));
 
-		report = JsonSchemaFactory.byDefault().getValidator().validate(schemaNode, projectsJsonData);
+		JsonValidator validator = JsonSchemaFactory.byDefault().getValidator();
+		report = validator.validate(schemaNode, projectsJsonData);
 		if (!report.isSuccess()) {
 			LOGGER.log(Level.WARN, "The project configuration is not valid!");
 			return false;
