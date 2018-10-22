@@ -56,11 +56,14 @@ public class GradleBuild {
 				process.waitFor();
 				process.destroy();
 			}
-			return getApk(src);
 
-		} catch (InterruptedException | IOException e) {
-			throw new RuntimeException(e);
+		} catch (InterruptedException e) {
+			LOGGER.log(Level.WARN, e.getMessage(), e);
+			Thread.currentThread().interrupt();
+		} catch (IOException e) {
+			LOGGER.log(Level.WARN, e.getMessage(), e);
 		}
+		return getApk(src);
 	}
 
 	/**
@@ -135,6 +138,7 @@ public class GradleBuild {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		} catch (InterruptedException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			Thread.currentThread().interrupt();
 		}
 
 		return false;

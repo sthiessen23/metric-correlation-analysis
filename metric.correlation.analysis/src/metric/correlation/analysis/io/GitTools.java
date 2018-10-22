@@ -80,8 +80,12 @@ public class GitTools {
 			process.waitFor();
 			process.destroy();
 			return process.exitValue() == 0;
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return false;
+		} catch (InterruptedException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			Thread.currentThread().interrupt();
 			return false;
 		}
 	}
@@ -120,8 +124,11 @@ public class GitTools {
 			stream_reader.close();
 			return true;
 
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
+		} catch (InterruptedException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			Thread.currentThread().interrupt();
 		}
 
 		return false;

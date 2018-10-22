@@ -177,9 +177,14 @@ public class MetricCalculation {
 
 		try {
 			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
-		} catch (IOException | CoreException | InterruptedException | NoGradleRootFolderException e) {
+		} catch (IOException | CoreException | NoGradleRootFolderException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return false;
+		} catch (InterruptedException e) {
+			errors.add(gradleImport.getClass().getSimpleName());
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			Thread.currentThread().interrupt();
 			return false;
 		}
 		if (project == null) {

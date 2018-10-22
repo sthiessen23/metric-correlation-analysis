@@ -143,7 +143,12 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 
 			return true;
 
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return false;
+		} catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
 	}
