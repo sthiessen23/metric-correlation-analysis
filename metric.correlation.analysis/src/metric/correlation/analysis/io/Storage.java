@@ -14,8 +14,8 @@ public class Storage {
 	private final List<String> keys;
 	private final File output;
 	
-	public Storage(File result_file, Collection<String> keys) throws IOException {
-		this.output = result_file;
+	public Storage(File resultFile, Collection<String> keys) throws IOException {
+		this.output = resultFile;
 		if (keys instanceof List) {
 			this.keys = (List<String>) keys;
 			
@@ -24,11 +24,11 @@ public class Storage {
 			this.keys = new ArrayList<String>(keys);
 		}
 		
-		if(!result_file.exists()) {
-			result_file.getParentFile().mkdirs();
-			result_file.createNewFile();
+		if(!resultFile.exists()) {
+			resultFile.getParentFile().mkdirs();
+			resultFile.createNewFile();
 		}
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(result_file))){
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))){
 			writer.write("Application-Name");
 			for (String key : keys) {
 				writer.write("," + key);

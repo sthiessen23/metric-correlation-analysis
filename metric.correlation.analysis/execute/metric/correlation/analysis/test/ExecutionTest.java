@@ -63,7 +63,8 @@ public class ExecutionTest {
 	private static final boolean VALIDATE_JSON = false;
 
 	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
-	private static final MetricCalculation METRIC_CALCULATION = new MetricCalculation();
+	
+	private static MetricCalculation calculator;
 
 
 	private ProjectConfiguration config;
@@ -151,23 +152,28 @@ public class ExecutionTest {
 		if (config.getGitCommitIds().isEmpty()) {
 			fail("No commits available");
 		}
-		boolean success = METRIC_CALCULATION.calculate(config);
+		boolean success = calculator.calculate(config);
 		if (!success) {
-			fail(METRIC_CALCULATION.getLastErrors().stream().map(Object::toString)
+			fail(calculator.getLastErrors().stream().map(Object::toString)
 					.collect(Collectors.joining(", ", "[", "]")));
 		}
 		assertTrue(success);
 	}
 
 	/**
-	 * Clean the repository folder before test execution
+	 * Clean the repository folder before test execution and initialize metric calculation
 	 * 
-	 * @throws InitializationError
+	 * @throws InitializationError If the cleanup or initialization failed
 	 */
 	@BeforeClass
-	public static void cleanupBefore() throws InitializationError {
+	public static void initialize() throws InitializationError {
 		if (!MetricCalculation.cleanupRepositories()) {
 			throw new InitializationError("Couldn't clean repositories");
+		}
+		try {
+			calculator = new MetricCalculation();
+		} catch (IOException e) {
+			throw new InitializationError(e);
 		}
 	}
 

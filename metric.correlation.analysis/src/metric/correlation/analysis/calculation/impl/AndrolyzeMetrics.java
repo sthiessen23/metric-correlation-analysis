@@ -6,8 +6,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaProject;
 import org.gravity.eclipse.os.OperationSystem;
@@ -20,9 +26,12 @@ import metric.correlation.analysis.GradleBuild;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
 
-public class AndrolyzeMetrics implements IMetricCalculator {
+import static metric.correlation.analysis.calculation.impl.AndrolyzeMetrics.MetricKeysImpl.*;
 
-	private static final String PERMISSIONS = "PERMISSIONS";
+public class AndrolyzeMetrics implements IMetricCalculator {
+	
+	private static final Logger LOGGER = Logger.getLogger(AndrolyzeMetrics.class);
+
 	public static final String env_variable_name_androlyze = "ANDROLYZE";
 	public static final String env_variable_name_mongod = "MONGOD";
 
@@ -86,7 +95,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
-					System.err.println("MONGO_DB: " + line);
+					LOGGER.log(Level.ERROR, "MONGO_DB: " + line);
 				}
 			}
 		} catch (IOException e) {
@@ -126,7 +135,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			try (BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
 				while ((line = stream.readLine()) != null) {
-					System.err.println("ANDROLYZE: " + line);
+					LOGGER.log(Level.ERROR, "ANDROLYZE: " + line);
 				}
 			}
 			process.waitFor();
@@ -152,7 +161,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		try {
 			jsonNode = JsonLoader.fromFile(resultsLocation);
 		} catch (IOException e) {
-			metricResults.put(PERMISSIONS, -1.0);
+			metricResults.put(PERMISSIONS.toString(), -1.0);
 			return metricResults;
 		}
 		JsonNode codePermissions = jsonNode.get("code permissions").get("listing");
@@ -173,13 +182,33 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		dfs.setDecimalSeparator('.');
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
-		double permission_metric = (double) sumNotUsedPermissions / (double) sumPermissions;
-		metricResults.put(PERMISSIONS, Double.parseDouble(dFormat.format(permission_metric)));
+		double permissionMetric = (double) sumNotUsedPermissions / (double) sumPermissions;
+		metricResults.put(PERMISSIONS.toString(), Double.parseDouble(dFormat.format(permissionMetric)));
 
-		System.out.println(sumPermissions);
-		System.out.println(sumNotUsedPermissions);
+		LOGGER.log(Level.INFO, sumPermissions);
+		LOGGER.log(Level.INFO, sumNotUsedPermissions);
 
 		return metricResults;
+	}
+	
+	@Override
+	public Collection<? extends String> getMetricKeys() {
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+	
+	public static enum MetricKeysImpl {
+		PERMISSIONS("PERMISSIONS");
+		
+		private String value;
+
+		private MetricKeysImpl(String value) {
+			this.value = value;
+		}
+		
+		@Override
+		public String toString() {
+			return value;
+		}
 	}
 
 }

@@ -44,11 +44,14 @@ public class MetricCalculation {
 
 	private final String timestamp;
 	private Set<String> errors;
+	private Storage storage;
 
 	/**
 	 * Initialized the list of calculators
+	 * 
+	 * @throws IOException If the results file cannot be initialized
 	 */
-	public MetricCalculation() {
+	public MetricCalculation() throws IOException {
 		METRIC_CALCULATORS.add(new HulkMetrics());
 
 		try {
@@ -63,7 +66,15 @@ public class MetricCalculation {
 			LOGGER.log(Level.WARN, e.getMessage(), e);
 		}
 		METRIC_CALCULATORS.add(new CVEMetrics());
+
 		timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
+		
+		Set<String> metricKeys = new HashSet<String>();
+		for(IMetricCalculator calculator : METRIC_CALCULATORS) {
+			metricKeys.addAll(calculator.getMetricKeys());
+		}
+		String resultFileName = "Results-" + timestamp + ".csv";
+		storage = new Storage(new File(new File(RESULTS, resultFileName), "results.csv"), metricKeys);
 	}
 
 	/**
@@ -101,8 +112,6 @@ public class MetricCalculation {
 		}
 				
 		errors = new HashSet<>();
-		String resultFileName = "Results-" + timestamp + ".csv";
-		File resultFile = new File(RESULTS, resultFileName);
 
 		String gitUrl = config.getGitUrl();
 
@@ -138,22 +147,21 @@ public class MetricCalculation {
 			}
 			FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
 			LOGGER.log(Level.INFO, "Start metric calculation");
-			success &= calculateMetrics(resultFile, productName, vendorName, entry.getKey(), srcLocation);
+			success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
 		}
 		return success;
 	}
 
 	/**
 	 * Calculate the correlation metrics
-	 * 
-	 * @param resultsDir
+	 *
 	 * @param productName
 	 * @param vendorName
 	 * @param version
 	 * @param src
 	 * @return true if everything went okay, otherwise false
 	 */
-	private boolean calculateMetrics(File resultsDir, String productName, String vendorName, String version,
+	private boolean calculateMetrics(String productName, String vendorName, String version,
 			File src) {
 		LOGGER.log(Level.INFO, "Importing Gradle project to Eclipse workspace");
 		GradleImport gradleImport;
@@ -198,15 +206,9 @@ public class MetricCalculation {
 			}
 		}
 
-		try {
-			if(!new Storage(new File(resultsDir, "results.csv"), results.keySet()).writeCSV(productName, results)) {
-				LOGGER.log(Level.ERROR, "Writing results for \""+productName+"\" failed!");
-				errors.add("Writing results");
-				return false;
-			}
-		} catch (IOException e) {
-			errors.add("Storage");
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
+		if(!storage.writeCSV(productName, results)) {
+			LOGGER.log(Level.ERROR, "Writing results for \""+productName+"\" failed!");
+			errors.add("Writing results");
 			return false;
 		}
 		return success;

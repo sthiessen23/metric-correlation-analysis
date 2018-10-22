@@ -1,6 +1,10 @@
 package metric.correlation.analysis.calculation.impl;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.stream.Collectors;
+
 import org.eclipse.jdt.core.IJavaProject;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.vulnerabilities.VulnerabilityDataQueryHandler;
@@ -20,5 +24,26 @@ public class CVEMetrics implements IMetricCalculator {
 	public HashMap<String, Double> getResults() {
 		return results;
 	}
+	
+	@Override
+	public Collection<? extends String> getMetricKeys() {
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+	
+	public static enum MetricKeysImpl {
+		AVERAGE_CVSS3("AverageCVSS3"),
+		AVERAGE_CVSS2("AverageCVSS2"),
+		NUMBER_OF_VULNERABILITIES("NumberOfVulnerabilities");
+		
+		private String value;
 
+		private MetricKeysImpl(String value) {
+			this.value = value;
+		}
+		
+		@Override
+		public String toString() {
+			return value;
+		}
+	}
 }

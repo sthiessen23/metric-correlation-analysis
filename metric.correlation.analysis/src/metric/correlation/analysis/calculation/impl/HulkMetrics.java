@@ -2,6 +2,8 @@ package metric.correlation.analysis.calculation.impl;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -23,10 +25,12 @@ import org.gravity.typegraph.basic.TypeGraph;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
 
+import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.*;
+
 public class HulkMetrics implements IMetricCalculator {
 
 	private static final Logger LOGGER = Logger.getLogger(HulkMetrics.class);
-	
+
 	private List<HAnnotation> results = null;
 	private boolean ok = false;
 
@@ -41,8 +45,8 @@ public class HulkMetrics implements IMetricCalculator {
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
 
 		try {
-			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob,
-					AntiPatternNames.IGAM, AntiPatternNames.IGAT);
+			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM,
+					AntiPatternNames.IGAT);
 		} catch (DetectionFailedException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
@@ -59,35 +63,30 @@ public class HulkMetrics implements IMetricCalculator {
 		double igat = 0.0;
 
 		if (!ok) {
-			metrics.put("BLOB-Antipattern", -1.0);
-			metrics.put("IGAM", -1.0);
-			metrics.put("IGAT", -1.0);
-			return metrics;
+			throw new IllegalStateException("The metrics haven't been calculated successfully!");
 		}
 		double blob = 0.0;
 
-		for (HAnnotation ha : results) {
+		for (HAnnotation annoatation : results) {
 
-			if (ha instanceof HBlobAntiPattern)
+			if (annoatation instanceof HBlobAntiPattern) {
 				blob++;
-
-			if (ha instanceof HIGAMMetric) {
-				if (ha.getTAnnotated() instanceof TypeGraph) {
-					igam = ((HMetric) ha).getValue();
-					System.out.println(igam);
+			} else if (annoatation instanceof HIGAMMetric) {
+				if (annoatation.getTAnnotated() instanceof TypeGraph) {
+					igam = ((HMetric) annoatation).getValue();
+					LOGGER.log(Level.INFO, "IGAM = " + igam);
 				}
-			}
-			if (ha instanceof HIGATMetric) {
-				if (ha.getTAnnotated() instanceof TypeGraph) {
-					igat = ((HMetric) ha).getValue();
-					System.out.println(igat);
+			} else if (annoatation instanceof HIGATMetric) {
+				if (annoatation.getTAnnotated() instanceof TypeGraph) {
+					igat = ((HMetric) annoatation).getValue();
+					LOGGER.log(Level.INFO, "IGAT = " + igat);
 				}
 			}
 
 		}
-		metrics.put("BLOB-Antipattern", blob);
-		metrics.put("IGAM", roundDouble(igam));
-		metrics.put("IGAT", roundDouble(igat));
+		metrics.put(BLOB.toString(), blob);
+		metrics.put(IGAM.toString(), roundDouble(igam));
+		metrics.put(IGAT.toString(), roundDouble(igat));
 
 		return metrics;
 	}
@@ -98,5 +97,25 @@ public class HulkMetrics implements IMetricCalculator {
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
 		return Double.parseDouble(dFormat.format(d));
+	}
+
+	@Override
+	public Collection<? extends String> getMetricKeys() {
+		return Arrays.asList(BLOB.toString(), IGAM.toString(), IGAT.toString());
+	}
+
+	static enum MetricKeysImpl {
+		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT");
+
+		private String value;
+
+		private MetricKeysImpl(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return value;
+		}
 	}
 }
