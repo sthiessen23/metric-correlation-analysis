@@ -11,9 +11,11 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
@@ -89,6 +91,15 @@ public class MetricCalculation {
 	 * @throws UnsupportedOperationSystemException
 	 */
 	public boolean calculate(ProjectConfiguration config) throws UnsupportedOperationSystemException {
+		try {
+			FileAppender fileAppender = new FileAppender(new PatternLayout("%d %-5p [%c{1}] %m%n"), "logs/"+timestamp+'/'+config.getVendorName()+'-'+config.getProductName()+".txt");
+			fileAppender.setThreshold(Level.INFO);
+			fileAppender.activateOptions();
+			Logger.getRootLogger().addAppender(fileAppender);
+		} catch (IOException e) {
+			LOGGER.log(Level.WARN, "Adding file appender failed!");
+		}
+				
 		errors = new HashSet<>();
 		String resultFileName = "Results-" + timestamp + ".csv";
 		File resultFile = new File(RESULTS, resultFileName);
@@ -188,14 +199,16 @@ public class MetricCalculation {
 		}
 
 		try {
-			new Storage(new File(resultsDir, "results.csv"), results.keySet()).writeCSV(productName, results);
+			if(!new Storage(new File(resultsDir, "results.csv"), results.keySet()).writeCSV(productName, results)) {
+				LOGGER.log(Level.ERROR, "Writing results for \""+productName+"\" failed!");
+				errors.add("Writing results");
+				return false;
+			}
 		} catch (IOException e) {
 			errors.add("Storage");
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
-
-		results.clear();
 		return success;
 	}
 
