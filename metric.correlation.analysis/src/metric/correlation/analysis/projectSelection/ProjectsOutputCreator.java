@@ -10,6 +10,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.elasticsearch.search.SearchHit;
 import org.junit.Test;
 
@@ -20,7 +22,9 @@ import com.google.gson.JsonParser;
 import metric.correlation.analysis.io.FileUtils;
 
 public class ProjectsOutputCreator {
-	
+
+	private static final Logger LOGGER = Logger.getLogger(ProjectsOutputCreator.class);
+
 	public static String projectsDataOutputFilePath = "Resources/projectsReleaseData.json";
 
 	/**
@@ -29,7 +33,6 @@ public class ProjectsOutputCreator {
 	 *         version/commit they relate to.
 	 *
 	 */
-
 	@Test
 	public void getProjectReleases() {
 		int apiTimeOutcounter = 1;
@@ -51,8 +54,7 @@ public class ProjectsOutputCreator {
 		JsonArray resultArray = new JsonArray();
 		resultJSON.add("projects", resultArray);
 
-		try {
-			CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
 
 			// Iterate the vulnerable projects
 			for (SearchHit repository : repositoriesWithCVEs) {
@@ -119,18 +121,14 @@ public class ProjectsOutputCreator {
 
 			}
 
-			httpClient.close();
-
 			FileUtils fileUtils = new FileUtils();
 			fileUtils.createDirectory("Resources");
-			
-			FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath);
-			
-			fileWriter.write(resultJSON.toString());
-			fileWriter.close();
 
+			try (FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath)) {
+				fileWriter.write(resultJSON.toString());
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 	}
