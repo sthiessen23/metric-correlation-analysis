@@ -63,8 +63,7 @@ public class StatisticExecuter {
 
 	public String[] getMetricNames(File dataFile) {
 		String[] metricNames = null;
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(dataFile));
+		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))){
 			String line = reader.readLine();
 			metricNames = line.substring(0, line.length()).split(",");
 			reader.close();

@@ -14,19 +14,17 @@ import org.junit.Test;
 public class SearchMethodEvaluator {
 
 	private static final Logger LOGGER = Logger.getLogger(SearchMethodEvaluator.class);
-	
+
 	private static final String controlResultsFileLocation = "SearchMethodComparisonResources/bt-data-githubname-cve-v3.0.csv";
 	private VulnerabilityDataQueryHandler VDQH = new VulnerabilityDataQueryHandler();
-	
+
 	/**
 	 * A class for representing search results for the vulnerability search
 	 * 
-	 * @param vendorName
-	 *            the name of the product's vendor to search for
-	 * @param productName
-	 *            the name of the project/product to search for
-	 * @param cveIDs
-	 *            a list of found CVE's for this project with their CVE ID's.
+	 * @param vendorName  the name of the product's vendor to search for
+	 * @param productName the name of the project/product to search for
+	 * @param cveIDs      a list of found CVE's for this project with their CVE
+	 *                    ID's.
 	 */
 	class VulnerabilitySearchResult implements Comparable<VulnerabilitySearchResult> {
 
@@ -88,11 +86,8 @@ public class SearchMethodEvaluator {
 	 */
 	private ArrayList<VulnerabilitySearchResult> readControlResultCSVData() {
 		ArrayList<VulnerabilitySearchResult> controlResults = new ArrayList<>();
-		BufferedReader br = null;
-		String line = "";
-
-		try {
-			br = new BufferedReader(new FileReader(controlResultsFileLocation));
+		try (BufferedReader br = new BufferedReader(new FileReader(controlResultsFileLocation))) {
+			String line;
 			while ((line = br.readLine()) != null) {
 				String[] vsrString = line.split(",");
 				ArrayList<String> cves = new ArrayList<>();
@@ -105,7 +100,6 @@ public class SearchMethodEvaluator {
 						.add(new VulnerabilitySearchResult(vsrString[0].toLowerCase().replace("-", "").replace("_", ""),
 								vsrString[1].toLowerCase().replace("-", "").replace("_", ""), cves));
 			}
-			br.close();
 		} catch (Exception e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
@@ -116,8 +110,8 @@ public class SearchMethodEvaluator {
 	/**
 	 * Get the a search result containing the project name and a list of CVEs.
 	 * 
-	 * @param product
-	 *            the product name, for which the vulnerabilities should be sought.
+	 * @param product the product name, for which the vulnerabilities should be
+	 *                sought.
 	 * @return A single vulnerability search result.
 	 */
 	private VulnerabilitySearchResult getCVEsOfProduct(String product, String vendor, String version,
@@ -139,10 +133,8 @@ public class SearchMethodEvaluator {
 	 * Calculate the recall and precision of a search method using an existing list
 	 * of control results.
 	 * 
-	 * @param controlResults
-	 *            - An array of search results that should be found.
-	 * @param actualResults
-	 *            - An array of the results actually found by the method.
+	 * @param controlResults - An array of search results that should be found.
+	 * @param actualResults  - An array of the results actually found by the method.
 	 */
 	private void calculateRecallAndPrecision() {
 		// Prepare the control results
@@ -189,7 +181,7 @@ public class SearchMethodEvaluator {
 		// Iterate the control results
 		for (VulnerabilitySearchResult controlResult : controlResults) {
 			int truePositives = 0, falsePositives = 0, falseNegatives = 0;
-			
+
 			// Get their CVE list and product name
 			ArrayList<String> expectedCVEIDs = new ArrayList<String>(controlResult.getCveIDs());
 			String controlResultProductName = controlResult.getProductName();
@@ -224,7 +216,8 @@ public class SearchMethodEvaluator {
 					truePositives++;
 					allTruePositives++;
 				} else {
-					LOGGER.log(Level.ERROR, "FalsePositive for project: " + controlResultProductName + ": " + actualCVEID);
+					LOGGER.log(Level.ERROR,
+							"FalsePositive for project: " + controlResultProductName + ": " + actualCVEID);
 					falsePositives++;
 					allFalsePositives++;
 				}
@@ -278,7 +271,8 @@ public class SearchMethodEvaluator {
 		LOGGER.log(Level.INFO, "For " + CVEsInControlResults + " CVE entries in the control results, there were: ");
 		LOGGER.log(Level.INFO, "True positives: " + allTruePositives + " False positives: " + allFalsePositives
 				+ " False negatives: " + allFalseNegatives + " ..in the actual results.");
-		LOGGER.log(Level.INFO, "The overall recall for this method was: " + recall + " and the precision was: " + precision);
+		LOGGER.log(Level.INFO,
+				"The overall recall for this method was: " + recall + " and the precision was: " + precision);
 		LOGGER.log(Level.INFO, "The average recall for this method was: " + averageRecall
 				+ " and the average precision was: " + averagePrecission);
 		LOGGER.log(Level.INFO, "################Recall and precision overall################");

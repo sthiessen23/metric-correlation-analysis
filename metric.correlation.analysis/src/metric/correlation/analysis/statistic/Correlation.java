@@ -63,8 +63,7 @@ public class Correlation {
 	public double[][] createMatrix(File dataFile, String[] metricNames) {
 		double[][] values = new double[50][metricNames.length];
 
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(dataFile));
+		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
 			String line = reader.readLine();
 			int row = 0;
 			while ((line = reader.readLine()) != null) {

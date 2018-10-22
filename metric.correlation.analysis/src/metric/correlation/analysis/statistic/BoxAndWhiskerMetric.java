@@ -3,7 +3,6 @@ package metric.correlation.analysis.statistic;
 import java.awt.Font;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,52 +71,50 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 
 		for (File r : resultList) {
 			String apkName = r.getName().replaceAll("SrcMeter", "");
-			File[] java_folder = new File(r, "SrcMeter" + File.separator + "java").listFiles();
-			if (java_folder.length > 0) {
-				try {
-					File metrics = new File(java_folder[0], "SrcMeter-Class.csv"); // $NON-NLS-1$
-					BufferedReader file_reader = new BufferedReader(new FileReader(metrics));
-					String line = file_reader.readLine();
-					file_reader.close();
-					String[] names = line.substring(1, line.length() - 1).split("\",\""); //$NON-NLS-1$
-					String[] metric_names = { "WMC", "CBO", "LCOM5", "DIT", "LDC" };
+			File[] javaFolder = new File(r, "SrcMeter" + File.separator + "java").listFiles();
+			if (javaFolder.length > 0) {
+				File metrics = new File(javaFolder[0], "SrcMeter-Class.csv"); // $NON-NLS-1$
 
-					for (String s : metric_names) {
-						List<Double> class_values = new ArrayList<Double>();
-						int metric_index = Arrays.asList(names).indexOf(s);
-						try {
-							String[] files = { "SrcMeter-Class.csv", "SrcMeter-Enum.csv" };
-							for (String f : files) {
-								metrics = new File(java_folder[0], f); // $NON-NLS-1$
-								BufferedReader metric_reader = new BufferedReader(new FileReader(metrics));
-								String m_line = metric_reader.readLine();
-								while ((m_line = metric_reader.readLine()) != null) {
-									String[] values = m_line.substring(1, m_line.length() - 1).split("\",\""); //$NON-NLS-1$
-									class_values.add(Double.parseDouble(values[metric_index]));
-								}
-								metric_reader.close();
-							}
-							// class_values = normalize(class_values);
-						} catch (FileNotFoundException e) {
-							LOGGER.log(Level.ERROR, e.getMessage(), e);
-						} catch (IOException e) {
-							LOGGER.log(Level.ERROR, e.getMessage(), e);
-						}
-
-						LOGGER.debug("Adding series " + r);
-						LOGGER.debug(class_values.toString());
-						dataset.add(class_values, s, apkName);
-					}
-
-				} catch (FileNotFoundException e) {
-					LOGGER.log(Level.ERROR, e.getMessage(), e);
+				String firstLine;
+				try (BufferedReader reader = new BufferedReader(new FileReader(metrics))) {
+					firstLine = reader.readLine();
 				} catch (IOException e) {
 					LOGGER.log(Level.ERROR, e.getMessage(), e);
+					return null;
 				}
-			} else
+
+				String[] names = firstLine.substring(1, firstLine.length() - 1).split("\",\""); //$NON-NLS-1$
+				String[] metricNames = { "WMC", "CBO", "LCOM5", "DIT", "LDC" };
+
+				for (String s : metricNames) {
+					List<Double> class_values = new ArrayList<Double>();
+					int metric_index = Arrays.asList(names).indexOf(s);
+					try {
+						String[] files = { "SrcMeter-Class.csv", "SrcMeter-Enum.csv" };
+						for (String f : files) {
+							metrics = new File(javaFolder[0], f); // $NON-NLS-1$
+							try (BufferedReader reader = new BufferedReader(new FileReader(metrics))) {
+								String line = reader.readLine();
+								while ((line = reader.readLine()) != null) {
+									String[] values = line.substring(1, line.length() - 1).split("\",\""); //$NON-NLS-1$
+									class_values.add(Double.parseDouble(values[metric_index]));
+								}
+							}
+						}
+					} catch (IOException e) {
+						LOGGER.log(Level.ERROR, e.getMessage(), e);
+					}
+
+					LOGGER.debug("Adding series " + r);
+					LOGGER.debug(class_values.toString());
+					dataset.add(class_values, s, apkName);
+				}
+			} else {
 				LOGGER.log(Level.ERROR, "SourceMeter Metric File is empty!");
+			}
 		}
 		return dataset;
+
 	}
 
 	public List<Double> normalize(List<Double> list) {

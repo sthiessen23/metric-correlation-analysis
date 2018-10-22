@@ -17,40 +17,40 @@ public class GitTools {
 
 	private static final Logger LOGGER = Logger.getLogger(GitTools.class);
 
-	protected static boolean gitClone(String url, File destination) throws UnsupportedOperationSystemException, GitCloneException {
+	protected static boolean gitClone(String url, File destination)
+			throws UnsupportedOperationSystemException, GitCloneException {
 		return gitClone(url, destination, false);
 	}
 
-	public static boolean gitClone(String url, File destination, boolean replace) throws UnsupportedOperationSystemException, GitCloneException {
+	public static boolean gitClone(String url, File destination, boolean replace)
+			throws UnsupportedOperationSystemException, GitCloneException {
 		if (!destination.exists()) {
 			destination.mkdirs();
 		}
 		String productName = url.substring(url.lastIndexOf('/') + 1, url.length() - 4);
 		File repository = new File(destination, productName);
-		if(repository.exists()) {
-			if(replace) {
+		if (repository.exists()) {
+			if (replace) {
 				Stack<File> files = new Stack<>();
 				files.add(repository);
 				Stack<File> delete = new Stack<>();
 				delete.add(repository);
-				while(!files.isEmpty()) {
+				while (!files.isEmpty()) {
 					File next = files.pop();
-					for(File f : next.listFiles()) {
-						if(f.isDirectory()) {
+					for (File f : next.listFiles()) {
+						if (f.isDirectory()) {
 							files.add(f);
 							delete.add(f);
-						}
-						else {
+						} else {
 							f.delete();
 						}
 					}
 				}
-				while(!delete.isEmpty()) {
+				while (!delete.isEmpty()) {
 					delete.pop().delete();
 				}
-			}
-			else {
-				throw new GitCloneException("There is already a repository with the name \""+productName+ "\".");
+			} else {
+				throw new GitCloneException("There is already a repository with the name \"" + productName + "\".");
 			}
 		}
 		String cmd = "cd " + destination.getAbsolutePath() + " && " + "git clone --recursive " + url;
@@ -69,9 +69,9 @@ public class GitTools {
 				throw new UnsupportedOperationSystemException("Program is not compatibel with the Operating System");
 			}
 
-			try (BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
-				while ((line = stream_reader.readLine()) != null) {
+				while ((line = reader.readLine()) != null) {
 					LOGGER.log(Level.ERROR, "> " + line); //$NON-NLS-1$
 				}
 			} catch (IOException e) {
@@ -92,11 +92,11 @@ public class GitTools {
 
 	public static boolean changeVersion(File src_code, String id) throws UnsupportedOperationSystemException {
 
-		LOGGER.log(Level.INFO, "Change version to commit: "+id);
-		File build_dir = new File(src_code, "build");
-		if (build_dir.exists()) {
+		LOGGER.log(Level.INFO, "Change version to commit: " + id);
+		File buildDir = new File(src_code, "build");
+		if (buildDir.exists()) {
 			GradleBuild.cleanBuild(src_code);
-			FileUtils.recursiveDelete(build_dir);
+			FileUtils.recursiveDelete(buildDir);
 		}
 		String cmd = "cd " + src_code.getPath() + " && " + "git checkout " + id + " .";
 		Runtime run = Runtime.getRuntime();
@@ -114,14 +114,14 @@ public class GitTools {
 				throw new UnsupportedOperationSystemException("Program is not compatibel with the Operating System");
 			}
 
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			while ((line = stream_reader.readLine()) != null) {
-				LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
+				}
+				process.waitFor();
+				process.destroy();
 			}
-			process.waitFor();
-			process.destroy();
-			stream_reader.close();
 			return true;
 
 		} catch (IOException e) {
