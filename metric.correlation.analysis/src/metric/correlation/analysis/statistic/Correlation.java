@@ -10,9 +10,13 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 
 public class Correlation {
+
+	private static final Logger LOGGER = Logger.getLogger(Correlation.class);
 
 	public void printMatrix(RealMatrix matrix, String[] metricNames) {
 		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
@@ -20,11 +24,12 @@ public class Correlation {
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 		for (int i = 0; i < metricNames.length; i++) {
 			double[] row = matrix.getRow(i);
-			System.out.println();
+			StringBuilder builder = new StringBuilder('\n');
 			for (double r : row) {
-				System.out.print(dFormat.format(r));
-				System.out.print("\t");
+				builder.append(dFormat.format(r));
+				builder.append('\t');
 			}
+			LOGGER.log(Level.INFO, builder.toString());
 		}
 	}
 
@@ -51,7 +56,7 @@ public class Correlation {
 			}
 			writer.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
@@ -72,7 +77,7 @@ public class Correlation {
 			reader.close();
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 		return values;

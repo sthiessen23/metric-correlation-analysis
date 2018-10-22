@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -21,15 +23,13 @@ import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
 import org.jfree.data.statistics.BoxAndWhiskerCategoryDataset;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.jfree.ui.ApplicationFrame;
-import org.jfree.util.Log;
-import org.jfree.util.LogContext;
 import org.jfree.chart.ChartUtils;
 
 public class BoxAndWhiskerMetric extends ApplicationFrame {
 
 	private static final long serialVersionUID = 1L;
 	/** Access to logging facilities. */
-	private static final LogContext LOGGER = Log.createContext(BoxAndWhiskerMetric.class);
+	private static final Logger LOGGER = Logger.getLogger(BoxAndWhiskerMetric.class);
 
 	public BoxAndWhiskerMetric(final String title, File folder, File result) {
 
@@ -54,7 +54,7 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 		try {
 			ChartUtils.saveChartAsJPEG(result, chart, 900, 450);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 	}
@@ -99,9 +99,9 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 							}
 							// class_values = normalize(class_values);
 						} catch (FileNotFoundException e) {
-							e.printStackTrace();
+							LOGGER.log(Level.ERROR, e.getMessage(), e);
 						} catch (IOException e) {
-							e.printStackTrace();
+							LOGGER.log(Level.ERROR, e.getMessage(), e);
 						}
 
 						LOGGER.debug("Adding series " + r);
@@ -110,12 +110,12 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 					}
 
 				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+					LOGGER.log(Level.ERROR, e.getMessage(), e);
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOGGER.log(Level.ERROR, e.getMessage(), e);
 				}
 			} else
-				System.err.println("SourceMeter Metric File is empty!");
+				LOGGER.log(Level.ERROR, "SourceMeter Metric File is empty!");
 		}
 		return dataset;
 	}

@@ -13,10 +13,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import flanagan.analysis.Normality;
 
 public class NormalDistribution {
 
+	private static final Logger LOGGER = Logger.getLogger(NormalDistribution.class);
+	
 	public static double significance = 0.05;
 	
 	public void testNormalDistribution(double[][] d, String[] metricNames, File resultFile) {
@@ -47,7 +52,7 @@ public class NormalDistribution {
 
 			writer.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
@@ -82,9 +87,9 @@ public class NormalDistribution {
 
 					// class_values = normalize(class_values);
 				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+					LOGGER.log(Level.ERROR, e.getMessage(), e);
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOGGER.log(Level.ERROR, e.getMessage(), e);
 				}
 				j++;
 				metric_values.clear();
@@ -93,7 +98,7 @@ public class NormalDistribution {
 			return d;
 		} catch (IOException e) {
 
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 		return new double[0][0];
 	}

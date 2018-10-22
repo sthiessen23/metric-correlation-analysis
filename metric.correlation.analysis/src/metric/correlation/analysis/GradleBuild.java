@@ -5,26 +5,29 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.gravity.eclipse.os.OperationSystem;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
 public class GradleBuild {
 
-	/**
-	 * @param src_code
-	 *            - The downloaded apk src
-	 * @return the apk for this application
-	 * @throws UnsupportedOperationSystemException
-	 *             when not on Windows/Linux
-	 */
-	public static File buildApk(File src_code) throws UnsupportedOperationSystemException {
+	private static final Logger LOGGER = Logger.getLogger(GradleBuild.class);
 
-		if (new File(src_code, "build").exists()) {
-			System.out.println("Build already exists!");
-			return getApk(src_code);
+	/**
+	 * @param src - The downloaded apk src
+	 * @return the apk for this application
+	 * @throws UnsupportedOperationSystemException when not on Windows/Linux
+	 */
+	public static File buildApk(File src) throws UnsupportedOperationSystemException {
+
+		if (new File(src, "build").exists()) {
+			LOGGER.log(Level.WARN, "Build already exists!");
+			return getApk(src);
 		}
 
-		String cmd = "cd " + src_code.getPath() + " && gradlew assembleDebug";
+		String cmd = "cd " + src.getPath() + " && gradlew assembleDebug";
 		Runtime run = Runtime.getRuntime();
 		Process process;
 
@@ -36,47 +39,47 @@ public class GradleBuild {
 				break;
 
 			case LINUX:
-				process = run.exec("./gradlew assembleDebug", null, src_code);
+				process = run.exec("./gradlew assembleDebug", null, src);
 				break;
 
 			default:
 				throw new UnsupportedOperationSystemException();
 			}
 
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+				String line;
 
-			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
+				while ((line = reader.readLine()) != null) {
+					LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
+				}
+
+				process.waitFor();
+				process.destroy();
 			}
-
-			process.waitFor();
-			process.destroy();
-
-			return getApk(src_code);
+			return getApk(src);
 
 		} catch (InterruptedException | IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
-	 * @param src_code the directory of the application
+	 * @param src the directory of the application
 	 * @return a compiled apk file
 	 */
-	private static File getApk(File src_code) {
-		File[] list = src_code.listFiles();
-		
+	private static File getApk(File src) {
+		File[] list = src.listFiles();
+
 		if (list == null) {
 			throw new RuntimeException("Directory is empty!");
 		}
-		
-		File compiled_apk = null;
+
+		File compiledApk = null;
 		for (File file : list) {
-			
+
 			if (file.isDirectory()) {
 				return getApk(file);
-				
+
 			} else {
 				File[] apklist = file.getParentFile().listFiles(new FilenameFilter() {
 					@Override
@@ -84,17 +87,18 @@ public class GradleBuild {
 						return name.endsWith(".apk");
 					}
 				});
-				
+
 				if (apklist.length > 0) {
-					return compiled_apk = apklist[0];
+					return compiledApk = apklist[0];
 				}
 			}
 		}
-		return compiled_apk;
+		return compiledApk;
 	}
 
 	/**
 	 * UnsupportedOperationSystemException
+	 * 
 	 * @param src_code the src to clean
 	 * @return true if it worked, else false
 	 * @throws UnsupportedOperationSystemException
@@ -102,7 +106,7 @@ public class GradleBuild {
 	public static boolean cleanBuild(File src_code) throws UnsupportedOperationSystemException {
 		String cmd = "cd " + src_code.getPath() + " && gradlew clean";
 		Runtime run = Runtime.getRuntime();
-		
+
 		try {
 			Process process;
 			switch (OperationSystem.getCurrentOS()) {
@@ -115,24 +119,24 @@ public class GradleBuild {
 			default:
 				throw new UnsupportedOperationSystemException();
 			}
-			
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
+				}
+
+				process.waitFor();
+				process.destroy();
 			}
-			
-			process.waitFor();
-			process.destroy();
-			stream_reader.close();
 			return true;
-			
+
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
-		
+
 		return false;
 	}
 

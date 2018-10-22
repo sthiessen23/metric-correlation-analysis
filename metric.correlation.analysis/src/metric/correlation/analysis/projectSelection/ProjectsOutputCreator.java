@@ -79,7 +79,7 @@ public class ProjectsOutputCreator {
 				for (int i = 0; i < 100; i++) {
 					// Respect 30 request limit of GitHub API
 					if (apiTimeOutcounter % 30 == 0) {
-						System.out.println(apiTimeOutcounter);
+						LOGGER.log(Level.INFO, apiTimeOutcounter);
 						TimeUnit.MINUTES.sleep(2);
 					}
 

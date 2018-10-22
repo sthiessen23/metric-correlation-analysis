@@ -9,8 +9,13 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 public class Storage {
 
+	private static final Logger LOGGER = Logger.getLogger(Storage.class);
+	
 	private final List<String> keys;
 	private final File output;
 	
@@ -45,7 +50,7 @@ public class Storage {
 				writer.write("," + results.get(key));
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
 		return true;

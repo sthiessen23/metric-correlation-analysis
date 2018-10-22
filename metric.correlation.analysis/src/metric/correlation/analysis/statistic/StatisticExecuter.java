@@ -9,14 +9,18 @@ import java.util.Arrays;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 public class StatisticExecuter {
 
+	private static final Logger LOGGER = Logger.getLogger(StatisticExecuter.class);
+	
 	private static StatisticExecuter executer;
-	public static String result_dir = "C:\\Users\\Biggi\\Documents\\strategie2\\";
+	public static String resultDir = "C:\\Users\\Biggi\\Documents\\strategie2\\";
 
 	public static void main(String[] args) {
-		File dataFile = new File(result_dir + "results" + File.separator + "ResultsOk.csv");
+		File dataFile = new File(resultDir + "results" + File.separator + "ResultsOk.csv");
 		executer = new StatisticExecuter();
 		executer.calculateStatistics(dataFile);
 	}
@@ -31,26 +35,26 @@ public class StatisticExecuter {
 
 		String[] metricNames = executer.getMetricNames(dataFile);
 
-		File folder = new File(result_dir + "Boxplotauswahl");
-		File boxplot_result = new File(result_dir + "StatisticResults" + File.separator + "Boxplot.jpeg");
+		File folder = new File(resultDir + "Boxplotauswahl");
+		File boxplot_result = new File(resultDir + "StatisticResults" + File.separator + "Boxplot.jpeg");
 
 		new BoxAndWhiskerMetric("Box-and-Whisker Project's Metrics", folder, boxplot_result);
 
 		double[][] d = correlation.createMatrix(dataFile, metricNames);
 		RealMatrix pearson_matrix = new PearsonsCorrelation().computeCorrelationMatrix(d);
 		File pearsonMatrixFile = new File(
-				result_dir + "StatisticResults" + File.separator + "PearsonCorrelationMatrix.csv");
+				resultDir + "StatisticResults" + File.separator + "PearsonCorrelationMatrix.csv");
 		correlation.storeMatrix(pearson_matrix, metricNames, pearsonMatrixFile);
 
 		RealMatrix spearman_matrix = new SpearmansCorrelation().computeCorrelationMatrix(d);
 		correlation.printMatrix(spearman_matrix, metricNames);
 		File spearmanMatrixFile = new File(
-				result_dir + "StatisticResults" + File.separator + "SpearmanCorrelationMatrix.csv");
+				resultDir + "StatisticResults" + File.separator + "SpearmanCorrelationMatrix.csv");
 		correlation.storeMatrix(spearman_matrix, metricNames, spearmanMatrixFile);
 
 		double[][] metricValues = normalityTest.getValues(dataFile, metricNames);
 		File normalityTestResult = new File(
-				result_dir + "StatisticResults" + File.separator + "shapiroWilkTestAll.csv");
+				resultDir + "StatisticResults" + File.separator + "shapiroWilkTestAll.csv");
 		normalityTest.testNormalDistribution(metricValues, metricNames, normalityTestResult);
 
 		// Normality norm = new Normality(LOCpC);
@@ -65,7 +69,7 @@ public class StatisticExecuter {
 			metricNames = line.substring(0, line.length()).split(",");
 			reader.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 		String[] metricNames2 = Arrays.copyOfRange(metricNames, 2, metricNames.length);
 		return metricNames2;

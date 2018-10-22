@@ -72,16 +72,16 @@ public class GitTools {
 			try (BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
 				while ((line = stream_reader.readLine()) != null) {
-					System.err.println("> " + line); //$NON-NLS-1$
+					LOGGER.log(Level.ERROR, "> " + line); //$NON-NLS-1$
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOGGER.log(Level.ERROR, e.getMessage(), e);
 			}
 			process.waitFor();
 			process.destroy();
 			return process.exitValue() == 0;
 		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
 	}
@@ -113,7 +113,7 @@ public class GitTools {
 			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			String line;
 			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
+				LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
 			}
 			process.waitFor();
 			process.destroy();
@@ -121,7 +121,7 @@ public class GitTools {
 			return true;
 
 		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 		return false;

@@ -6,11 +6,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.elasticsearch.search.SearchHit;
 import org.junit.Test;
 
 public class SearchMethodEvaluator {
 
+	private static final Logger LOGGER = Logger.getLogger(SearchMethodEvaluator.class);
+	
 	private static final String controlResultsFileLocation = "SearchMethodComparisonResources/bt-data-githubname-cve-v3.0.csv";
 	private VulnerabilityDataQueryHandler VDQH = new VulnerabilityDataQueryHandler();
 	
@@ -103,7 +107,7 @@ public class SearchMethodEvaluator {
 			}
 			br.close();
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 		return controlResults;
@@ -207,7 +211,7 @@ public class SearchMethodEvaluator {
 
 			// If nothing is found for this project - recall and precision are 0
 			if (actualCVEIDs == null) {
-				System.err.println("No actual results for: " + controlResultProductName + " by vendor "
+				LOGGER.log(Level.ERROR, "No actual results for: " + controlResultProductName + " by vendor "
 						+ controlResult.getVendorName());
 				singleRecallAndPrecision.setPrecision(0f);
 				singleRecallAndPrecision.setRecall(0f);
@@ -220,7 +224,7 @@ public class SearchMethodEvaluator {
 					truePositives++;
 					allTruePositives++;
 				} else {
-					System.err.println("FalsePositive for project: " + controlResultProductName + ": " + actualCVEID);
+					LOGGER.log(Level.ERROR, "FalsePositive for project: " + controlResultProductName + ": " + actualCVEID);
 					falsePositives++;
 					allFalsePositives++;
 				}
@@ -232,7 +236,7 @@ public class SearchMethodEvaluator {
 
 			// Print out the false negatives
 			for (String expectedCVEID : expectedCVEIDs) {
-				System.err.println("FalseNegative for " + controlResultProductName + ": " + expectedCVEID);
+				LOGGER.log(Level.ERROR, "FalseNegative for " + controlResultProductName + ": " + expectedCVEID);
 			}
 
 			// Calculate singular recall and precision
@@ -254,9 +258,9 @@ public class SearchMethodEvaluator {
 
 		// Print out recall and precision for each project
 		double averageRecall = 0, averagePrecission = 0;
-		System.out.println("################Recall and precision per project################");
+		LOGGER.log(Level.INFO, "################Recall and precision per project################");
 		for (ProjectRecallPrecisionTriple<String, Double, Double> triple : recallAndPrecisionPerProject) {
-			System.out.println("Recall and precision for project: " + triple.getProjectName() + " was "
+			LOGGER.log(Level.INFO, "Recall and precision for project: " + triple.getProjectName() + " was "
 					+ triple.getRecall() + " , " + triple.getPrecision());
 			averageRecall += triple.getRecall();
 			averagePrecission += triple.getPrecision();
@@ -264,21 +268,20 @@ public class SearchMethodEvaluator {
 		}
 		averagePrecission = averagePrecission / recallAndPrecisionPerProject.size();
 		averageRecall = averageRecall / recallAndPrecisionPerProject.size();
-		System.out.println("################Recall and precision per project################");
+		LOGGER.log(Level.INFO, "################Recall and precision per project################");
 
 		// Calculate overall recall and precision
 		float recall = allTruePositives / (float) (allTruePositives + allFalseNegatives);
 		float precision = allTruePositives / (float) (allTruePositives + allFalsePositives);
 
-		System.out.println("################Recall and precision overall################");
-		System.out.println("For " + CVEsInControlResults + " CVE entries in the control results, there were: ");
-		System.out.println("True positives: " + allTruePositives + " False positives: " + allFalsePositives
+		LOGGER.log(Level.INFO, "################Recall and precision overall################");
+		LOGGER.log(Level.INFO, "For " + CVEsInControlResults + " CVE entries in the control results, there were: ");
+		LOGGER.log(Level.INFO, "True positives: " + allTruePositives + " False positives: " + allFalsePositives
 				+ " False negatives: " + allFalseNegatives + " ..in the actual results.");
-		System.out
-				.println("The overall recall for this method was: " + recall + " and the precision was: " + precision);
-		System.out.println("The average recall for this method was: " + averageRecall
+		LOGGER.log(Level.INFO, "The overall recall for this method was: " + recall + " and the precision was: " + precision);
+		LOGGER.log(Level.INFO, "The average recall for this method was: " + averageRecall
 				+ " and the average precision was: " + averagePrecission);
-		System.out.println("################Recall and precision overall################");
+		LOGGER.log(Level.INFO, "################Recall and precision overall################");
 	}
 
 	@Test

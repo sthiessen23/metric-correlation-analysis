@@ -74,14 +74,14 @@ public class SourceMeterMetrics implements IMetricCalculator {
 				process = run.exec(cmd);
 				break;
 			default:
-				System.err.println("Program is not compatibel with the Operating System");
+				LOGGER.log(Level.ERROR, "Program is not compatibel with the Operating System");
 				return false;
 			}
 
 			try (BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
 				String line;
 				while ((line = stream_reader.readLine()) != null) {
-					System.out.println("> " + line); //$NON-NLS-1$
+					LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
 				}
 			}
 			process.waitFor();

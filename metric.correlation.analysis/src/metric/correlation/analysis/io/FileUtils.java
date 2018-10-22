@@ -11,10 +11,15 @@ import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 /**
  * @author Antoniya Ivanova Offers some standard file-modifying abilities.
  */
 public class FileUtils {
+
+	private static final Logger LOGGER = Logger.getLogger(FileUtils.class);
 
 	/**
 	 * @param directoryPath
@@ -31,8 +36,8 @@ public class FileUtils {
 				return dir;
 
 		} catch (Exception e) {
-			System.err.println("Could not create directory " + directoryPath);
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, "Could not create directory " + directoryPath);
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 		return null;
@@ -50,7 +55,7 @@ public class FileUtils {
 				Files.createDirectories(Paths.get(unzipLocation));
 			} catch (IOException e) {
 
-				e.printStackTrace();
+				LOGGER.log(Level.ERROR, e.getMessage(), e);
 			}
 		}
 		try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(zipFilePath))) {
@@ -67,7 +72,7 @@ public class FileUtils {
 				entry = zipInputStream.getNextEntry();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
@@ -80,7 +85,7 @@ public class FileUtils {
 				bos.write(bytesIn, 0, read);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
