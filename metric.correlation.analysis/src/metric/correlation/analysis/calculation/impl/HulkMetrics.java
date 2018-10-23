@@ -1,16 +1,21 @@
 package metric.correlation.analysis.calculation.impl;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.jdt.core.IJavaProject;
 
 import org.gravity.hulk.HulkAPI;
@@ -43,7 +48,11 @@ public class HulkMetrics implements IMetricCalculator {
 
 	@Override
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
-
+		try {
+			cleanResults();
+		} catch (IOException e) {
+			LOGGER.log(Level.WARN, "Cleaning previous results failed: "+e.getMessage(), e);
+		}
 		try {
 			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM,
 					AntiPatternNames.IGAT);
@@ -53,6 +62,22 @@ public class HulkMetrics implements IMetricCalculator {
 		}
 		ok = true;
 		return true;
+	}
+
+	private void cleanResults() throws IOException {
+		if(results == null) {
+			return;
+		}
+		Set<Resource> resources = new HashSet<>();
+		for(HAnnotation metric : results) {
+			resources.add(metric.eResource());
+		}
+		results.clear();
+		results = null;
+		for(Resource resource : resources) {
+			resource.delete(Collections.EMPTY_MAP);
+		}
+		resources.clear();
 	}
 
 	@Override
