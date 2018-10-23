@@ -113,7 +113,7 @@ public class HulkMetrics implements IMetricCalculator {
 	 * @author speldszus
 	 *
 	 */
-	enum MetricKeysImpl {
+	public enum MetricKeysImpl {
 		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT");
 
 		private String value;

@@ -212,7 +212,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 	 * @author speldszus
 	 *
 	 */
-	public static enum MetricKeysImpl {
+	public enum MetricKeysImpl {
 		PERMISSIONS("PERMISSIONS");
 
 		private String value;

@@ -152,7 +152,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 	 * @author speldszus
 	 *
 	 */
-	enum MetricKeysImpl {
+	public enum MetricKeysImpl {
 		LDC("LDC"), DIT("DIT"), LCOM("LCOM5"), CBO("CBO"), WMC("WMC"), LLOC("LLOC"), LOC_PER_CLASS("LOCpC");
 
 		private String value;
