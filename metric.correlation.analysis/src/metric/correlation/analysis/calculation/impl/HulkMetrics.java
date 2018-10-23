@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -24,7 +25,6 @@ import org.gravity.tgg.modisco.MoDiscoTGGActivator;
 import org.gravity.typegraph.basic.TypeGraph;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
-
 import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.*;
 
 public class HulkMetrics implements IMetricCalculator {
@@ -70,14 +70,17 @@ public class HulkMetrics implements IMetricCalculator {
 		for (HAnnotation annoatation : results) {
 
 			if (annoatation instanceof HBlobAntiPattern) {
+				// We count all blobs
 				blob++;
-			} else if (annoatation instanceof HIGAMMetric) {
-				if (annoatation.getTAnnotated() instanceof TypeGraph) {
+			} else if (annoatation.getTAnnotated() instanceof TypeGraph) {
+				/*
+				 * For all metrics that are not blobs we are only interested in the values for
+				 * the whole program model
+				 */
+				if (annoatation instanceof HIGAMMetric) {
 					igam = ((HMetric) annoatation).getValue();
 					LOGGER.log(Level.INFO, "IGAM = " + igam);
-				}
-			} else if (annoatation instanceof HIGATMetric) {
-				if (annoatation.getTAnnotated() instanceof TypeGraph) {
+				} else if (annoatation instanceof HIGATMetric) {
 					igat = ((HMetric) annoatation).getValue();
 					LOGGER.log(Level.INFO, "IGAT = " + igat);
 				}
@@ -100,11 +103,17 @@ public class HulkMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public Collection<? extends String> getMetricKeys() {
-		return Arrays.asList(BLOB.toString(), IGAM.toString(), IGAT.toString());
+	public Collection<String> getMetricKeys() {
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
 	}
 
-	static enum MetricKeysImpl {
+	/**
+	 * The keys of the Hulk metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
+	enum MetricKeysImpl {
 		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT");
 
 		private String value;

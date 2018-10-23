@@ -15,46 +15,47 @@ import org.apache.log4j.Logger;
 public class StatisticExecuter {
 
 	private static final Logger LOGGER = Logger.getLogger(StatisticExecuter.class);
-	
+	private static final String RESULTS = "C:\\Users\\Biggi\\Documents\\strategie2\\";
+
 	private static StatisticExecuter executer;
-	public static String resultDir = "C:\\Users\\Biggi\\Documents\\strategie2\\";
 
 	public static void main(String[] args) {
-		File dataFile = new File(resultDir + "results" + File.separator + "ResultsOk.csv");
+		File dataFile = new File(new File(new File(RESULTS), "results"), "ResultsOk.csv");
 		executer = new StatisticExecuter();
-		executer.calculateStatistics(dataFile);
+		try {
+			executer.calculateStatistics(dataFile);
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+		}
 	}
 
 	private Correlation correlation;
 	private NormalDistribution normalityTest;
 
-	public void calculateStatistics(File dataFile) {
+	public void calculateStatistics(File dataFile) throws IOException {
 		normalityTest = new NormalDistribution();
 		executer = new StatisticExecuter();
 		correlation = new Correlation();
 
 		String[] metricNames = executer.getMetricNames(dataFile);
 
-		File folder = new File(resultDir + "Boxplotauswahl");
-		File boxplot_result = new File(resultDir + "StatisticResults" + File.separator + "Boxplot.jpeg");
-
-		new BoxAndWhiskerMetric("Box-and-Whisker Project's Metrics", folder, boxplot_result);
+		File boxplotFoder = new File(RESULTS + "Boxplotauswahl");
+		File statisticOutputFolder = new File(new File(RESULTS), "StatisticResults");
+		
+		new BoxAndWhiskerMetric("Box-and-Whisker Project's Metrics", boxplotFoder, new File(statisticOutputFolder, "Boxplot.jpeg"));
 
 		double[][] d = correlation.createMatrix(dataFile, metricNames);
-		RealMatrix pearson_matrix = new PearsonsCorrelation().computeCorrelationMatrix(d);
-		File pearsonMatrixFile = new File(
-				resultDir + "StatisticResults" + File.separator + "PearsonCorrelationMatrix.csv");
-		correlation.storeMatrix(pearson_matrix, metricNames, pearsonMatrixFile);
+		RealMatrix pearsonMatrix = new PearsonsCorrelation().computeCorrelationMatrix(d);
+		File pearsonMatrixFile = new File(statisticOutputFolder, "PearsonCorrelationMatrix.csv");
+		correlation.storeMatrix(pearsonMatrix, metricNames, pearsonMatrixFile);
 
-		RealMatrix spearman_matrix = new SpearmansCorrelation().computeCorrelationMatrix(d);
-		correlation.printMatrix(spearman_matrix, metricNames);
-		File spearmanMatrixFile = new File(
-				resultDir + "StatisticResults" + File.separator + "SpearmanCorrelationMatrix.csv");
-		correlation.storeMatrix(spearman_matrix, metricNames, spearmanMatrixFile);
+		RealMatrix spearmanMatrix = new SpearmansCorrelation().computeCorrelationMatrix(d);
+		correlation.printMatrix(spearmanMatrix, metricNames);
+		File spearmanMatrixFile = new File(statisticOutputFolder, "SpearmanCorrelationMatrix.csv");
+		correlation.storeMatrix(spearmanMatrix, metricNames, spearmanMatrixFile);
 
 		double[][] metricValues = normalityTest.getValues(dataFile, metricNames);
-		File normalityTestResult = new File(
-				resultDir + "StatisticResults" + File.separator + "shapiroWilkTestAll.csv");
+		File normalityTestResult = new File(statisticOutputFolder, "shapiroWilkTestAll.csv");
 		normalityTest.testNormalDistribution(metricValues, metricNames, normalityTestResult);
 
 		// Normality norm = new Normality(LOCpC);
@@ -63,10 +64,9 @@ public class StatisticExecuter {
 
 	public String[] getMetricNames(File dataFile) {
 		String[] metricNames = null;
-		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))){
+		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
 			String line = reader.readLine();
 			metricNames = line.substring(0, line.length()).split(",");
-			reader.close();
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}

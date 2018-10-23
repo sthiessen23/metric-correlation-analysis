@@ -67,6 +67,8 @@ public class GradleBuild {
 	}
 
 	/**
+	 * Searches for the build apk file
+	 * 
 	 * @param src the directory of the application
 	 * @return a compiled apk file
 	 */
@@ -74,10 +76,9 @@ public class GradleBuild {
 		File[] list = src.listFiles();
 
 		if (list == null) {
-			throw new RuntimeException("Directory is empty!");
+			throw new IllegalArgumentException("Directory is empty!");
 		}
 
-		File compiledApk = null;
 		for (File file : list) {
 
 			if (file.isDirectory()) {
@@ -92,11 +93,11 @@ public class GradleBuild {
 				});
 
 				if (apklist.length > 0) {
-					return compiledApk = apklist[0];
+					return apklist[0];
 				}
 			}
 		}
-		return compiledApk;
+		return null;
 	}
 
 	/**

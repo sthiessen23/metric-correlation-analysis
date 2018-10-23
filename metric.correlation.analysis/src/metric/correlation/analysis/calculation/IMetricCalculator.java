@@ -11,5 +11,5 @@ public interface IMetricCalculator {
 	
 	public HashMap<String, Double> getResults();
 
-	public Collection<? extends String> getMetricKeys();
+	public Collection<String> getMetricKeys();
 }

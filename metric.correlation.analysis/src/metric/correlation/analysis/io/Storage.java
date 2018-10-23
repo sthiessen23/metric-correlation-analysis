@@ -38,7 +38,6 @@ public class Storage {
 			for (String key : keys) {
 				writer.write("," + key);
 			}
-			writer.close();
 		}
 	}
 

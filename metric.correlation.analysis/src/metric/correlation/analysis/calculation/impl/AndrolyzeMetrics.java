@@ -29,7 +29,7 @@ import metric.correlation.analysis.calculation.MetricCalculatorInitializationExc
 import static metric.correlation.analysis.calculation.impl.AndrolyzeMetrics.MetricKeysImpl.*;
 
 public class AndrolyzeMetrics implements IMetricCalculator {
-	
+
 	private static final Logger LOGGER = Logger.getLogger(AndrolyzeMetrics.class);
 
 	public static final String env_variable_name_androlyze = "ANDROLYZE";
@@ -146,7 +146,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
-		} catch(InterruptedException e) {
+		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
@@ -187,29 +187,40 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		dfs.setDecimalSeparator('.');
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
-		double permissionMetric = (double) sumNotUsedPermissions / (double) sumPermissions;
+		double permissionMetric;
+		if (sumPermissions == 0) {
+			permissionMetric = 0;
+		} else {
+			permissionMetric = (double) sumNotUsedPermissions / (double) sumPermissions;
+		}
 		metricResults.put(PERMISSIONS.toString(), Double.parseDouble(dFormat.format(permissionMetric)));
 
-		LOGGER.log(Level.INFO, sumPermissions);
-		LOGGER.log(Level.INFO, sumNotUsedPermissions);
+		LOGGER.log(Level.INFO, "Requested permissions: " + sumPermissions);
+		LOGGER.log(Level.INFO, "Unused permissions: " + sumNotUsedPermissions);
 
 		return metricResults;
 	}
-	
+
 	@Override
-	public Collection<? extends String> getMetricKeys() {
+	public Collection<String> getMetricKeys() {
 		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
 	}
-	
+
+	/**
+	 * The keys of the androlyze metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
 	public static enum MetricKeysImpl {
 		PERMISSIONS("PERMISSIONS");
-		
+
 		private String value;
 
 		private MetricKeysImpl(String value) {
 			this.value = value;
 		}
-		
+
 		@Override
 		public String toString() {
 			return value;

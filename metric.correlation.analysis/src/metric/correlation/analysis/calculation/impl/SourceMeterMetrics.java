@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -20,10 +19,11 @@ import java.util.stream.Collectors;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.eclipse.jdt.core.IJavaProject;
-import org.gravity.eclipse.os.OperationSystem;
+import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
+import metric.correlation.analysis.commands.CommandExecuter;
 
 public class SourceMeterMetrics implements IMetricCalculator {
 
@@ -56,44 +56,18 @@ public class SourceMeterMetrics implements IMetricCalculator {
 
 	@Override
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
-		File in = project.getProject().getLocation().toFile();
+		File projectLocation = project.getProject().getLocation().toFile();
 
 		lastProjectName = project.getProject().getName();
 		String cmd = sourceMeterExecutable + " -projectName=" + lastProjectName + //$NON-NLS-1$
-				" -projectBaseDir=" + in.getAbsolutePath() + //$NON-NLS-1$
+				" -projectBaseDir=" + projectLocation.getAbsolutePath() + //$NON-NLS-1$
 				" -resultsDir=" + tmpResultDir.getAbsolutePath(); //$NON-NLS-1$
 
-		Runtime run = Runtime.getRuntime();
 		try {
-			Process process;
-			switch (OperationSystem.getCurrentOS()) {
-			case WINDOWS:
-				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-				break;
-			case LINUX:
-				process = run.exec(cmd);
-				break;
-			default:
-				LOGGER.log(Level.ERROR, "Program is not compatibel with the Operating System");
-				return false;
-			}
-
-			try (BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-				String line;
-				while ((line = stream_reader.readLine()) != null) {
-					LOGGER.log(Level.INFO, "> " + line); //$NON-NLS-1$
-				}
-			}
-			process.waitFor();
-		} catch (IOException e) {
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return CommandExecuter.executeCommand(projectLocation, cmd);
+		} catch (UnsupportedOperationSystemException e) {
 			return false;
-		} catch (InterruptedException e) {
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
-			Thread.currentThread().interrupt();
 		}
-
-		return true;
 	}
 
 	@Override
@@ -168,11 +142,17 @@ public class SourceMeterMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public Collection<? extends String> getMetricKeys() {
+	public Collection<String> getMetricKeys() {
 		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
 	}
 
-	static enum MetricKeysImpl {
+	/**
+	 * The keys of the SourceMeter metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
+	enum MetricKeysImpl {
 		LDC("LDC"), DIT("DIT"), LCOM("LCOM5"), CBO("CBO"), WMC("WMC"), LLOC("LLOC"), LOC_PER_CLASS("LOCpC");
 
 		private String value;

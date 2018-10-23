@@ -3,7 +3,6 @@ package metric.correlation.analysis.statistic;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -57,15 +56,12 @@ public class NormalDistribution {
 	}
 
 	// double[][] = [AnzahlMetriken][Anzahl Apps]
-	public double[][] getValues(File dataFile, String[] metricNames) {
+	public double[][] getValues(File dataFile, String[] metricNames) throws IOException {
 		double[][] d = new double[metricNames.length][50];
 		String firstLine;
 		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
 			firstLine = reader.readLine();
-		} catch (IOException e) {
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
-			return null;
-		}
+		} 
 
 		String[] names = firstLine.substring(0, firstLine.length()).split(",");
 		List<Double> metricValues = new ArrayList<Double>();

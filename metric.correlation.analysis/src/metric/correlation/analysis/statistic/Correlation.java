@@ -13,7 +13,6 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-
 public class Correlation {
 
 	private static final Logger LOGGER = Logger.getLogger(Correlation.class);
@@ -24,7 +23,7 @@ public class Correlation {
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 		for (int i = 0; i < metricNames.length; i++) {
 			double[] row = matrix.getRow(i);
-			StringBuilder builder = new StringBuilder('\n');
+			StringBuilder builder = new StringBuilder("\n");
 			for (double r : row) {
 				builder.append(dFormat.format(r));
 				builder.append('\t');
@@ -38,8 +37,7 @@ public class Correlation {
 		dfs.setDecimalSeparator('.');
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
-		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile));
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))) {
 			writer.newLine();
 			writer.write(",");
 			for (int j = 0; j < metricNames.length; j++) {
@@ -51,10 +49,9 @@ public class Correlation {
 				writer.write(metricNames[i]);
 				for (double r : row) {
 					writer.write(", ");
-					writer.write(dFormat.format(r));				
+					writer.write(dFormat.format(r));
 				}
 			}
-			writer.close();
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
@@ -73,8 +70,6 @@ public class Correlation {
 				}
 				row++;
 			}
-			reader.close();
-
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}

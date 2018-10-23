@@ -26,10 +26,16 @@ public class CVEMetrics implements IMetricCalculator {
 	}
 	
 	@Override
-	public Collection<? extends String> getMetricKeys() {
+	public Collection<String> getMetricKeys() {
 		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
 	}
 	
+	/**
+	 * The keys of the CVE metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
 	public static enum MetricKeysImpl {
 		AVERAGE_CVSS3("AverageCVSS3"),
 		AVERAGE_CVSS2("AverageCVSS2"),
