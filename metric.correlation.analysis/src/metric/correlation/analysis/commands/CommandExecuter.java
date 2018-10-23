@@ -21,6 +21,10 @@ import metric.correlation.analysis.io.GitTools;
  *
  */
 public class CommandExecuter {
+	
+	private CommandExecuter() {
+		// As the class only provides static methods the class shouldn't be instantiated
+	}
 
 	/**
 	 * Executes a command at the given location
@@ -47,15 +51,7 @@ public class CommandExecuter {
 			default:
 				throw new UnsupportedOperationSystemException("Program is not compatibel with the Operating System");
 			}
-	
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					GitTools.LOGGER.log(Level.ERROR, "> " + line); //$NON-NLS-1$
-				}
-			} catch (IOException e) {
-				GitTools.LOGGER.log(Level.ERROR, e.getMessage(), e);
-			}
+			printErrorSteam(process);
 			process.waitFor();
 			process.destroy();
 			return process.exitValue() == 0;
@@ -66,6 +62,22 @@ public class CommandExecuter {
 			GitTools.LOGGER.log(Level.ERROR, e.getMessage(), e);
 			Thread.currentThread().interrupt();
 			return false;
+		}
+	}
+
+	/**
+	 * Loggs the error stream of the process
+	 * 
+	 * @param process The process
+	 */
+	private static void printErrorSteam(Process process) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				GitTools.LOGGER.log(Level.ERROR, "> " + line); //$NON-NLS-1$
+			}
+		} catch (IOException e) {
+			GitTools.LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
