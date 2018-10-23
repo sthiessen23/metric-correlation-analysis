@@ -68,9 +68,9 @@ public class MetricCalculation {
 		METRIC_CALCULATORS.add(new CVEMetrics());
 
 		timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
-		
+
 		Set<String> metricKeys = new HashSet<String>();
-		for(IMetricCalculator calculator : METRIC_CALCULATORS) {
+		for (IMetricCalculator calculator : METRIC_CALCULATORS) {
 			metricKeys.addAll(calculator.getMetricKeys());
 		}
 		String resultFileName = "Results-" + timestamp + ".csv";
@@ -99,57 +99,86 @@ public class MetricCalculation {
 	 * This method has to be called from a running eclipse workspace!
 	 * 
 	 * @param configurations The project configuration which should be considered
-	 * @throws UnsupportedOperationSystemException
 	 */
-	public boolean calculate(ProjectConfiguration config) throws UnsupportedOperationSystemException {
+	public boolean calculate(ProjectConfiguration config) {
+		FileAppender fileAppender = addLogAppender(config);
+
+		errors = new HashSet<>();
+
+		boolean success = clone(config);
+		if (success) {
+			String productName = config.getProductName();
+			String vendorName = config.getVendorName();
+
+			File srcLocation = new File(REPOSITORIES, productName);
+
+			for (Entry<String, String> entry : config.getVersionCommitIdPairs()) {
+				String commitId = entry.getValue();
+				LOGGER.log(Level.INFO, "\n\n\n#############################");
+				LOGGER.log(Level.INFO, "### " + timestamp + " ###");
+				LOGGER.log(Level.INFO, "#############################");
+				LOGGER.log(Level.INFO, "Checkingout commit : " + commitId);
+				LOGGER.log(Level.INFO, "#############################\n");
+
+				try {
+					if (!GitTools.changeVersion(srcLocation, commitId)) {
+						LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
+						continue;
+					}
+				} catch (UnsupportedOperationSystemException e) {
+					LOGGER.log(Level.ERROR, e.getMessage(), e);
+					break;
+				}
+				FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
+				LOGGER.log(Level.INFO, "Start metric calculation");
+				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
+			}
+		}
+		
+		if (fileAppender != null) {
+			Logger.getRootLogger().removeAppender(fileAppender);
+		}
+		return success;
+	}
+
+	/**
+	 * @param config
+	 * @return
+	 */
+	private FileAppender addLogAppender(ProjectConfiguration config) {
+		FileAppender fileAppender = null;
 		try {
-			FileAppender fileAppender = new FileAppender(new PatternLayout("%d %-5p [%c{1}] %m%n"), "logs/"+timestamp+'/'+config.getVendorName()+'-'+config.getProductName()+".txt");
-			fileAppender.setThreshold(Level.INFO);
+			fileAppender = new FileAppender(new PatternLayout("%d %-5p [%c{1}] %m%n"),
+					"logs/" + timestamp + '/' + config.getVendorName() + '-' + config.getProductName() + ".txt");
+			fileAppender.setThreshold(Level.ALL);
 			fileAppender.activateOptions();
 			Logger.getRootLogger().addAppender(fileAppender);
 		} catch (IOException e) {
 			LOGGER.log(Level.WARN, "Adding file appender failed!");
 		}
-				
-		errors = new HashSet<>();
+		return fileAppender;
+	}
 
+	/**
+	 * Clones the repository
+	 * 
+	 * @param config The project configuration
+	 * @return true, iff the repository has been cloned successfully
+	 */
+	private boolean clone(ProjectConfiguration config) {
 		String gitUrl = config.getGitUrl();
-
 		try {
-			LOGGER.log(Level.INFO, "Cloning repository: "+gitUrl);
+			LOGGER.log(Level.INFO, "Cloning repository: " + gitUrl);
 			if (!GitTools.gitClone(gitUrl, REPOSITORIES, true)) {
 				errors.add("gitClone()");
 				return false;
 			}
-		} catch (GitCloneException e1) {
-			LOGGER.log(Level.ERROR, e1.getMessage(), e1);
-			errors.add(e1.getLocalizedMessage());
+		} catch (GitCloneException | UnsupportedOperationSystemException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			errors.add(e.getLocalizedMessage());
 			return false;
 		}
-
-		String productName = config.getProductName();
-		String vendorName = config.getVendorName();
-
-		File srcLocation = new File(REPOSITORIES, productName);
-
-		boolean success = true;
-		for (Entry<String, String> entry : config.getVersionCommitIdPairs()) {
-			String commitId = entry.getValue();
-			LOGGER.log(Level.INFO, "\n\n\n#############################");
-			LOGGER.log(Level.INFO, "### " + timestamp + " ###");
-			LOGGER.log(Level.INFO, "#############################");
-			LOGGER.log(Level.INFO, "Checkingout commit : "+commitId);
-			LOGGER.log(Level.INFO, "#############################\n");
-
-			if (!GitTools.changeVersion(srcLocation, commitId)) {
-				LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
-				continue;
-			}
-			FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
-			LOGGER.log(Level.INFO, "Start metric calculation");
-			success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
-		}
-		return success;
+		return true;
 	}
 
 	/**
@@ -161,8 +190,7 @@ public class MetricCalculation {
 	 * @param src
 	 * @return true if everything went okay, otherwise false
 	 */
-	private boolean calculateMetrics(String productName, String vendorName, String version,
-			File src) {
+	private boolean calculateMetrics(String productName, String vendorName, String version, File src) {
 		LOGGER.log(Level.INFO, "Importing Gradle project to Eclipse workspace");
 		GradleImport gradleImport;
 
@@ -195,24 +223,23 @@ public class MetricCalculation {
 		boolean success = true;
 		Hashtable<String, Double> results = new Hashtable<>();
 		for (IMetricCalculator calc : METRIC_CALCULATORS) {
-			LOGGER.log(Level.INFO, "Execure metric calculation: "+calc.getClass().getSimpleName());
+			LOGGER.log(Level.INFO, "Execute metric calculation: " + calc.getClass().getSimpleName());
 			try {
 				if (calc.calculateMetric(project, productName, vendorName, version)) {
 					results.putAll(calc.getResults());
-				}
-				else {
+				} else {
 					errors.add(calc.getClass().getSimpleName());
 					success = false;
 				}
 			} catch (Exception e) {
 				success = false;
 				errors.add(calc.getClass().getSimpleName());
-				LOGGER.log(Level.ERROR, "A detection failed with an Exception: "+e.getMessage(), e);
+				LOGGER.log(Level.ERROR, "A detection failed with an Exception: " + e.getMessage(), e);
 			}
 		}
 
-		if(!storage.writeCSV(productName, results)) {
-			LOGGER.log(Level.ERROR, "Writing results for \""+productName+"\" failed!");
+		if (!storage.writeCSV(productName, results)) {
+			LOGGER.log(Level.ERROR, "Writing results for \"" + productName + "\" failed!");
 			errors.add("Writing results");
 			return false;
 		}
@@ -227,13 +254,13 @@ public class MetricCalculation {
 	public static boolean cleanupRepositories() {
 		return FileUtils.recursiveDelete(REPOSITORIES);
 	}
-	
+
 	/**
 	 * Returns the errors of the last run
 	 * 
 	 * @return A Set of error messages
 	 */
-	public Set<String> getLastErrors(){
+	public Set<String> getLastErrors() {
 		return errors;
 	}
 

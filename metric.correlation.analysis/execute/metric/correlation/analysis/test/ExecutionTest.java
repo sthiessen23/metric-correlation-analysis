@@ -37,6 +37,8 @@ import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
 @RunWith(Parameterized.class)
 public class ExecutionTest {
 
+	// BEGIN CONSTANTS -->
+
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
@@ -62,10 +64,20 @@ public class ExecutionTest {
 	 */
 	private static final boolean VALIDATE_JSON = false;
 
-	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
-	
-	private static MetricCalculation calculator;
+	/**
+	 * The level at which all loggers should log
+	 */
+	private static final Level LOG_LEVEL = Level.OFF;
 
+	private static final String[] EXCLUDES = new String[] { "cSploit-android" };
+	// <-- END CONSTANTS
+
+	/**
+	 * The logger of this class
+	 */
+	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
+
+	private static MetricCalculation calculator;
 
 	private ProjectConfiguration config;
 
@@ -85,23 +97,38 @@ public class ExecutionTest {
 		}
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
-		if(projects.size() == 0) {
+		if (projects.size() == 0) {
 			throw new IllegalArgumentException("There are no projects in the JSON documnet!");
 		}
 
 		int projectCounter = 0;
+		int skipedProjects = 0;
 		List<Object[]> configs = new ArrayList<>(Math.min(MAX_NUMBER_OF_PROJECTS, projects.size()));
 		for (JsonNode project : projects) {
 			projectCounter++;
 			if (OFFSET_FOR_PROJECTS >= projectCounter) {
 				continue;
 			}
-			if (projectCounter > MAX_NUMBER_OF_PROJECTS + OFFSET_FOR_PROJECTS) {
+			if (projectCounter > MAX_NUMBER_OF_PROJECTS + OFFSET_FOR_PROJECTS + skipedProjects) {
 				break;
 			}
 
 			String productName = project.get("productName").asText();
 			String vendorName = project.get("vendorName").asText();
+
+			boolean skip = false;
+			String name = vendorName + "-" + productName;
+			for (String exclude : EXCLUDES) {
+				if (exclude.equals(name)) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) {
+				skipedProjects++;
+				continue;
+			}
+
 			String gitURL = project.get("url").asText();
 			ArrayNode commits = (ArrayNode) project.get("commits");
 
@@ -154,19 +181,20 @@ public class ExecutionTest {
 		}
 		boolean success = calculator.calculate(config);
 		if (!success) {
-			fail(calculator.getLastErrors().stream().map(Object::toString)
-					.collect(Collectors.joining(", ", "[", "]")));
+			fail(calculator.getLastErrors().stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 		}
 		assertTrue(success);
 	}
 
 	/**
-	 * Clean the repository folder before test execution and initialize metric calculation
+	 * Clean the repository folder before test execution and initialize metric
+	 * calculation
 	 * 
 	 * @throws InitializationError If the cleanup or initialization failed
 	 */
 	@BeforeClass
 	public static void initialize() throws InitializationError {
+		Logger.getRootLogger().setLevel(LOG_LEVEL);
 		if (!MetricCalculation.cleanupRepositories()) {
 			throw new InitializationError("Couldn't clean repositories");
 		}
