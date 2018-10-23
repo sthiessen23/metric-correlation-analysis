@@ -76,7 +76,6 @@ public class NormalDistribution {
 					metricValues.add(Double.parseDouble(values[metricIndex]));
 
 				}
-				reader.close();
 
 				for (int i = 0; i < metricValues.size(); i++) {
 					d[j][i] = metricValues.get(i);
