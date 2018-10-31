@@ -5,8 +5,13 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,7 +40,7 @@ import metric.correlation.analysis.configuration.ProjectConfiguration;
 import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
 
 @RunWith(Parameterized.class)
-public class ExecutionTest {
+public class Execution {
 
 	// BEGIN CONSTANTS -->
 
@@ -67,26 +72,36 @@ public class ExecutionTest {
 	/**
 	 * The level at which all loggers should log
 	 */
-	private static final Level LOG_LEVEL = Level.OFF;
+	private static final Level LOG_LEVEL = Level.ALL;
 
-	private static final String[] EXCLUDES = new String[] { "cSploit-android" };
+	private static final String[] EXCLUDES = new String[] { "cSploit-android", "powermock-powermock", "alibaba-atlas",
+			"Netflix-zuul", "apache-beam", "apache-kafka", "orhanobut-logger", "apache-groovy", "orhanobut-hawk"};
+	private static final String[] INCLUDES = new String[] {};
+
+	/**
+	 * Path to a file containing one exclude per line. Successfully processed
+	 * projects are automatically appended to this file!
+	 */
+	private static final File EXCLUDES_FILE = new File("excludes.txt");
 	// <-- END CONSTANTS
 
 	/**
 	 * The logger of this class
 	 */
-	private static final Logger LOGGER = Logger.getLogger(ExecutionTest.class);
+	private static final Logger LOGGER = Logger.getLogger(Execution.class);
 
 	private static MetricCalculation calculator;
 
 	private ProjectConfiguration config;
 
-	public ExecutionTest(String projectName, ProjectConfiguration config) {
+	public Execution(String projectName, ProjectConfiguration config) {
 		this.config = config;
 	}
 
 	@Parameters(name = "Analyze: {0}")
 	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
+		Collection<String> excludedProjectNames = getExcludes();
+
 		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.projectsDataOutputFilePath);
 
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
@@ -118,7 +133,7 @@ public class ExecutionTest {
 
 			boolean skip = false;
 			String name = vendorName + "-" + productName;
-			for (String exclude : EXCLUDES) {
+			for (String exclude : excludedProjectNames) {
 				if (exclude.equals(name)) {
 					skip = true;
 					break;
@@ -154,6 +169,22 @@ public class ExecutionTest {
 	}
 
 	/**
+	 * Searches all excluded projects
+	 * 
+	 * @return The names of the excluded projects
+	 * @throws IOException
+	 */
+	private static Collection<String> getExcludes() throws IOException {
+		Collection<String> excludes = new HashSet<>();
+		if (EXCLUDES_FILE.exists()) {
+			excludes.addAll(Files.readAllLines(EXCLUDES_FILE.toPath(), Charset.defaultCharset()));
+		}
+		excludes.removeAll(Arrays.asList(INCLUDES));
+		excludes.addAll(Arrays.asList(EXCLUDES));
+		return excludes;
+	}
+
+	/**
 	 * Checks the JSON document against the schema used by this application
 	 * 
 	 * @param projectsJsonData The JSON document the schema
@@ -182,8 +213,27 @@ public class ExecutionTest {
 		boolean success = calculator.calculate(config);
 		if (!success) {
 			fail(calculator.getLastErrors().stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
+		} else {
+			addToExcludeFile();
 		}
 		assertTrue(success);
+	}
+
+	/**
+	 * Adds the current project to the excludes file
+	 * 
+	 * @return true, iff the project has been added
+	 */
+	private boolean addToExcludeFile() {
+		final String name = config.getVendorName() + "-" + config.getProductName();
+		try {
+			Files.write(EXCLUDES_FILE.toPath(), (name + '\n').getBytes(),
+					EXCLUDES_FILE.exists() ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
+		} catch (IOException e) {
+			LOGGER.log(Level.WARN, "Couldn't append project to excludes: " + name);
+			return false;
+		}
+		return true;
 	}
 
 	/**

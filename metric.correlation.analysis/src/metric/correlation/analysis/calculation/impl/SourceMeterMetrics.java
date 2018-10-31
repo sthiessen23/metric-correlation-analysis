@@ -66,6 +66,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 		try {
 			return CommandExecuter.executeCommand(projectLocation, cmd);
 		} catch (UnsupportedOperationSystemException e) {
+			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			return false;
 		}
 	}

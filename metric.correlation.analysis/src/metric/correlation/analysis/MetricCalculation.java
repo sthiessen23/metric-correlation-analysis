@@ -227,6 +227,7 @@ public class MetricCalculation {
 			try {
 				if (calc.calculateMetric(project, productName, vendorName, version)) {
 					results.putAll(calc.getResults());
+					success &= plausabilityCheck(calc);
 				} else {
 					errors.add(calc.getClass().getSimpleName());
 					success = false;
@@ -244,6 +245,21 @@ public class MetricCalculation {
 			return false;
 		}
 		return success;
+	}
+
+	/**
+	 * Checks if the results of the metric calculator are plausible
+	 * @param calc The executed metric calculator
+	 * @return true iff the results ar plausible
+	 */
+	private boolean plausabilityCheck(IMetricCalculator calc) {
+		for(Double value : calc.getResults().values()) {
+			if(value == null || Double.isNaN(value)) {
+				errors.add("Values not plausible: "+calc.getClass().getSimpleName());
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**

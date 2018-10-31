@@ -6,6 +6,7 @@ package metric.correlation.analysis.commands;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.apache.log4j.Level;
@@ -51,7 +52,8 @@ public class CommandExecuter {
 			default:
 				throw new UnsupportedOperationSystemException("Program is not compatibel with the Operating System");
 			}
-			printErrorSteam(process);
+			printStream(process.getErrorStream(), Level.ERROR);
+			printStream(process.getInputStream(), Level.INFO);
 			process.waitFor();
 			process.destroy();
 			return process.exitValue() == 0;
@@ -66,18 +68,19 @@ public class CommandExecuter {
 	}
 
 	/**
-	 * Loggs the error stream of the process
+	 * Loggs a stream with the given level
 	 * 
-	 * @param process The process
+	 * @param stream The stream
+	 * @param level The level
 	 */
-	private static void printErrorSteam(Process process) {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+	private static void printStream(final InputStream stream, final Level level) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				GitTools.LOGGER.log(Level.ERROR, "> " + line); //$NON-NLS-1$
+				GitTools.LOGGER.log(level, "> " + line); //$NON-NLS-1$
 			}
 		} catch (IOException e) {
-			GitTools.LOGGER.log(Level.ERROR, e.getMessage(), e);
+			GitTools.LOGGER.log(level, e.getMessage(), e);
 		}
 	}
 
