@@ -84,7 +84,7 @@ public class ProjectsOutputCreator {
 					}
 
 					gitURL = "https://api.github.com/repos/" + vendorName + "/" + productName + "/tags?page=" + i
-							+ "&per_page=100&access_token=" + ProjectSelector.OAuthToken;
+							+ "&per_page=100&access_token=" + ProjectSelector.oAuthToken;
 
 					apiTimeOutcounter++;
 

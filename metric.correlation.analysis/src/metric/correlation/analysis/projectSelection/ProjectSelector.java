@@ -45,13 +45,20 @@ import metric.correlation.analysis.vulnerabilities.VulnerabilityDataQueryHandler
 public class ProjectSelector {
 
 	private static final Logger LOGGER = Logger.getLogger(ProjectSelector.class);
-	
+
+	/**
+	 * Selectors for checking if the project has an supported build nature
+	 */
+	private static final IGithubProjectSelector[] BUILD_NATURE_SELECTORS = new IGithubProjectSelector[] {
+			new GradleGithubProjectSelector()
+			};
+
 	private RestHighLevelClient elasticClient;
 	// Change this to your own OAuthToken
-	protected static String OAuthToken = "183c10a9725ad6c00195df59c201040e1b3d1d07";
+	protected static String oAuthToken = "183c10a9725ad6c00195df59c201040e1b3d1d07";
 	protected static String repositoryDatabaseName = "repositories_database_extended";
-	
-	public void initializeProjectElasticDatabase(){
+
+	public void initializeProjectElasticDatabase() {
 		addDocumentsToElastic(searchForJavaRepositoryNames());
 	}
 
@@ -71,7 +78,7 @@ public class ProjectSelector {
 			// Requests per page x 100
 			for (int i = 1; i <= 100; i++) {
 				url = "https://api.github.com/search/repositories?q=language:java&sort=stars&order=desc"
-						+ "&access_token=" + OAuthToken + "&page=" + i + "&per_page=89";
+						+ "&access_token=" + oAuthToken + "&page=" + i + "&per_page=89";
 
 				HttpGet request = new HttpGet(url);
 				request.addHeader("content-type", "application/json");
@@ -90,7 +97,11 @@ public class ProjectSelector {
 					int stars = Integer.parseInt(jo.get("stargazers_count").toString());
 
 					// if ((stars >= 100) && isGradleRepository(fullName)) {
-					if (isGradleRepository(fullName)) {
+					boolean accept = false;
+					for (IGithubProjectSelector b : BUILD_NATURE_SELECTORS) {
+						accept |= b.accept(fullName, oAuthToken);
+					}
+					if (accept) {
 						LOGGER.log(Level.INFO, "MATCH : " + fullName);
 
 						String product = jo.get("name").toString().replace("\"", "");
@@ -123,53 +134,10 @@ public class ProjectSelector {
 	}
 
 	/**
-	 * Tests if a repository is a Gradle repository. Checks for file "build.gradle"
-	 * in its contents.
-	 * 
-	 * @param repositoryName
-	 *            the name of the repository to be tested
-	 * @return true if it is a Gradle repository, false otherwise.
-	 */
-	private boolean isGradleRepository(String repositoryName) {
-		boolean result = false;
-		String gradleKeyword = "build.gradle";
-		String gradleSearchUrl;
-
-		try {
-			CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-
-			gradleSearchUrl = "https://api.github.com/search/code?q=repo:" + repositoryName + "+filename:"
-					+ gradleKeyword + "&access_token=" + OAuthToken;
-			HttpGet requestGradleRepository = new HttpGet(gradleSearchUrl);
-			requestGradleRepository.addHeader("content-type", "application/json");
-
-			HttpResponse resultResponse = httpClient.execute(requestGradleRepository);
-			String json = EntityUtils.toString(resultResponse.getEntity(), "UTF-8");
-
-			JsonElement jelement = new JsonParser().parse(json);
-
-			try {
-				result = jelement.getAsJsonObject().get("total_count").getAsInt() != 0 ? true : false;
-
-			} catch (Exception e) {
-				LOGGER.log(Level.INFO, e.toString());
-			}
-
-			httpClient.close();
-
-		} catch (Exception e) {
-			LOGGER.log(Level.ERROR, "Could not check if repository is a Gradle repository.");
-			LOGGER.log(Level.INFO, e.getStackTrace());
-		}
-
-		return result;
-	}
-
-	/**
 	 * Adds the found repositories to an Elasticsearch DB.
 	 * 
-	 * @param repositoriesSet
-	 *            repositories to be added to the Elasticsearch database (index).
+	 * @param repositoriesSet repositories to be added to the Elasticsearch database
+	 *                        (index).
 	 */
 	private void addDocumentsToElastic(HashSet<Repository> repositoriesSet) {
 		ArrayList<HashMap<String, Object>> repositories = new ArrayList<HashMap<String, Object>>();
@@ -259,7 +227,7 @@ public class ProjectSelector {
 
 			LOGGER.log(Level.INFO, "The percentage of repositories with a vulnerability is : "
 					+ percentageOfRepositoriesWithVulnerabilities + "%");
-			LOGGER.log(Level.INFO, 
+			LOGGER.log(Level.INFO,
 					"Repositories with at least one vulnerability : " + numberOfRepositoriesWithVulnerabilities);
 
 			elasticClient.close();
@@ -340,9 +308,10 @@ public class ProjectSelector {
 
 			averageVulnerabilitiesPerProject = totalNumberOfVulnerabilites / totalNumberOfProjects;
 
-			LOGGER.log(Level.INFO, 
+			LOGGER.log(Level.INFO,
 					"The average number of discovered vulnerabilities is : " + averageVulnerabilitiesPerProject);
-			LOGGER.log(Level.INFO, "The total number of discovered vulnerabilities is : " + totalNumberOfVulnerabilites);
+			LOGGER.log(Level.INFO,
+					"The total number of discovered vulnerabilities is : " + totalNumberOfVulnerabilites);
 
 			elasticClient.close();
 		} catch (Exception e) {
