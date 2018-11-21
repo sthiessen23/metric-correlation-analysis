@@ -24,17 +24,55 @@ import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.chart.ChartUtils;
 
-public class BoxAndWhiskerMetric extends ApplicationFrame {
+/**
+ * 
+ * This class can be used to visualize the distribution of different metrics per
+ * class calculated by source meter
+ *
+ */
+public class SourceMeterBoxAndWhiskerMetric extends ApplicationFrame {
+	
+	
+	/**
+	 * The location of the SourceMeter outputs which should be considered
+	 */
+	private static final File INPUT = new File("sourcemeter");
+	
+	/**
+	 * The folder to which the results should be written
+	 */
+	private static final File OUTPUT = new File(new File("statisics"), "boxplots");
 
+	
+	/**
+	 * The generated serial version ID
+	 */
 	private static final long serialVersionUID = 1L;
-	/** Access to logging facilities. */
-	private static final Logger LOGGER = Logger.getLogger(BoxAndWhiskerMetric.class);
+	
+	/**
+	 *  Access to logging facilities. 
+	 */
+	private static final Logger LOGGER = Logger.getLogger(SourceMeterBoxAndWhiskerMetric.class);
 
-	public BoxAndWhiskerMetric(final String title, File folder, File result) {
+	
+	public static void main(String[] args) throws IOException {
+		if(!INPUT.exists()) {
+			final String message = "The input folder doesn't exist!";
+			LOGGER.log(Level.ERROR, message);
+			throw new IOException(message);
+		}
+		if(!OUTPUT.exists()) {
+			OUTPUT.mkdirs();
+		}
+		new SourceMeterBoxAndWhiskerMetric("Box-and-Whisker Project's Metrics", INPUT, new File(OUTPUT, "Boxplot.jpeg"));
+	}
+	
+
+	public SourceMeterBoxAndWhiskerMetric(final String title, File folder, File result) {
 
 		super(title);
 
-		final BoxAndWhiskerCategoryDataset dataset = createDataset(folder);
+		final BoxAndWhiskerCategoryDataset dataset = createDatasetForSourceMeterOutput(folder);
 
 		final CategoryAxis xAxis = new CategoryAxis("");
 		final NumberAxis yAxis = new NumberAxis("Value");
@@ -63,11 +101,11 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 	 * 
 	 * @return a dataset.
 	 */
-	private BoxAndWhiskerCategoryDataset createDataset(File folder) {
+	private BoxAndWhiskerCategoryDataset createDatasetForSourceMeterOutput(File sourceMeterOutputFolder) {
 
 		final DefaultBoxAndWhiskerCategoryDataset dataset = new DefaultBoxAndWhiskerCategoryDataset();
 
-		File[] resultList = folder.listFiles();
+		File[] resultList = sourceMeterOutputFolder.listFiles();
 
 		for (File r : resultList) {
 			String apkName = r.getName().replaceAll("SrcMeter", "");
@@ -87,7 +125,7 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 				String[] metricNames = { "WMC", "CBO", "LCOM5", "DIT", "LDC" };
 
 				for (String s : metricNames) {
-					List<Double> class_values = new ArrayList<Double>();
+					List<Double> classValues = new ArrayList<Double>();
 					int metric_index = Arrays.asList(names).indexOf(s);
 					try {
 						String[] files = { "SrcMeter-Class.csv", "SrcMeter-Enum.csv" };
@@ -97,7 +135,7 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 								String line = reader.readLine();
 								while ((line = reader.readLine()) != null) {
 									String[] values = line.substring(1, line.length() - 1).split("\",\""); //$NON-NLS-1$
-									class_values.add(Double.parseDouble(values[metric_index]));
+									classValues.add(Double.parseDouble(values[metric_index]));
 								}
 							}
 						}
@@ -106,8 +144,8 @@ public class BoxAndWhiskerMetric extends ApplicationFrame {
 					}
 
 					LOGGER.debug("Adding series " + r);
-					LOGGER.debug(class_values.toString());
-					dataset.add(class_values, s, apkName);
+					LOGGER.debug(classValues.toString());
+					dataset.add(classValues, s, apkName);
 				}
 			} else {
 				LOGGER.log(Level.ERROR, "SourceMeter Metric File is empty!");

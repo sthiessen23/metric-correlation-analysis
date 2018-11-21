@@ -6,12 +6,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+/**
+ * Stores metric calculation results as csv
+ * 
+ * @author speldszus
+ *
+ */
 public class Storage {
 
 	private static final Logger LOGGER = Logger.getLogger(Storage.class);
@@ -19,6 +25,13 @@ public class Storage {
 	private final List<String> keys;
 	private final File output;
 	
+	/**
+	 * Creates a new instance with a given output file and the names of the metrics
+	 * 
+	 * @param resultFile The output file
+	 * @param keys The metric names
+	 * @throws IOException If the output file cannot be created
+	 */
 	public Storage(File resultFile, Collection<String> keys) throws IOException {
 		this.output = resultFile;
 		if (keys instanceof List) {
@@ -41,7 +54,14 @@ public class Storage {
 		}
 	}
 
-	public boolean writeCSV(String name, Hashtable<String, Double> results) {
+	/**
+	 * Appends the results of a detection run on a project
+	 * 
+	 * @param name The project name
+	 * @param results The metric results
+	 * @return true, iff the results have been appended successfully
+	 */
+	public boolean writeCSV(String name, Map<String, Double> results) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output, true))) {
 			writer.newLine();
 			writer.write(name);

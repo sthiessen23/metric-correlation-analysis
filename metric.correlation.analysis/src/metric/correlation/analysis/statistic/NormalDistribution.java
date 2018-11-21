@@ -1,16 +1,14 @@
 package metric.correlation.analysis.statistic;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -23,71 +21,88 @@ public class NormalDistribution {
 
 	public static double significance = 0.05;
 
-	public void testNormalDistribution(double[][] d, String[] metricNames, File resultFile) {
+	private DecimalFormat dFormat;
 
+	public NormalDistribution() {
 		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
 		dfs.setDecimalSeparator('.');
-		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
-		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile));
-			writer.newLine();
+		dFormat = new DecimalFormat("0.00", dfs);
+	}
+	
+	public void testAndStoreNormalDistribution(Map<String, List<Double>> metricValues, File resultFile) {
+
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))){
 			writer.write(
 					"Metric name, W-Value, W-crit, Normal Distribution, P-Value, Significance, Normal Distribution");
-			for (int i = 0; i < metricNames.length; i++) {
-				Normality norm = new Normality(d[i]);
-				writer.newLine();
-				writer.write(metricNames[i] + "," + dFormat.format(norm.shapiroWilkWvalue()) + ","
-						+ dFormat.format(norm.shapiroWilkCriticalW()) + ",");
-				if (norm.shapiroWilkWvalue() <= norm.shapiroWilkCriticalW())
-					writer.write("Yes,");
-				else
-					writer.write("No,");
-				writer.write(dFormat.format(norm.shapiroWilkPvalue()) + "," + significance + ",");
-				if (norm.shapiroWilkPvalue() <= significance)
-					writer.write("Yes");
-				else
-					writer.write("No");
+			for (String metricName : metricValues.keySet()) {
+				List<Double> list = metricValues.get(metricName);
+				double[] doubleArray = new double[list.size()];
+				for(int i = 0; i < list.size(); i++) {
+					doubleArray[i] = list.get(i);
+				}
+				Normality norm = new Normality(doubleArray);
+				final double wValue = norm.shapiroWilkWvalue();
+				final double wCritical = norm.shapiroWilkCriticalW();
+				final boolean normalDistribution = wValue <= wCritical;
+				final double pValue = norm.shapiroWilkPvalue();
+				final boolean normalDistribution2 = pValue <= significance;
+				
+				printNextLine(writer, metricName, wValue, wCritical, normalDistribution, pValue, normalDistribution2);
 			}
-
-			writer.close();
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
-	// double[][] = [AnzahlMetriken][Anzahl Apps]
-	public double[][] getValues(File dataFile, String[] metricNames) throws IOException {
-		double[][] d = new double[metricNames.length][50];
-		String firstLine;
-		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
-			firstLine = reader.readLine();
-		} 
+	/**
+	 * Prints the next line
+	 * 
+	 * @param writer The writer
+	 * @param metricName
+	 * @param wValue
+	 * @param wCritical
+	 * @param normalDistribution
+	 * @param pValue
+	 * @param normalDistribution2
+	 * @throws IOException
+	 */
+	public void printNextLine(BufferedWriter writer, String metricName, final double wValue, final double wCritical,
+			final boolean normalDistribution, final double pValue, final boolean normalDistribution2)
+			throws IOException {
+		writer.newLine();
+		writer.write(metricName);
+		writer.write(",");
+		writer.write(dFormat.format(wValue));
+		writer.write(",");
+		writer.write(dFormat.format(wCritical));
+		writer.write(",");
+		writer.write(Boolean.toString(normalDistribution));
+		writer.write(",");
+		writer.write(dFormat.format(pValue));
+		writer.write(",");
+		writer.write(dFormat.format(significance));
+		writer.write(",");
+		writer.write(Boolean.toString(normalDistribution2));
+	}
 
-		String[] names = firstLine.substring(0, firstLine.length()).split(",");
-		List<Double> metricValues = new ArrayList<Double>();
-		int j = 0;
-		for (String nam : metricNames) {
-			int metricIndex = Arrays.asList(names).indexOf(nam);
-
-			try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))){
-				String line = reader.readLine();
-				while ((line = reader.readLine()) != null) {
-					String[] values = line.substring(0, line.length()).split(",");
-					metricValues.add(Double.parseDouble(values[metricIndex]));
-
-				}
-
-				for (int i = 0; i < metricValues.size(); i++) {
-					d[j][i] = metricValues.get(i);
-				}
-			} catch (IOException e) {
-				LOGGER.log(Level.ERROR, e.getMessage(), e);
+	/**
+	 *  size of the returned matrix: double[][] = [AnzahlMetriken][Anzahl Apps]
+	 * 
+	 * @param metrics A linked hashmap of metric keys and values
+	 * @return a double matrix
+	 */
+	public double[][] getValues(LinkedHashMap<String, List<Double>> metrics) {
+		double[][] results = new double[metrics.size()][];
+		int metricIndex = 0;
+		for(List<Double> values : metrics.values()) {
+			double[] doubleArray = new double[values.size()];
+			for(int doubleArrayIndex = 0; doubleArrayIndex < values.size(); doubleArrayIndex++) {
+				doubleArray[metricIndex] = values.get(doubleArrayIndex);
 			}
-			j++;
-			metricValues.clear();
+			results[metricIndex++] = doubleArray;
 		}
-
-		return d;
+		
+		return results;
 	}
 
 }

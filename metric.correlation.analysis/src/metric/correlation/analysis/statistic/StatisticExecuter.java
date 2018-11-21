@@ -1,11 +1,14 @@
 package metric.correlation.analysis.statistic;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
@@ -14,63 +17,117 @@ import org.apache.log4j.Logger;
 
 public class StatisticExecuter {
 
+	private static final String INPUT_SERIES = "Results-2018-11-04_22_47.csv";
+	private static final File DATA_FILE = new File(new File("results", INPUT_SERIES), "results.csv");
+	
 	private static final Logger LOGGER = Logger.getLogger(StatisticExecuter.class);
-	private static final String RESULTS = "C:\\Users\\Biggi\\Documents\\strategie2\\";
 
-	private static StatisticExecuter executer;
+	private static final File RESULTS = new File("statistics");
 
 	public static void main(String[] args) {
-		File dataFile = new File(new File(new File(RESULTS), "results"), "ResultsOk.csv");
-		executer = new StatisticExecuter();
+		StatisticExecuter executer = new StatisticExecuter();
 		try {
-			executer.calculateStatistics(dataFile);
+			executer.calculateStatistics(DATA_FILE, new File(RESULTS, INPUT_SERIES));
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
-	private Correlation correlation;
-	private NormalDistribution normalityTest;
+	/**
+	 * Calculates correlations for the given metric values and saves them at the given location
+	 * 
+	 * @param in
+	 * @param out
+	 * @throws IOException
+	 */
+	public void calculateStatistics(File in, File out) throws IOException {
+		if(!out.exists()) {
+			out.mkdirs();
+		}
+		calculateStatistics(getMetricMap(in), out);
+	}
 
-	public void calculateStatistics(File dataFile) throws IOException {
-		normalityTest = new NormalDistribution();
-		executer = new StatisticExecuter();
-		correlation = new Correlation();
-
-		String[] metricNames = executer.getMetricNames(dataFile);
-
-		File boxplotFoder = new File(RESULTS + "Boxplotauswahl");
-		File statisticOutputFolder = new File(new File(RESULTS), "StatisticResults");
+	/**
+	 * Calculates correlations for the given metric values and saves them at the given location
+	 * 
+	 * @param map The mapping from metric names to values
+	 * @param out The output file
+	 * @throws IOException
+	 */
+	public void calculateStatistics(final LinkedHashMap<String, List<Double>> map, File out) throws IOException {
+		final ArrayList<String> metricNames = new ArrayList<>(map.keySet());
 		
-		new BoxAndWhiskerMetric("Box-and-Whisker Project's Metrics", boxplotFoder, new File(statisticOutputFolder, "Boxplot.jpeg"));
+		RealMatrix matrix = createMatrix(map);
+		
+		RealMatrix pearsonMatrix = new PearsonsCorrelation().computeCorrelationMatrix(matrix);
+		CorreltationMatrixPrinter.storeMatrix(pearsonMatrix, metricNames, new File(out, "PearsonCorrelationMatrix.csv"));
 
-		double[][] d = correlation.createMatrix(dataFile, metricNames);
-		RealMatrix pearsonMatrix = new PearsonsCorrelation().computeCorrelationMatrix(d);
-		File pearsonMatrixFile = new File(statisticOutputFolder, "PearsonCorrelationMatrix.csv");
-		correlation.storeMatrix(pearsonMatrix, metricNames, pearsonMatrixFile);
+		RealMatrix spearmanMatrix = new SpearmansCorrelation().computeCorrelationMatrix(matrix);
+		CorreltationMatrixPrinter.storeMatrix(spearmanMatrix, metricNames, new File(out, "SpearmanCorrelationMatrix.csv"));
 
-		RealMatrix spearmanMatrix = new SpearmansCorrelation().computeCorrelationMatrix(d);
-		correlation.printMatrix(spearmanMatrix, metricNames);
-		File spearmanMatrixFile = new File(statisticOutputFolder, "SpearmanCorrelationMatrix.csv");
-		correlation.storeMatrix(spearmanMatrix, metricNames, spearmanMatrixFile);
-
-		double[][] metricValues = normalityTest.getValues(dataFile, metricNames);
-		File normalityTestResult = new File(statisticOutputFolder, "shapiroWilkTestAll.csv");
-		normalityTest.testNormalDistribution(metricValues, metricNames, normalityTestResult);
-
-		// Normality norm = new Normality(LOCpC);
-		// norm.fullAnalysis();
+		new NormalDistribution().testAndStoreNormalDistribution(map, new File(out, "shapiroWilkTestAll.csv"));
 	}
 
-	public String[] getMetricNames(File dataFile) {
-		String[] metricNames = null;
-		try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
-			String line = reader.readLine();
-			metricNames = line.substring(0, line.length()).split(",");
-		} catch (IOException e) {
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
+	/**
+	 * Creates a map from a stored metric csv file
+	 * 
+	 * @param dataFile The file
+	 * @return The map
+	 * @throws IOException If there is an exception reading the file
+	 */
+	private LinkedHashMap<String, List<Double>> getMetricMap(File dataFile) throws IOException {
+		List<String> lines = Files.readAllLines(dataFile.toPath());
+		String[] keys = lines.get(0).split(",");
+		LinkedHashMap<String, List<Double>> metrics = new LinkedHashMap<>(keys.length - 1);
+		int projectNameIndex = -1;
+		for (int i = 0; i < keys.length; i++) {
+			String value = keys[i];
+			if ("Application-Name".equals(value)) {
+				projectNameIndex = i;
+			} else {
+				metrics.put(value, new ArrayList<>(lines.size() -1));
+			}
 		}
-		String[] metricNames2 = Arrays.copyOfRange(metricNames, 2, metricNames.length);
-		return metricNames2;
+		if (projectNameIndex == -1) {
+			throw new IllegalStateException("Project name not found");
+		}
+		for (String line : lines.subList(1, lines.size())) {
+			String[] values = line.split(",");
+			
+			boolean valid = true;
+			for (int i = 0; i < values.length; i++) {
+				if(i == projectNameIndex) {
+					continue;
+				}
+				String s = values[i];
+				if (s == null || "null".equals(s) || "NaN".equals(s)) {
+					valid = false;
+					break;
+				}
+			}
+			
+			if (valid) {
+				for(int i = 0; i < values.length; i++) {
+					if(i == projectNameIndex) {
+						continue;
+					}
+					metrics.get(keys[i]).add(Double.parseDouble(values[i]));
+				}
+			}
+		}
+		return metrics;
+	}
+
+	public RealMatrix createMatrix(Map<String, List<Double>> metricValues) {
+		double[][] results = new double[metricValues.size()][];
+		int col = 0;
+		for (List<Double> s : metricValues.values()) {
+			double[] d = new double[s.size()];
+			for (int i = 0; i < s.size(); i++) {
+				d[i] = s.get(i);
+			}
+			results[col++] = d;
+		}
+		return new Array2DRowRealMatrix(results).transpose();
 	}
 }
