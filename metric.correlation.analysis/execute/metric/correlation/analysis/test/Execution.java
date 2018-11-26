@@ -74,9 +74,36 @@ public class Execution {
 	 */
 	private static final Level LOG_LEVEL = Level.ALL;
 
-	private static final String[] EXCLUDES = new String[] { "cSploit-android", "powermock-powermock", "alibaba-atlas",
-			"Netflix-zuul", "apache-beam", "apache-kafka", "orhanobut-logger", "apache-groovy", "orhanobut-hawk"};
+	/**
+	 * Names of projects which should be excluded (maybe overriden by INCLUDES)
+	 */
+	private static final String[] EXCLUDES = new String[] {
+			// Timeout 30 Min
+			"cSploit-android", "alibaba-atlas", "orhanobut-logger", "orhanobut-hawk", "google-agera", "timusus-Shuttle", "requery-requery", "kickstarter-android-oss", "spring-projects-spring-boot", "apache-groovy", "spring-projects-spring-framework", "rey5137-material", 
+			"libgdx-libgdx"
+			// TGG Local completeness
+			, "jjoe64-GraphView", "junit-team-junit5", "spring-projects-spring-security", "grpc-grpc-java", "google-binnavi", "apache-kafka", "facebook-litho", "greenrobot-EventBus"
+			// CVE values
+			, "dm77-barcodescanner", "facebook-fresco"
+			// WONTFIX
+			, "powermock-powermock", "apache-beam", "elastic-elasticsearch", "ZieIony-Carbon", "apache-ignite", "asLody-VirtualApp"
+			// Duplicate files
+//			, "facebook-buck"
+			// MoDisco Discovery
+//			, "apereo-cas", "igniterealtime-Smack"
+			}; 
+	
+	/**
+	 * Names of projects which should be included in any case (Overrides all excludes)
+	 */
 	private static final String[] INCLUDES = new String[] {};
+
+	// BEGIN CONSTANTS -->
+	
+	/**
+	 * All projects which timed out are stored here
+	 */
+	private static final File TIMEOUT_FILE = new File("timeout.txt");
 
 	/**
 	 * Path to a file containing one exclude per line. Successfully processed
@@ -84,21 +111,22 @@ public class Execution {
 	 */
 	private static final File EXCLUDES_FILE = new File("excludes.txt");
 	// <-- END CONSTANTS
+	//
+	// Don't edit below here
 
 	/**
 	 * The logger of this class
 	 */
 	private static final Logger LOGGER = Logger.getLogger(Execution.class);
-
+	
 	private static MetricCalculation calculator;
-
 	private ProjectConfiguration config;
 
-	public Execution(String projectName, ProjectConfiguration config) {
+	public Execution(String projectName, ProjectConfiguration config, Integer index) {
 		this.config = config;
 	}
 
-	@Parameters(name = "Analyze: {0}")
+	@Parameters(name = "{2} - Analyze: {0}")
 	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
 		Collection<String> excludedProjectNames = getExcludes();
 
@@ -162,7 +190,7 @@ public class Execution {
 
 			ProjectConfiguration projectConfiguration = new ProjectConfiguration(productName, vendorName, gitURL,
 					commitsAndVersions);
-			configs.add(new Object[] { vendorName + "-" + productName, projectConfiguration });
+			configs.add(new Object[] { vendorName + "-" + productName, projectConfiguration , new Integer(projectCounter)});
 
 		}
 		return configs;
@@ -205,16 +233,22 @@ public class Execution {
 		return true;
 	}
 
-	@Test
+	@Test(timeout=(long) (1.5*1800000))
 	public void execute() throws UnsupportedOperationSystemException {
 		if (config.getGitCommitIds().isEmpty()) {
 			fail("No commits available");
 		}
+		addToFile(TIMEOUT_FILE);
 		boolean success = calculator.calculate(config);
 		if (!success) {
 			fail(calculator.getLastErrors().stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 		} else {
 			addToExcludeFile();
+		}
+		try {
+			Files.write(TIMEOUT_FILE.toPath(), Files.readAllLines(TIMEOUT_FILE.toPath()).stream().filter(line -> !getProjectId().equals(line)).collect(Collectors.joining("\n")).getBytes());
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 		}
 		assertTrue(success);
 	}
@@ -225,15 +259,34 @@ public class Execution {
 	 * @return true, iff the project has been added
 	 */
 	private boolean addToExcludeFile() {
-		final String name = config.getVendorName() + "-" + config.getProductName();
+		return addToFile(EXCLUDES_FILE);
+	}
+
+	/**
+ 	 * Adds the current project to the given file
+ 	 * 
+	 * @param file The file
+	 * @return true, iff the project has been added
+	 */
+	public boolean addToFile(final File file) {
+		final String name = getProjectId();
 		try {
-			Files.write(EXCLUDES_FILE.toPath(), (name + '\n').getBytes(),
-					EXCLUDES_FILE.exists() ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
+			Files.write(file.toPath(), (name + '\n').getBytes(),
+					file.exists() ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			LOGGER.log(Level.WARN, "Couldn't append project to excludes: " + name);
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Returns an ID consisting out of the name of vendor and product
+	 * 
+	 * @return
+	 */
+	private String getProjectId() {
+		return config.getVendorName() + "-" + config.getProductName();
 	}
 
 	/**
@@ -256,12 +309,13 @@ public class Execution {
 	}
 
 	/**
-	 * Clean the repository folder after test execution if CLEAN == true
+	 * Calculate all statistics and clean the repository folder after test execution if CLEAN == true
 	 * 
-	 * @throws InitializationError
+	 * @throws InitializationError Iff the repositories couldn't be cleaned
 	 */
 	@AfterClass
-	public static void cleanupAfter() throws InitializationError {
+	public static void after() throws InitializationError {
+		calculator.performStatistics();
 		if (!CLEAN) {
 			return;
 		}

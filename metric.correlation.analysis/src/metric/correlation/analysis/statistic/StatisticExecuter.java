@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
 
 public class StatisticExecuter {
 
-	private static final String INPUT_SERIES = "Results-2018-11-04_22_47.csv";
+	private static final String INPUT_SERIES = "Results-2018-11-21_13_54";
 	private static final File DATA_FILE = new File(new File("results", INPUT_SERIES), "results.csv");
 	
 	private static final Logger LOGGER = Logger.getLogger(StatisticExecuter.class);

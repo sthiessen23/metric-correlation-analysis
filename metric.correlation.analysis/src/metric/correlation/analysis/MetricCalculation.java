@@ -1,29 +1,38 @@
 package metric.correlation.analysis;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 import org.gravity.eclipse.importer.gradle.GradleImport;
+import org.gravity.eclipse.importer.gradle.GradleImportException;
 import org.gravity.eclipse.importer.gradle.NoGradleRootFolderException;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
+
+import com.google.common.io.Files;
+
 import metric.correlation.analysis.calculation.IMetricCalculator;
-import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
 import metric.correlation.analysis.calculation.impl.AndrolyzeMetrics;
 import metric.correlation.analysis.calculation.impl.CVEMetrics;
 import metric.correlation.analysis.calculation.impl.HulkMetrics;
@@ -33,18 +42,59 @@ import metric.correlation.analysis.io.FileUtils;
 import metric.correlation.analysis.io.GitCloneException;
 import metric.correlation.analysis.io.GitTools;
 import metric.correlation.analysis.io.Storage;
+import metric.correlation.analysis.statistic.StatisticExecuter;
 
+/**
+ * A class for executing different metric calculations of git java projects and
+ * performing statistics on the results
+ * 
+ * @author speldszus
+ *
+ */
 public class MetricCalculation {
 
-	private static final Logger LOGGER = LogManager.getLogger(MetricCalculation.class);
+	// BEGIN: Configuration variables
+	/**
+	 * The location where the results should be stored
+	 */
 	private static final File RESULTS = new File("results");
+
+	/**
+	 * The location where the git repositories should be cloned to
+	 */
 	private static final File REPOSITORIES = new File("repositories");
 
-	private static final Collection<IMetricCalculator> METRIC_CALCULATORS = new ArrayList<>(3);
+	/**
+	 * The classes of the calculators which should be executed
+	 */
+	private static final Collection<Class<? extends IMetricCalculator>> METRIC_CALCULATORS = Arrays
+			.asList(HulkMetrics.class, SourceMeterMetrics.class, AndrolyzeMetrics.class, CVEMetrics.class);
+
+	// END
+	// Don't edit below here
+
+	/**
+	 * The logger of this class
+	 */
+	private static final Logger LOGGER = LogManager.getLogger(MetricCalculation.class);
+
+	private final Collection<IMetricCalculator> calculators;
 
 	private final String timestamp;
 	private Set<String> errors;
 	private Storage storage;
+
+	/**
+	 * A mapping from metric names to all values for this metric
+	 */
+	private final LinkedHashMap<String, List<Double>> metricResults;
+
+	/**
+	 * The folder in which the results are stored
+	 */
+	private static File outputFolder;
+
+	private File errorFile;
 
 	/**
 	 * Initialized the list of calculators
@@ -52,29 +102,35 @@ public class MetricCalculation {
 	 * @throws IOException If the results file cannot be initialized
 	 */
 	public MetricCalculation() throws IOException {
-		METRIC_CALCULATORS.add(new HulkMetrics());
-
-		try {
-			METRIC_CALCULATORS.add(new SourceMeterMetrics());
-		} catch (MetricCalculatorInitializationException e) {
-			LOGGER.log(Level.WARN, e.getMessage(), e);
+		// Initialize the metric calculators
+		this.calculators = new ArrayList<IMetricCalculator>(METRIC_CALCULATORS.size());
+		for (Class<? extends IMetricCalculator> clazz : METRIC_CALCULATORS) {
+			try {
+				calculators.add(clazz.getConstructor().newInstance());
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				LOGGER.log(Level.WARN, e.getMessage(), e);
+			}
 		}
 
-		try {
-			METRIC_CALCULATORS.add(new AndrolyzeMetrics());
-		} catch (MetricCalculatorInitializationException e) {
-			LOGGER.log(Level.WARN, e.getMessage(), e);
-		}
-		METRIC_CALCULATORS.add(new CVEMetrics());
+		// Get the time stamp of this run
+		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
 
-		timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
-
+		// Collect all metric keys
 		Set<String> metricKeys = new HashSet<String>();
-		for (IMetricCalculator calculator : METRIC_CALCULATORS) {
+		for (IMetricCalculator calculator : calculators) {
 			metricKeys.addAll(calculator.getMetricKeys());
 		}
-		String resultFileName = "Results-" + timestamp + ".csv";
-		storage = new Storage(new File(new File(RESULTS, resultFileName), "results.csv"), metricKeys);
+
+		// Initialize the metric results
+		this.metricResults = new LinkedHashMap<>();
+		for (String metricKey : metricKeys) {
+			this.metricResults.put(metricKey, new LinkedList<Double>());
+		}
+
+		outputFolder = new File(RESULTS, "Results-" + timestamp);
+		storage = new Storage(new File(outputFolder, "results.csv"), metricKeys);
+		errorFile = new File(outputFolder, "errors.csv");
+		Files.write("vendor,product,version,errors\n".getBytes(), errorFile);
 	}
 
 	/**
@@ -101,10 +157,13 @@ public class MetricCalculation {
 	 * @param configurations The project configuration which should be considered
 	 */
 	public boolean calculate(ProjectConfiguration config) {
+		// Create a project specific file logger
 		FileAppender fileAppender = addLogAppender(config);
 
+		// Reset previously recored errors
 		errors = new HashSet<>();
 
+		// Clone the project
 		boolean success = clone(config);
 		if (success) {
 			String productName = config.getProductName();
@@ -112,6 +171,7 @@ public class MetricCalculation {
 
 			File srcLocation = new File(REPOSITORIES, productName);
 
+			// Calculate metrics for each commit of the project configuration
 			for (Entry<String, String> entry : config.getVersionCommitIdPairs()) {
 				String commitId = entry.getValue();
 				LOGGER.log(Level.INFO, "\n\n\n#############################");
@@ -121,6 +181,7 @@ public class MetricCalculation {
 				LOGGER.log(Level.INFO, "#############################\n");
 
 				try {
+					// Checkout the specific commit
 					if (!GitTools.changeVersion(srcLocation, commitId)) {
 						LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
 						continue;
@@ -130,11 +191,14 @@ public class MetricCalculation {
 					break;
 				}
 				FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
+				
+				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
 				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
 			}
 		}
-		
+
+		// Drop the project specific file logger
 		if (fileAppender != null) {
 			Logger.getRootLogger().removeAppender(fileAppender);
 		}
@@ -142,8 +206,11 @@ public class MetricCalculation {
 	}
 
 	/**
-	 * @param config
-	 * @return
+	 * Creates a new project specific logger with an new output file for a project
+	 * configuration
+	 * 
+	 * @param config The project configuration
+	 * @return The project specific logger
 	 */
 	private FileAppender addLogAppender(ProjectConfiguration config) {
 		FileAppender fileAppender = null;
@@ -184,13 +251,14 @@ public class MetricCalculation {
 	/**
 	 * Calculate the correlation metrics
 	 *
-	 * @param productName
-	 * @param vendorName
-	 * @param version
-	 * @param src
+	 * @param productName The name of the software project
+	 * @param vendorName  The name of the projects vendor
+	 * @param version     The version which should be inspected
+	 * @param src         The location of the source code
 	 * @return true if everything went okay, otherwise false
 	 */
 	private boolean calculateMetrics(String productName, String vendorName, String version, File src) {
+		// Import the sourcecode as gradle project
 		LOGGER.log(Level.INFO, "Importing Gradle project to Eclipse workspace");
 		GradleImport gradleImport;
 
@@ -205,11 +273,11 @@ public class MetricCalculation {
 
 		try {
 			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
-		} catch (IOException | CoreException | NoGradleRootFolderException e) {
+		} catch (NoGradleRootFolderException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
-		} catch (InterruptedException e) {
+		} catch (GradleImportException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			Thread.currentThread().interrupt();
@@ -220,9 +288,10 @@ public class MetricCalculation {
 			return false;
 		}
 
+		// Calculate all metrics
 		boolean success = true;
-		Hashtable<String, Double> results = new Hashtable<>();
-		for (IMetricCalculator calc : METRIC_CALCULATORS) {
+		HashMap<String, Double> results = new HashMap<>();
+		for (IMetricCalculator calc : calculators) {
 			LOGGER.log(Level.INFO, "Execute metric calculation: " + calc.getClass().getSimpleName());
 			try {
 				if (calc.calculateMetric(project, productName, vendorName, version)) {
@@ -239,23 +308,47 @@ public class MetricCalculation {
 			}
 		}
 
+		// Store all results in a csv file
 		if (!storage.writeCSV(productName, results)) {
 			LOGGER.log(Level.ERROR, "Writing results for \"" + productName + "\" failed!");
 			errors.add("Writing results");
-			return false;
+			success = false;
 		}
+		
+		// If all metrics have been calculated successfully add them to the metric results
+		if(success) {
+			for(Entry<String, Double> entry: results.entrySet()) {
+				metricResults.get(entry.getKey()).add(entry.getValue());
+			}
+		}
+		else {
+			try(FileWriter writer = new FileWriter(errorFile, true)){
+				writer.append(vendorName);
+				writer.append(',');
+				writer.append(productName);
+				writer.append(',');
+				writer.append(version);
+				writer.append(',');
+				writer.append(errors.stream().collect(Collectors.joining(" - ")));
+				writer.append('\n');
+			} catch (IOException e) {
+				LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
+			}
+		}
+		
 		return success;
 	}
 
 	/**
 	 * Checks if the results of the metric calculator are plausible
+	 * 
 	 * @param calc The executed metric calculator
 	 * @return true iff the results ar plausible
 	 */
 	private boolean plausabilityCheck(IMetricCalculator calc) {
-		for(Double value : calc.getResults().values()) {
-			if(value == null || Double.isNaN(value)) {
-				errors.add("Values not plausible: "+calc.getClass().getSimpleName());
+		for (Double value : calc.getResults().values()) {
+			if (value == null || Double.isNaN(value)) {
+				errors.add("Values not plausible: " + calc.getClass().getSimpleName());
 				return false;
 			}
 		}
@@ -278,6 +371,21 @@ public class MetricCalculation {
 	 */
 	public Set<String> getLastErrors() {
 		return errors;
+	}
+
+	/**
+	 * Executes the statistic calculation on all projects discovered with this instance
+	 * 
+	 * @return true, iff the results have been stored successfully
+	 */
+	public boolean performStatistics() {
+		try {
+			new StatisticExecuter().calculateStatistics(metricResults, outputFolder);
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
+			return false;
+		}
+		return true;
 	}
 
 }
