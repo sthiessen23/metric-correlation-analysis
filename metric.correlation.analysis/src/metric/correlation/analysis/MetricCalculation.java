@@ -65,7 +65,12 @@ public class MetricCalculation {
 		} catch (MetricCalculatorInitializationException e) {
 			LOGGER.log(Level.WARN, e.getMessage(), e);
 		}
-		METRIC_CALCULATORS.add(new CVEMetrics());
+		
+		try {
+			METRIC_CALCULATORS.add(new CVEMetrics());
+		} catch (MetricCalculatorInitializationException e) {
+			LOGGER.log(Level.WARN, e.getMessage(), e);
+		}
 
 		timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
 
