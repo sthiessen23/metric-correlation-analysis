@@ -1,7 +1,7 @@
 package metric.correlation.analysis.configuration;
 
 import java.util.Collection;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -13,7 +13,7 @@ public class ProjectConfiguration {
 	private final String productName;
 	private final String vendorName;
 	private final String gitUrl;
-	private final Hashtable<String, String> versionGitCommitIdMapping;
+	private final HashMap<String, String> versionGitCommitIdMapping;
 
 	/**
 	 * Constructs a new configuration
@@ -25,7 +25,7 @@ public class ProjectConfiguration {
 	 *                                  ids
 	 */
 	public ProjectConfiguration(String productName, String vendorName, String gitUrl,
-			Hashtable<String, String> versionGitCommitIdMapping) {
+			HashMap<String, String> versionGitCommitIdMapping) {
 		this.productName = productName;
 		this.vendorName = vendorName;
 		this.gitUrl = gitUrl;

@@ -199,6 +199,7 @@ public class MetricCalculation {
 				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
 				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
+				//TODO: If no success try next version
 			}
 		}
 
@@ -347,7 +348,7 @@ public class MetricCalculation {
 	 * Checks if the results of the metric calculator are plausible
 	 * 
 	 * @param calc The executed metric calculator
-	 * @return true iff the results ar plausible
+	 * @return true iff the results are plausible
 	 */
 	private boolean plausabilityCheck(IMetricCalculator calc) {
 		for (String value : calc.getResults().values()) {

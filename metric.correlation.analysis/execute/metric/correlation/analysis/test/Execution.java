@@ -11,8 +11,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +20,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -134,10 +133,8 @@ public class Execution {
 		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.projectsDataOutputFilePath);
 
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
-		if (VALIDATE_JSON) {
-			if (!checkDocument(projectsJsonData)) {
+		if (VALIDATE_JSON && !checkDocument(projectsJsonData)) {
 				throw new IllegalArgumentException("The given JSON file doesn't comply with the JSON Schema!");
-			}
 		}
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
@@ -176,7 +173,7 @@ public class Execution {
 			String gitURL = project.get("url").asText();
 			ArrayNode commits = (ArrayNode) project.get("commits");
 
-			Hashtable<String, String> commitsAndVersions = new Hashtable<String, String>();
+			HashMap<String, String> commitsAndVersions = new HashMap<>();
 
 			int commitCounter = 0;
 			for (JsonNode commit : commits) {
@@ -235,7 +232,7 @@ public class Execution {
 	}
 
 	@Test(timeout=(long) (1.5*1800000))
-	public void execute() throws UnsupportedOperationSystemException {
+	public void execute() {
 		if (config.getGitCommitIds().isEmpty()) {
 			fail("No commits available");
 		}
