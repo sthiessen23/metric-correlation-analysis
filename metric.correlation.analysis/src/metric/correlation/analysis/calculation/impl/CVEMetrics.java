@@ -17,7 +17,7 @@ import metric.correlation.analysis.vulnerabilities.VulnerabilityDataQueryHandler
 
 public class CVEMetrics implements IMetricCalculator {
 
-	private HashMap<String, Double> results;
+	private HashMap<String, String> results;
 
 	public CVEMetrics() throws MetricCalculatorInitializationException {
 		// Check if ES is running
@@ -39,7 +39,7 @@ public class CVEMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public HashMap<String, Double> getResults() {
+	public HashMap<String, String> getResults() {
 		return results;
 	}
 

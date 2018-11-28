@@ -72,7 +72,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public LinkedHashMap<String, Double> getResults() {
+	public LinkedHashMap<String, String> getResults() {
 		if (lastProjectName == null) {
 			throw new IllegalStateException("The calculateMetrics() operation hasn't been executed!");
 		}
@@ -85,7 +85,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 			dfs.setDecimalSeparator('.');
 			DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 			
-			LinkedHashMap<String, Double> metricMap = new LinkedHashMap<String, Double>();
+			LinkedHashMap<String, String> metricMap = new LinkedHashMap<>();
 			List<String> names = null;
 			File metrics = new File(sourcemeterOutputFolder[0], lastProjectName + "-Class.csv"); // $NON-NLS-1$
 			try (BufferedReader fileReader = new BufferedReader(new FileReader(metrics))) {
@@ -126,11 +126,11 @@ public class SourceMeterMetrics implements IMetricCalculator {
 					}
 					double average = Double.parseDouble(dFormat.format(sum / classValues.size()));
 					if (LLOC.toString().equals(metricName)) {
-						metricMap.put(LLOC.toString(), Double.parseDouble(dFormat.format(sum)));
-						metricMap.put(LOC_PER_CLASS.toString(), average);
+						metricMap.put(LLOC.toString(), dFormat.format(sum));
+						metricMap.put(LOC_PER_CLASS.toString(), Double.toString(average));
 					}
 					else {
-						metricMap.put(metricName, average);
+						metricMap.put(metricName, Double.toString(average));
 					}
 
 				} catch (IOException e) {

@@ -9,7 +9,7 @@ public interface IMetricCalculator {
 
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version);
 	
-	public HashMap<String, Double> getResults();
+	public HashMap<String, String> getResults();
 
 	public Collection<String> getMetricKeys();
 }

@@ -154,10 +154,10 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public LinkedHashMap<String, Double> getResults() {
+	public LinkedHashMap<String, String> getResults() {
 		File resultsLocation = new File(androlyzeDir, "storage" + File.separator + "res");
 
-		LinkedHashMap<String, Double> metricResults = new LinkedHashMap<String, Double>();
+		LinkedHashMap<String, String> metricResults = new LinkedHashMap<>();
 
 		int sumPermissions = 0;
 		int sumNotUsedPermissions = 0;
@@ -166,7 +166,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		try {
 			jsonNode = JsonLoader.fromFile(resultsLocation);
 		} catch (IOException e) {
-			metricResults.put(PERMISSIONS.toString(), -1.0);
+			metricResults.put(PERMISSIONS.toString(), Double.toString(-1.0));
 			return metricResults;
 		}
 		JsonNode codePermissions = jsonNode.get("code permissions").get("listing");
@@ -193,7 +193,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		} else {
 			permissionMetric = (double) sumNotUsedPermissions / (double) sumPermissions;
 		}
-		metricResults.put(PERMISSIONS.toString(), Double.parseDouble(dFormat.format(permissionMetric)));
+		metricResults.put(PERMISSIONS.toString(), dFormat.format(permissionMetric));
 
 		LOGGER.log(Level.INFO, "Requested permissions: " + sumPermissions);
 		LOGGER.log(Level.INFO, "Unused permissions: " + sumNotUsedPermissions);

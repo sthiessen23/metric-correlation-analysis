@@ -37,6 +37,7 @@ import metric.correlation.analysis.calculation.impl.AndrolyzeMetrics;
 import metric.correlation.analysis.calculation.impl.CVEMetrics;
 import metric.correlation.analysis.calculation.impl.HulkMetrics;
 import metric.correlation.analysis.calculation.impl.SourceMeterMetrics;
+import metric.correlation.analysis.calculation.impl.VersionMetrics;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
 import metric.correlation.analysis.io.FileUtils;
 import metric.correlation.analysis.io.GitCloneException;
@@ -87,7 +88,7 @@ public class MetricCalculation {
 	/**
 	 * A mapping from metric names to all values for this metric
 	 */
-	private final LinkedHashMap<String, List<Double>> metricResults;
+	private final LinkedHashMap<String, List<String>> allMetricResults;
 
 	/**
 	 * The folder in which the results are stored
@@ -103,11 +104,13 @@ public class MetricCalculation {
 	 */
 	public MetricCalculation() throws IOException {
 		// Initialize the metric calculators
-		this.calculators = new ArrayList<IMetricCalculator>(METRIC_CALCULATORS.size());
+		this.calculators = new ArrayList<IMetricCalculator>(METRIC_CALCULATORS.size() + 1);
+		this.calculators.add(new VersionMetrics());
 		for (Class<? extends IMetricCalculator> clazz : METRIC_CALCULATORS) {
 			try {
 				calculators.add(clazz.getConstructor().newInstance());
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
 				LOGGER.log(Level.WARN, e.getMessage(), e);
 			}
 		}
@@ -115,6 +118,8 @@ public class MetricCalculation {
 		// Get the time stamp of this run
 		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
 
+		this.allMetricResults = new LinkedHashMap<>();
+		
 		// Collect all metric keys
 		Set<String> metricKeys = new HashSet<String>();
 		for (IMetricCalculator calculator : calculators) {
@@ -122,9 +127,8 @@ public class MetricCalculation {
 		}
 
 		// Initialize the metric results
-		this.metricResults = new LinkedHashMap<>();
 		for (String metricKey : metricKeys) {
-			this.metricResults.put(metricKey, new LinkedList<Double>());
+			this.allMetricResults.put(metricKey, new LinkedList<>());
 		}
 
 		outputFolder = new File(RESULTS, "Results-" + timestamp);
@@ -191,7 +195,7 @@ public class MetricCalculation {
 					break;
 				}
 				FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
-				
+
 				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
 				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
@@ -290,7 +294,7 @@ public class MetricCalculation {
 
 		// Calculate all metrics
 		boolean success = true;
-		HashMap<String, Double> results = new HashMap<>();
+		HashMap<String, String> results = new HashMap<>();
 		for (IMetricCalculator calc : calculators) {
 			LOGGER.log(Level.INFO, "Execute metric calculation: " + calc.getClass().getSimpleName());
 			try {
@@ -314,15 +318,15 @@ public class MetricCalculation {
 			errors.add("Writing results");
 			success = false;
 		}
-		
-		// If all metrics have been calculated successfully add them to the metric results
-		if(success) {
-			for(Entry<String, Double> entry: results.entrySet()) {
-				metricResults.get(entry.getKey()).add(entry.getValue());
+
+		// If all metrics have been calculated successfully add them to the metric
+		// results
+		if (success) {
+			for (Entry<String, String> entry : results.entrySet()) {
+				allMetricResults.get(entry.getKey()).add(entry.getValue());
 			}
-		}
-		else {
-			try(FileWriter writer = new FileWriter(errorFile, true)){
+		} else {
+			try (FileWriter writer = new FileWriter(errorFile, true)) {
 				writer.append(vendorName);
 				writer.append(',');
 				writer.append(productName);
@@ -335,7 +339,7 @@ public class MetricCalculation {
 				LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			}
 		}
-		
+
 		return success;
 	}
 
@@ -346,8 +350,8 @@ public class MetricCalculation {
 	 * @return true iff the results ar plausible
 	 */
 	private boolean plausabilityCheck(IMetricCalculator calc) {
-		for (Double value : calc.getResults().values()) {
-			if (value == null || Double.isNaN(value)) {
+		for (String value : calc.getResults().values()) {
+			if (value == null || Double.toString(Double.NaN).equals(value)) {
 				errors.add("Values not plausible: " + calc.getClass().getSimpleName());
 				return false;
 			}
@@ -374,13 +378,18 @@ public class MetricCalculation {
 	}
 
 	/**
-	 * Executes the statistic calculation on all projects discovered with this instance
+	 * Executes the statistic calculation on all projects discovered with this
+	 * instance
 	 * 
 	 * @return true, iff the results have been stored successfully
 	 */
 	public boolean performStatistics() {
+		LinkedHashMap<String, List<Double>> newestVersionOnly = new LinkedHashMap<>();
+		for(Entry<String, List<String>> enty : allMetricResults.entrySet()) {
+			//TODO: Only add newest version from metricResults of a project to the newestVersionOnly Map	
+		}
 		try {
-			new StatisticExecuter().calculateStatistics(metricResults, outputFolder);
+			new StatisticExecuter().calculateStatistics(newestVersionOnly, outputFolder);
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			return false;

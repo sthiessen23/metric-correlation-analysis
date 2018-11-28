@@ -61,7 +61,7 @@ public class Storage {
 	 * @param results The metric results
 	 * @return true, iff the results have been appended successfully
 	 */
-	public boolean writeCSV(String name, Map<String, Double> results) {
+	public boolean writeCSV(String name, Map<String, String> results) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output, true))) {
 			writer.newLine();
 			writer.write(name);

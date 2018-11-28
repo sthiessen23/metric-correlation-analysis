@@ -81,9 +81,9 @@ public class HulkMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public LinkedHashMap<String, Double> getResults() {
+	public LinkedHashMap<String, String> getResults() {
 
-		LinkedHashMap<String, Double> metrics = new LinkedHashMap<String, Double>();
+		LinkedHashMap<String, String> metrics = new LinkedHashMap<>();
 		double igam = 0.0;
 		double igat = 0.0;
 
@@ -112,19 +112,19 @@ public class HulkMetrics implements IMetricCalculator {
 			}
 
 		}
-		metrics.put(BLOB.toString(), blob);
+		metrics.put(BLOB.toString(), Double.toString(blob));
 		metrics.put(IGAM.toString(), roundDouble(igam));
 		metrics.put(IGAT.toString(), roundDouble(igat));
 
 		return metrics;
 	}
 
-	private double roundDouble(double d) {
+	private String roundDouble(double d) {
 		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
 		dfs.setDecimalSeparator('.');
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
-		return Double.parseDouble(dFormat.format(d));
+		return dFormat.format(d);
 	}
 
 	@Override

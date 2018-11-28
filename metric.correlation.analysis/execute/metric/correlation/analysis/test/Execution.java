@@ -84,13 +84,14 @@ public class Execution {
 			// TGG Local completeness
 			, "jjoe64-GraphView", "junit-team-junit5", "spring-projects-spring-security", "grpc-grpc-java", "google-binnavi", "apache-kafka", "facebook-litho", "greenrobot-EventBus"
 			// CVE values
-			, "dm77-barcodescanner", "facebook-fresco"
+//			, "dm77-barcodescanner"
+			, "facebook-fresco"
 			// WONTFIX
 			, "powermock-powermock", "apache-beam", "elastic-elasticsearch", "ZieIony-Carbon", "apache-ignite", "asLody-VirtualApp"
 			// Duplicate files
-//			, "facebook-buck"
+			, "facebook-buck"
 			// MoDisco Discovery
-//			, "apereo-cas", "igniterealtime-Smack"
+			, "apereo-cas", "igniterealtime-Smack"
 			}; 
 	
 	/**

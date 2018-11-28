@@ -1,0 +1,57 @@
+package metric.correlation.analysis.calculation.impl;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+
+import org.eclipse.jdt.core.IJavaProject;
+import metric.correlation.analysis.calculation.IMetricCalculator;
+
+/**
+ * Stores the project version as result
+ * 
+ * @author speldszus
+ *
+ */
+public class VersionMetrics implements IMetricCalculator {
+
+	private HashMap<String, String> results = new HashMap<>();
+
+	@Override
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
+		results.put(MetricKeysImpl.VERSION.toString(), version);
+		return !results.isEmpty();
+	}
+
+	@Override
+	public HashMap<String, String> getResults() {
+		return results;
+	}
+
+	@Override
+	public Collection<String> getMetricKeys() {
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	/**
+	 * The keys of the version metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
+	public enum MetricKeysImpl {
+		VERSION("version"); 
+
+		private String value;
+
+		private MetricKeysImpl(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return value;
+		}
+	}
+}
