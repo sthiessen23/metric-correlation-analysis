@@ -74,7 +74,7 @@ public class Execution {
 	private static final Level LOG_LEVEL = Level.ALL;
 
 	/**
-	 * Names of projects which should be excluded (maybe overriden by INCLUDES)
+	 * Names of projects which should be excluded (maybe overridden by INCLUDES)
 	 */
 	private static final String[] EXCLUDES = new String[] {
 			// Timeout 30 Min

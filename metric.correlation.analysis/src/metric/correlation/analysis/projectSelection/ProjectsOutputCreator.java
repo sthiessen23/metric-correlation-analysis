@@ -25,7 +25,10 @@ public class ProjectsOutputCreator {
 
 	private static final Logger LOGGER = Logger.getLogger(ProjectsOutputCreator.class);
 
-	public static String projectsDataOutputFilePath = "Resources/projectsReleaseData.json";
+	/**
+	 * The location of the JSON file containing the project information
+	 */
+	public static String projectsDataOutputFilePath = "input/projectsReleaseData-normalized.json";
 
 	/**
 	 * @author Antoniya Ivanova - prepares the JSON output for the repository
