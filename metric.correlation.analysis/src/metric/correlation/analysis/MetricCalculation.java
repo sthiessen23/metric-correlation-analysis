@@ -337,6 +337,9 @@ public class MetricCalculation {
 		// results
 		if (success) {
 			for (Entry<String, String> entry : results.entrySet()) {
+				if(!allMetricResults.containsKey(entry.getKey())) {
+					allMetricResults.put(entry.getKey(), new LinkedList<>());
+				}
 				allMetricResults.get(entry.getKey()).add(entry.getValue());
 			}
 		} else {
