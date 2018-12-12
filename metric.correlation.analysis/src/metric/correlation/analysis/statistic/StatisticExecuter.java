@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -55,7 +56,8 @@ public class StatisticExecuter {
 	 * @throws IOException
 	 */
 	public void calculateStatistics(final LinkedHashMap<String, List<Double>> map, File out) throws IOException {
-		final ArrayList<String> metricNames = new ArrayList<>(map.keySet());
+		final Set<String> keySet = map.keySet();
+		final ArrayList<String> metricNames = new ArrayList<>(keySet);
 		
 		RealMatrix matrix = createMatrix(map);
 		
@@ -64,7 +66,18 @@ public class StatisticExecuter {
 
 		RealMatrix spearmanMatrix = new SpearmansCorrelation().computeCorrelationMatrix(matrix);
 		CorreltationMatrixPrinter.storeMatrix(spearmanMatrix, metricNames, new File(out, "SpearmanCorrelationMatrix.csv"));
-
+		
+		
+		for(int i = 0; i < keySet.size(); i++) {
+			String xMetric = metricNames.get(i);
+			List<Double> xValues = map.get(xMetric);
+			for(int j = i + 1; j < keySet.size() ; j++) {
+				String yMetric = metricNames.get(j);
+				List<Double> yValues = map.get(yMetric);
+				//TODO: print charts for RQ2 here 
+			}
+		}
+		
 		new NormalDistribution().testAndStoreNormalDistribution(map, new File(out, "shapiroWilkTestAll.csv"));
 	}
 

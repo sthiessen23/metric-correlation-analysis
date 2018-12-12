@@ -46,7 +46,7 @@ public class Execution {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 100;
+	private static final int MAX_NUMBER_OF_PROJECTS = 2;
 
 	/**
 	 * From which project should be started
@@ -56,7 +56,7 @@ public class Execution {
 	/**
 	 * The maximum amount of versions per projects which should be considered
 	 */
-	private static final int MAX_VERSIONS_OF_PROJECTS = 1;
+	private static final int MAX_VERSIONS_OF_PROJECTS = 2;
 
 	/**
 	 * If all data should be cleaned after an execution
@@ -81,7 +81,8 @@ public class Execution {
 			"cSploit-android", "alibaba-atlas", "orhanobut-logger", "orhanobut-hawk", "google-agera", "timusus-Shuttle", "requery-requery", "kickstarter-android-oss", "spring-projects-spring-boot", "apache-groovy", "spring-projects-spring-framework", "rey5137-material", 
 			"libgdx-libgdx"
 			// TGG Local completeness
-			, "jjoe64-GraphView", "junit-team-junit5", "spring-projects-spring-security", "grpc-grpc-java", "google-binnavi", "apache-kafka", "facebook-litho", "greenrobot-EventBus"
+//			, "jjoe64-GraphView"
+			, "junit-team-junit5", "spring-projects-spring-security", "grpc-grpc-java", "google-binnavi", "apache-kafka", "facebook-litho", "greenrobot-EventBus"
 			// CVE values
 //			, "dm77-barcodescanner"
 			, "facebook-fresco"

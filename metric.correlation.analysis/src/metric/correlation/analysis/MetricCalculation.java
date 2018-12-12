@@ -119,7 +119,7 @@ public class MetricCalculation {
 		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
 
 		this.allMetricResults = new LinkedHashMap<>();
-		
+
 		// Collect all metric keys
 		Set<String> metricKeys = new HashSet<String>();
 		for (IMetricCalculator calculator : calculators) {
@@ -199,7 +199,7 @@ public class MetricCalculation {
 				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
 				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
-				//TODO: If no success try next version
+				// TODO: If no success try next version
 			}
 		}
 
@@ -313,6 +313,19 @@ public class MetricCalculation {
 			}
 		}
 
+		// TODO: Support general calculators which work on other metrics
+		try {
+			results.put("VulnerabilitiesPerKLoc", Double.toString(
+				Double.parseDouble(results.get(CVEMetrics.MetricKeysImpl.NUMBER_OF_VULNERABILITIES.toString()))
+						/ Double.parseDouble(results.get(SourceMeterMetrics.MetricKeysImpl.LLOC.toString())) * 1000));
+		}
+		catch(NullPointerException | NumberFormatException e) {
+			// The calculation shouldn't fail
+			success = false;
+			errors.add("VulnerabilitiesPerKLoc");
+			LOGGER.log(Level.ERROR, "A detection failed with an Exception: VulnerabilitiesPerKLoc", e);
+		}
+			
 		// Store all results in a csv file
 		if (!storage.writeCSV(productName, results)) {
 			LOGGER.log(Level.ERROR, "Writing results for \"" + productName + "\" failed!");
@@ -386,11 +399,19 @@ public class MetricCalculation {
 	 */
 	public boolean performStatistics() {
 		LinkedHashMap<String, List<Double>> newestVersionOnly = new LinkedHashMap<>();
-		for(Entry<String, List<String>> enty : allMetricResults.entrySet()) {
-			//TODO: Only add newest version from metricResults of a project to the newestVersionOnly Map	
+		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
+			// TODO: Print charts here for RQ4
+			
+			// TODO: Only add newest version from metricResults of a project to the newestVersionOnly Map
+			// TODO: check if newest version has only valid values and select older version if not
 		}
 		try {
-			new StatisticExecuter().calculateStatistics(newestVersionOnly, outputFolder);
+			if(newestVersionOnly.size() > 1) {
+				new StatisticExecuter().calculateStatistics(newestVersionOnly, outputFolder);
+			}
+			else {
+				LOGGER.log(Level.WARN, "Skipped calculation of correlation matrix");
+			}
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			return false;

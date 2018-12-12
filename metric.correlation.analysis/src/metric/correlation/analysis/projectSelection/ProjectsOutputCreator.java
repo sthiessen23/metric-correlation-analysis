@@ -35,8 +35,8 @@ public class ProjectsOutputCreator {
 	/**
 	 * The location of the JSON file containing the project information
 	 */
-	public static String projectsDataOutputFilePath = "Resources/projectsReleaseData.json";
-	public static String normalizedProjectsDataOutputFilePath = "Resources/projectsReleaseData-normalized.json";
+	public static String projectsDataOutputFilePath = "input/projectsReleaseData.json";
+	public static String normalizedProjectsDataOutputFilePath = "input/projectsReleaseData-normalized.json";
 
 	/**
 	 * @author Antoniya Ivanova - prepares the JSON output for the repository
