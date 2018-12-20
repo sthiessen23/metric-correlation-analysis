@@ -57,6 +57,8 @@ public class CVEMetrics implements IMetricCalculator {
 	public enum MetricKeysImpl {
 		AVERAGE_CVSS3("AverageCVSS3"), 
 		AVERAGE_CVSS2("AverageCVSS2"), 
+		MAX_CVSS2("AverageCVSS2"),
+		MAX_CVSS3("AverageCVSS3"),
 		NUMBER_OF_VULNERABILITIES("NumberOfVulnerabilities");
 
 		private String value;
