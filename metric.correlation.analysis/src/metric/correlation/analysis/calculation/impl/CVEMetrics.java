@@ -3,7 +3,10 @@ package metric.correlation.analysis.calculation.impl;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
@@ -32,7 +35,8 @@ public class CVEMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
+			final Map<String, String> map) {
 		VulnerabilityDataQueryHandler VDQH = new VulnerabilityDataQueryHandler();
 		results = VDQH.getMetrics(VDQH.getVulnerabilities(productName, vendorName, version, "TWO"));
 		return !results.isEmpty();
@@ -46,6 +50,11 @@ public class CVEMetrics implements IMetricCalculator {
 	@Override
 	public Collection<String> getMetricKeys() {
 		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	@Override
+	public Set<Class<? extends IMetricCalculator>> getDependencies() {
+		return Collections.emptySet();
 	}
 
 	/**

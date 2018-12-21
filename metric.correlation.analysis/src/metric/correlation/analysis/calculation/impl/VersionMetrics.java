@@ -2,7 +2,10 @@ package metric.correlation.analysis.calculation.impl;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.IJavaProject;
@@ -19,7 +22,8 @@ public class VersionMetrics implements IMetricCalculator {
 	private HashMap<String, String> results = new HashMap<>();
 
 	@Override
-	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
+			final Map<String, String> map) {
 		results.put(MetricKeysImpl.VERSION.toString(), version);
 		return !results.isEmpty();
 	}
@@ -32,6 +36,11 @@ public class VersionMetrics implements IMetricCalculator {
 	@Override
 	public Collection<String> getMetricKeys() {
 		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	@Override
+	public Set<Class<? extends IMetricCalculator>> getDependencies() {
+		return Collections.emptySet();
 	}
 
 	/**

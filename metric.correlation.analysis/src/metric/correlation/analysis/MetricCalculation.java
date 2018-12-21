@@ -5,9 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.FileAppender;
@@ -38,6 +40,7 @@ import metric.correlation.analysis.calculation.impl.CVEMetrics;
 import metric.correlation.analysis.calculation.impl.HulkMetrics;
 import metric.correlation.analysis.calculation.impl.SourceMeterMetrics;
 import metric.correlation.analysis.calculation.impl.VersionMetrics;
+import metric.correlation.analysis.calculation.impl.VulnerabilitiesPerKLOCMetrics;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
 import metric.correlation.analysis.io.FileUtils;
 import metric.correlation.analysis.io.GitCloneException;
@@ -68,8 +71,13 @@ public class MetricCalculation {
 	/**
 	 * The classes of the calculators which should be executed
 	 */
-	private static final Collection<Class<? extends IMetricCalculator>> METRIC_CALCULATORS = Arrays
-			.asList(HulkMetrics.class, SourceMeterMetrics.class, AndrolyzeMetrics.class, CVEMetrics.class);
+	private static final Collection<Class<? extends IMetricCalculator>> METRIC_CALCULATORS = Arrays.asList(
+			HulkMetrics.class, 
+			SourceMeterMetrics.class, 
+			VulnerabilitiesPerKLOCMetrics.class, 
+			AndrolyzeMetrics.class, 
+			CVEMetrics.class, 
+			VersionMetrics.class);
 
 	// END
 	// Don't edit below here
@@ -79,7 +87,7 @@ public class MetricCalculation {
 	 */
 	private static final Logger LOGGER = LogManager.getLogger(MetricCalculation.class);
 
-	private final Collection<IMetricCalculator> calculators;
+	private final SortedSet<IMetricCalculator> calculators;
 
 	private final String timestamp;
 	private Set<String> errors;
@@ -104,8 +112,8 @@ public class MetricCalculation {
 	 */
 	public MetricCalculation() throws IOException {
 		// Initialize the metric calculators
-		this.calculators = new ArrayList<IMetricCalculator>(METRIC_CALCULATORS.size() + 1);
-		this.calculators.add(new VersionMetrics());
+		FileAppender initLogger = addLogAppender("initialization");
+		this.calculators = new TreeSet<IMetricCalculator>();
 		for (Class<? extends IMetricCalculator> clazz : METRIC_CALCULATORS) {
 			try {
 				calculators.add(clazz.getConstructor().newInstance());
@@ -135,6 +143,7 @@ public class MetricCalculation {
 		storage = new Storage(new File(outputFolder, "results.csv"), metricKeys);
 		errorFile = new File(outputFolder, "errors.csv");
 		Files.write("vendor,product,version,errors\n".getBytes(), errorFile);
+		dropLogAppender(initLogger);
 	}
 
 	/**
@@ -204,9 +213,7 @@ public class MetricCalculation {
 		}
 
 		// Drop the project specific file logger
-		if (fileAppender != null) {
-			Logger.getRootLogger().removeAppender(fileAppender);
-		}
+		dropLogAppender(fileAppender);
 		return success;
 	}
 
@@ -218,10 +225,20 @@ public class MetricCalculation {
 	 * @return The project specific logger
 	 */
 	private FileAppender addLogAppender(ProjectConfiguration config) {
+		return addLogAppender(config.getVendorName() + '-' + config.getProductName());
+	}
+
+	/**
+	 * Creates a log appender which appends to a file with the given name
+	 * 
+	 * @param name The file name
+	 * @return The logger
+	 */
+	private FileAppender addLogAppender(String name) {
 		FileAppender fileAppender = null;
 		try {
 			fileAppender = new FileAppender(new PatternLayout("%d %-5p [%c{1}] %m%n"),
-					"logs/" + timestamp + '/' + config.getVendorName() + '-' + config.getProductName() + ".txt");
+					"logs/" + timestamp + '/' + name + ".txt");
 			fileAppender.setThreshold(Level.ALL);
 			fileAppender.activateOptions();
 			Logger.getRootLogger().addAppender(fileAppender);
@@ -229,6 +246,17 @@ public class MetricCalculation {
 			LOGGER.log(Level.WARN, "Adding file appender failed!");
 		}
 		return fileAppender;
+	}
+
+	/**
+	 * Drops the log appender
+	 * 
+	 * @param fileAppender the logger
+	 */
+	private void dropLogAppender(FileAppender fileAppender) {
+		if (fileAppender != null) {
+			Logger.getRootLogger().removeAppender(fileAppender);
+		}
 	}
 
 	/**
@@ -268,7 +296,7 @@ public class MetricCalculation {
 		GradleImport gradleImport;
 
 		try {
-			gradleImport = new GradleImport(src);
+			gradleImport = new GradleImport(src, true);
 		} catch (NoGradleRootFolderException | IOException e) {
 			errors.add("new GradleImport()");
 			return false;
@@ -277,7 +305,7 @@ public class MetricCalculation {
 		IJavaProject project;
 
 		try {
-			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
+			project = gradleImport.importGradleProject(new NullProgressMonitor());
 		} catch (NoGradleRootFolderException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
@@ -299,7 +327,8 @@ public class MetricCalculation {
 		for (IMetricCalculator calc : calculators) {
 			LOGGER.log(Level.INFO, "Execute metric calculation: " + calc.getClass().getSimpleName());
 			try {
-				if (calc.calculateMetric(project, productName, vendorName, version)) {
+				if (calc.calculateMetric(project, productName, vendorName, version,
+						Collections.unmodifiableMap(results))) {
 					results.putAll(calc.getResults());
 					success &= plausabilityCheck(calc);
 				} else {
@@ -313,19 +342,6 @@ public class MetricCalculation {
 			}
 		}
 
-		// TODO: Support general calculators which work on other metrics
-		try {
-			results.put("VulnerabilitiesPerKLoc", Double.toString(
-				Double.parseDouble(results.get(CVEMetrics.MetricKeysImpl.NUMBER_OF_VULNERABILITIES.toString()))
-						/ Double.parseDouble(results.get(SourceMeterMetrics.MetricKeysImpl.LLOC.toString())) * 1000));
-		}
-		catch(NullPointerException | NumberFormatException e) {
-			// The calculation shouldn't fail
-			success = false;
-			errors.add("VulnerabilitiesPerKLoc");
-			LOGGER.log(Level.ERROR, "A detection failed with an Exception: VulnerabilitiesPerKLoc", e);
-		}
-			
 		// Store all results in a csv file
 		if (!storage.writeCSV(productName, results)) {
 			LOGGER.log(Level.ERROR, "Writing results for \"" + productName + "\" failed!");
@@ -337,7 +353,7 @@ public class MetricCalculation {
 		// results
 		if (success) {
 			for (Entry<String, String> entry : results.entrySet()) {
-				if(!allMetricResults.containsKey(entry.getKey())) {
+				if (!allMetricResults.containsKey(entry.getKey())) {
 					allMetricResults.put(entry.getKey(), new LinkedList<>());
 				}
 				allMetricResults.get(entry.getKey()).add(entry.getValue());
@@ -404,15 +420,16 @@ public class MetricCalculation {
 		LinkedHashMap<String, List<Double>> newestVersionOnly = new LinkedHashMap<>();
 		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
 			// TODO: Print charts here for RQ4
-			
-			// TODO: Only add newest version from metricResults of a project to the newestVersionOnly Map
-			// TODO: check if newest version has only valid values and select older version if not
+
+			// TODO: Only add newest version from metricResults of a project to the
+			// newestVersionOnly Map
+			// TODO: check if newest version has only valid values and select older version
+			// if not
 		}
 		try {
-			if(newestVersionOnly.size() > 1) {
+			if (newestVersionOnly.size() > 1) {
 				new StatisticExecuter().calculateStatistics(newestVersionOnly, outputFolder);
-			}
-			else {
+			} else {
 				LOGGER.log(Level.WARN, "Skipped calculation of correlation matrix");
 			}
 		} catch (IOException e) {

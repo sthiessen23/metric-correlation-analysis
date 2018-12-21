@@ -8,8 +8,11 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
@@ -105,17 +108,18 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
-		File compiled_apk;
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
+			final Map<String, String> map) {
+		File compiledApk;
 		try {
 			IProject iproject = project.getProject();
-			compiled_apk = GradleBuild.buildApk(iproject.getLocation().toFile());
+			compiledApk = GradleBuild.buildApk(iproject.getLocation().toFile());
 		} catch (UnsupportedOperationSystemException e1) {
 			e1.printStackTrace();
 			return false;
 		}
 		String andro_cmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
-				+ "--apks " + compiled_apk + " -pm  non-parallel";
+				+ "--apks " + compiledApk + " -pm  non-parallel";
 
 		Runtime run = Runtime.getRuntime();
 		try {
@@ -125,7 +129,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
 				break;
 			case LINUX:
-				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiled_apk;
+				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiledApk;
 				process = run.exec(andro_cmd, null, androlyzeDir);
 				break;
 			default:
@@ -204,6 +208,11 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 	@Override
 	public Collection<String> getMetricKeys() {
 		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	@Override
+	public Set<Class<? extends IMetricCalculator>> getDependencies() {
+		return Collections.emptySet();
 	}
 
 	/**

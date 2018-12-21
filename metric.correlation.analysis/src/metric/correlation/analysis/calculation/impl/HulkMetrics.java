@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,7 +48,13 @@ public class HulkMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
+	public Set<Class<? extends IMetricCalculator>> getDependencies() {
+		return Collections.emptySet();
+	}
+
+	@Override
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
+			final Map<String, String> map) {
 		try {
 			cleanResults();
 		} catch (IOException e) {
