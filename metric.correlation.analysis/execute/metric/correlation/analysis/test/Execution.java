@@ -46,17 +46,17 @@ public class Execution {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 2;
+	private static final int MAX_NUMBER_OF_PROJECTS = 4;
 
 	/**
 	 * From which project should be started
 	 */
-	private static final int OFFSET_FOR_PROJECTS = 0;
+	private static final int OFFSET_FOR_PROJECTS = 2;
 
 	/**
 	 * The maximum amount of versions per projects which should be considered
 	 */
-	private static final int MAX_VERSIONS_OF_PROJECTS = 2;
+	private static final int MAX_VERSIONS_OF_PROJECTS = 10;
 
 	/**
 	 * If all data should be cleaned after an execution
@@ -131,7 +131,7 @@ public class Execution {
 	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
 		Collection<String> excludedProjectNames = getExcludes();
 
-		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.projectsDataOutputFilePath);
+		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.normalizedProjectsDataOutputFilePath);
 
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
 		if (VALIDATE_JSON && !checkDocument(projectsJsonData)) {

@@ -24,7 +24,7 @@ public class VersionMetrics implements IMetricCalculator {
 	@Override
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
 			final Map<String, String> map) {
-		results.put(MetricKeysImpl.VERSION.toString(), version);
+		results.put(MetricKeysImpl.VERSION.toString(), productName + " - " + version);
 		return !results.isEmpty();
 	}
 
