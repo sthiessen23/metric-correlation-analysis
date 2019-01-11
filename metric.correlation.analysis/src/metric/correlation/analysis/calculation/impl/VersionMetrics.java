@@ -24,7 +24,8 @@ public class VersionMetrics implements IMetricCalculator {
 	@Override
 	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
 			final Map<String, String> map) {
-		results.put(MetricKeysImpl.VERSION.toString(), productName + " - " + version);
+		results.put(MetricKeysImpl.VERSION.toString(), version);
+		results.put(MetricKeysImpl.PRODUCT.toString(), productName);
 		return !results.isEmpty();
 	}
 
@@ -35,7 +36,7 @@ public class VersionMetrics implements IMetricCalculator {
 
 	@Override
 	public Collection<String> getMetricKeys() {
-		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+		return Arrays.asList(MetricKeysImpl.values()).parallelStream().map(Object::toString).collect(Collectors.toList());
 	}
 
 	@Override
@@ -50,7 +51,8 @@ public class VersionMetrics implements IMetricCalculator {
 	 *
 	 */
 	public enum MetricKeysImpl {
-		VERSION("version"); 
+		VERSION("version"), 
+		PRODUCT("product"); 
 
 		private String value;
 

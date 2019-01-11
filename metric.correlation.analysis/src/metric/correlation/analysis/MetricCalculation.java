@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +15,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
@@ -27,6 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
+import org.elasticsearch.Version;
 import org.gravity.eclipse.importer.gradle.GradleImport;
 import org.gravity.eclipse.importer.gradle.GradleImportException;
 import org.gravity.eclipse.importer.gradle.NoGradleRootFolderException;
@@ -46,6 +49,7 @@ import metric.correlation.analysis.io.FileUtils;
 import metric.correlation.analysis.io.GitCloneException;
 import metric.correlation.analysis.io.GitTools;
 import metric.correlation.analysis.io.Storage;
+import metric.correlation.analysis.io.VersionHelper;
 import metric.correlation.analysis.statistic.StatisticExecuter;
 
 /**
@@ -72,12 +76,11 @@ public class MetricCalculation {
 	 * The classes of the calculators which should be executed
 	 */
 	private static final Collection<Class<? extends IMetricCalculator>> METRIC_CALCULATORS = Arrays.asList(
-			HulkMetrics.class, 
-			SourceMeterMetrics.class, 
-			VulnerabilitiesPerKLOCMetrics.class, 
-			AndrolyzeMetrics.class, 
-			CVEMetrics.class, 
-			VersionMetrics.class);
+			HulkMetrics.class,
+			SourceMeterMetrics.class,
+			VulnerabilitiesPerKLOCMetrics.class,
+			AndrolyzeMetrics.class,
+			CVEMetrics.class, VersionMetrics.class);
 
 	// END
 	// Don't edit below here
@@ -108,7 +111,8 @@ public class MetricCalculation {
 	/**
 	 * Initialized the list of calculators
 	 * 
-	 * @throws IOException If the results file cannot be initialized
+	 * @throws IOException
+	 *             If the results file cannot be initialized
 	 */
 	public MetricCalculation() throws IOException {
 		// Initialize the metric calculators
@@ -150,7 +154,8 @@ public class MetricCalculation {
 	 * The main method for calculating metrics for multiple versions of multiple
 	 * projects. This method has to be called from a running eclipse workspace!
 	 * 
-	 * @param configurations The project configurations which should be considered
+	 * @param configurations
+	 *            The project configurations which should be considered
 	 * @throws UnsupportedOperationSystemException
 	 */
 	public boolean calculateAll(Collection<ProjectConfiguration> configurations)
@@ -167,7 +172,8 @@ public class MetricCalculation {
 	 * The main method for calculating metrics for multiple versions of a project.
 	 * This method has to be called from a running eclipse workspace!
 	 * 
-	 * @param configurations The project configuration which should be considered
+	 * @param configurations
+	 *            The project configuration which should be considered
 	 */
 	public boolean calculate(ProjectConfiguration config) {
 		// Create a project specific file logger
@@ -208,7 +214,6 @@ public class MetricCalculation {
 				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
 				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
-				// TODO: If no success try next version
 			}
 		}
 
@@ -221,7 +226,8 @@ public class MetricCalculation {
 	 * Creates a new project specific logger with an new output file for a project
 	 * configuration
 	 * 
-	 * @param config The project configuration
+	 * @param config
+	 *            The project configuration
 	 * @return The project specific logger
 	 */
 	private FileAppender addLogAppender(ProjectConfiguration config) {
@@ -231,7 +237,8 @@ public class MetricCalculation {
 	/**
 	 * Creates a log appender which appends to a file with the given name
 	 * 
-	 * @param name The file name
+	 * @param name
+	 *            The file name
 	 * @return The logger
 	 */
 	private FileAppender addLogAppender(String name) {
@@ -251,7 +258,8 @@ public class MetricCalculation {
 	/**
 	 * Drops the log appender
 	 * 
-	 * @param fileAppender the logger
+	 * @param fileAppender
+	 *            the logger
 	 */
 	private void dropLogAppender(FileAppender fileAppender) {
 		if (fileAppender != null) {
@@ -262,7 +270,8 @@ public class MetricCalculation {
 	/**
 	 * Clones the repository
 	 * 
-	 * @param config The project configuration
+	 * @param config
+	 *            The project configuration
 	 * @return true, iff the repository has been cloned successfully
 	 */
 	private boolean clone(ProjectConfiguration config) {
@@ -284,10 +293,14 @@ public class MetricCalculation {
 	/**
 	 * Calculate the correlation metrics
 	 *
-	 * @param productName The name of the software project
-	 * @param vendorName  The name of the projects vendor
-	 * @param version     The version which should be inspected
-	 * @param src         The location of the source code
+	 * @param productName
+	 *            The name of the software project
+	 * @param vendorName
+	 *            The name of the projects vendor
+	 * @param version
+	 *            The version which should be inspected
+	 * @param src
+	 *            The location of the source code
 	 * @return true if everything went okay, otherwise false
 	 */
 	private boolean calculateMetrics(String productName, String vendorName, String version, File src) {
@@ -296,7 +309,7 @@ public class MetricCalculation {
 		GradleImport gradleImport;
 
 		try {
-			gradleImport = new GradleImport(src, true);
+			gradleImport = new GradleImport(src);
 		} catch (NoGradleRootFolderException | IOException e) {
 			errors.add("new GradleImport()");
 			return false;
@@ -305,7 +318,7 @@ public class MetricCalculation {
 		IJavaProject project;
 
 		try {
-			project = gradleImport.importGradleProject(new NullProgressMonitor());
+			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
 		} catch (NoGradleRootFolderException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
@@ -379,7 +392,8 @@ public class MetricCalculation {
 	/**
 	 * Checks if the results of the metric calculator are plausible
 	 * 
-	 * @param calc The executed metric calculator
+	 * @param calc
+	 *            The executed metric calculator
 	 * @return true iff the results are plausible
 	 */
 	private boolean plausabilityCheck(IMetricCalculator calc) {
@@ -418,14 +432,95 @@ public class MetricCalculation {
 	 */
 	public boolean performStatistics() {
 		LinkedHashMap<String, List<Double>> newestVersionOnly = new LinkedHashMap<>();
-		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
-			// TODO: Print charts here for RQ4
+		Set<Integer> badIndexes = new HashSet<Integer>();
 
-			// TODO: Only add newest version from metricResults of a project to the
-			// newestVersionOnly Map
-			// TODO: check if newest version has only valid values and select older version
-			// if not
+		// Get all invalid indexes
+		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
+			String key = entry.getKey();
+
+			if (key == VersionMetrics.MetricKeysImpl.PRODUCT.toString()
+					|| key == VersionMetrics.MetricKeysImpl.VERSION
+							.toString()
+					|| key == "AverageCVSS3" || key == "MaxCVSS3") {
+				continue;
+			}
+
+			int index = 0;
+			for (String value : entry.getValue()) {
+				// merge with plausibility check
+				if ((value == null || value == "" || Double.parseDouble(value) < 0)) {
+					badIndexes.add(Integer.valueOf(index));
+				}
+				index++;
+			}
 		}
+
+		// Sort the indexes descending
+		List<Integer> badIndexesList = new ArrayList<Integer>();
+
+		for (Integer badIndex : badIndexes) {
+			badIndexesList.add(badIndex);
+		}
+
+		Collections.sort(badIndexesList);
+		Collections.reverse(badIndexesList);
+
+		// Remove all invalid entries
+		/*
+		 * if(anyValue for index is invalid) { continue; }
+		 * 
+		 * baue eine neue liste mit nur validen werten
+		 */
+		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
+			List<String> values = entry.getValue();
+			for (Integer badIndex : badIndexesList) {
+				values.remove(badIndex.intValue());
+			}
+		}
+
+		// Find indexes of all newest versions
+		List<String> productNames = allMetricResults
+				.get(metric.correlation.analysis.calculation.impl.VersionMetrics.MetricKeysImpl.PRODUCT.toString());
+		List<String> versions = allMetricResults
+				.get(metric.correlation.analysis.calculation.impl.VersionMetrics.MetricKeysImpl.VERSION.toString());
+
+		Map<String, Integer> productToNewestIndex = new HashMap<>();
+		Map<String, String> productToNewestVersion = new HashMap<>();
+
+		for (int index = 0; index < versions.size(); index++) {
+
+			String product = productNames.get(index);
+			String newVersion = versions.get(index);
+			if (productToNewestVersion.containsKey(product)) {
+
+				String prevVersion = productToNewestVersion.get(product);
+
+				if (VersionHelper.compare(prevVersion, newVersion) == -1) {
+					productToNewestVersion.put(product, newVersion);
+					productToNewestIndex.put(product, index);
+				}
+
+			} else {
+				productToNewestVersion.put(product, newVersion);
+				productToNewestIndex.put(product, index);
+			}
+		}
+
+		// Remove the version key completely
+		// auch hier die andere liste nutzen
+		allMetricResults.remove(VersionMetrics.MetricKeysImpl.PRODUCT.toString());
+		allMetricResults.remove(VersionMetrics.MetricKeysImpl.VERSION.toString());
+		
+
+		// Add them to newestVersionOnly
+		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
+			List<Double> newestMetrics = new LinkedList<Double>();
+			for (Integer newVersionIndex : productToNewestIndex.values()) {
+				newestMetrics.add(Double.valueOf(entry.getValue().get(newVersionIndex.intValue())));
+			}
+			newestVersionOnly.put(entry.getKey(), newestMetrics);
+		}
+
 		try {
 			if (newestVersionOnly.size() > 1) {
 				new StatisticExecuter().calculateStatistics(newestVersionOnly, outputFolder);
