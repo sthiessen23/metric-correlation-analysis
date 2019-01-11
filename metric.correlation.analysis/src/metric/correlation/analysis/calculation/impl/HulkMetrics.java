@@ -61,7 +61,7 @@ public class HulkMetrics implements IMetricCalculator {
 			LOGGER.log(Level.WARN, "Cleaning previous results failed: "+e.getMessage(), e);
 		}
 		try {
-			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.Blob, AntiPatternNames.IGAM,
+			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.BLOB, AntiPatternNames.IGAM,
 					AntiPatternNames.IGAT);
 		} catch (DetectionFailedException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);

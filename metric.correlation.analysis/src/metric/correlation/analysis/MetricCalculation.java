@@ -111,6 +111,10 @@ public class MetricCalculation {
 	 * @throws IOException If the results file cannot be initialized
 	 */
 	public MetricCalculation() throws IOException {
+
+		// Get the time stamp of this run
+		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
+		
 		// Initialize the metric calculators
 		FileAppender initLogger = addLogAppender("initialization");
 		this.calculators = new TreeSet<IMetricCalculator>();
@@ -122,9 +126,6 @@ public class MetricCalculation {
 				LOGGER.log(Level.WARN, e.getMessage(), e);
 			}
 		}
-
-		// Get the time stamp of this run
-		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
 
 		this.allMetricResults = new LinkedHashMap<>();
 
