@@ -26,6 +26,7 @@ public class VersionMetrics implements IMetricCalculator {
 			final Map<String, String> map) {
 		results.put(MetricKeysImpl.VERSION.toString(), version);
 		results.put(MetricKeysImpl.PRODUCT.toString(), productName);
+		results.put(MetricKeysImpl.VENDOR.toString(), vendorName);
 		return !results.isEmpty();
 	}
 
@@ -52,7 +53,8 @@ public class VersionMetrics implements IMetricCalculator {
 	 */
 	public enum MetricKeysImpl {
 		VERSION("version"), 
-		PRODUCT("product"); 
+		PRODUCT("product"), 
+		VENDOR("vendor"); 
 
 		private String value;
 

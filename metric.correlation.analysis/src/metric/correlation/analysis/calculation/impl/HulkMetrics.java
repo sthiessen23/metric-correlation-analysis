@@ -24,8 +24,11 @@ import org.gravity.hulk.HulkAPI.AntiPatternNames;
 import org.gravity.hulk.antipatterngraph.HAnnotation;
 import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
+import org.gravity.hulk.antipatterngraph.metrics.HDepthOfInheritanceMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGAMMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
+import org.gravity.hulk.antipatterngraph.metrics.HLCOM5Metric;
+import org.gravity.hulk.antipatterngraph.metrics.HTotalVisibilityMetric;
 import org.gravity.hulk.exceptions.DetectionFailedException;
 import org.gravity.tgg.modisco.MoDiscoTGGActivator;
 import org.gravity.typegraph.basic.TypeGraph;
@@ -58,11 +61,12 @@ public class HulkMetrics implements IMetricCalculator {
 		try {
 			cleanResults();
 		} catch (IOException e) {
-			LOGGER.log(Level.WARN, "Cleaning previous results failed: "+e.getMessage(), e);
+			LOGGER.log(Level.WARN, "Cleaning previous results failed: " + e.getMessage(), e);
 		}
 		try {
 			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.BLOB, AntiPatternNames.IGAM,
-					AntiPatternNames.IGAT);
+					AntiPatternNames.IGAT, AntiPatternNames.DIT, AntiPatternNames.LCOM5,
+					AntiPatternNames.TOTAL_METHOD_VISIBILITY);
 		} catch (DetectionFailedException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
@@ -72,16 +76,16 @@ public class HulkMetrics implements IMetricCalculator {
 	}
 
 	private void cleanResults() throws IOException {
-		if(results == null) {
+		if (results == null) {
 			return;
 		}
 		Set<Resource> resources = new HashSet<>();
-		for(HAnnotation metric : results) {
+		for (HAnnotation metric : results) {
 			resources.add(metric.eResource());
 		}
 		results.clear();
 		results = null;
-		for(Resource resource : resources) {
+		for (Resource resource : resources) {
 			resource.delete(Collections.EMPTY_MAP);
 		}
 		resources.clear();
@@ -93,6 +97,10 @@ public class HulkMetrics implements IMetricCalculator {
 		LinkedHashMap<String, String> metrics = new LinkedHashMap<>();
 		double igam = 0.0;
 		double igat = 0.0;
+		double vis = 0.0;
+		double lcom = 0.0;
+		double dit = 0.0;
+
 
 		if (!ok) {
 			throw new IllegalStateException("The metrics haven't been calculated successfully!");
@@ -116,12 +124,24 @@ public class HulkMetrics implements IMetricCalculator {
 					igat = ((HMetric) annoatation).getValue();
 					LOGGER.log(Level.INFO, "IGAT = " + igat);
 				}
+				else if (annoatation instanceof HTotalVisibilityMetric) {
+					vis = ((HMetric) annoatation).getValue();
+				}
+				else if (annoatation instanceof HLCOM5Metric) {
+					lcom = ((HMetric) annoatation).getValue();
+				}
+				else if (annoatation instanceof HDepthOfInheritanceMetric) {
+					dit = ((HMetric) annoatation).getValue();
+				}
 			}
 
 		}
 		metrics.put(BLOB.toString(), Double.toString(blob));
 		metrics.put(IGAM.toString(), roundDouble(igam));
 		metrics.put(IGAT.toString(), roundDouble(igat));
+//		metrics.put(VISIBILITY.toString(), roundDouble(vis));
+//		metrics.put(DIT.toString(), roundDouble(dit));
+//		metrics.put(LCOM5.toString(), roundDouble(lcom));
 
 		return metrics;
 	}
@@ -146,7 +166,9 @@ public class HulkMetrics implements IMetricCalculator {
 	 *
 	 */
 	public enum MetricKeysImpl {
-		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT");
+		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT")
+//		, LCOM5("HulkLCOM5"), DIT("HulkDIT"), VISIBILITY("HulkVisibility")
+		;
 
 		private String value;
 

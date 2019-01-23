@@ -29,10 +29,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
-import org.elasticsearch.Version;
+import org.gravity.eclipse.importer.NoRootFolderException;
 import org.gravity.eclipse.importer.gradle.GradleImport;
-import org.gravity.eclipse.importer.gradle.GradleImportException;
-import org.gravity.eclipse.importer.gradle.NoGradleRootFolderException;
+import org.gravity.eclipse.importer.ImportException;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
 import com.google.common.io.Files;
@@ -310,8 +309,8 @@ public class MetricCalculation {
 		GradleImport gradleImport;
 
 		try {
-			gradleImport = new GradleImport(src);
-		} catch (NoGradleRootFolderException | IOException e) {
+			gradleImport = new GradleImport(src, true);
+		} catch (IOException | ImportException e) {
 			errors.add("new GradleImport()");
 			return false;
 		}
@@ -319,12 +318,12 @@ public class MetricCalculation {
 		IJavaProject project;
 
 		try {
-			project = gradleImport.importGradleProject(true, new NullProgressMonitor());
-		} catch (NoGradleRootFolderException e) {
+			project = gradleImport.importProject(new NullProgressMonitor());
+		} catch (NoRootFolderException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
-		} catch (GradleImportException e) {
+		} catch (ImportException e) {
 			errors.add(gradleImport.getClass().getSimpleName());
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			Thread.currentThread().interrupt();
@@ -441,6 +440,8 @@ public class MetricCalculation {
 
 			if (key == VersionMetrics.MetricKeysImpl.PRODUCT.toString()
 					|| key == VersionMetrics.MetricKeysImpl.VERSION
+							.toString()
+					|| key == VersionMetrics.MetricKeysImpl.VENDOR
 							.toString()
 					|| key == "AverageCVSS3" || key == "MaxCVSS3") {
 				continue;

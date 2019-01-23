@@ -46,17 +46,17 @@ public class Execution {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 4;
+	private static final int MAX_NUMBER_OF_PROJECTS = 100;
 
 	/**
 	 * From which project should be started
 	 */
-	private static final int OFFSET_FOR_PROJECTS = 2;
+	private static final int OFFSET_FOR_PROJECTS = 0;
 
 	/**
 	 * The maximum amount of versions per projects which should be considered
 	 */
-	private static final int MAX_VERSIONS_OF_PROJECTS = 10;
+	private static final int MAX_VERSIONS_OF_PROJECTS = Integer.MAX_VALUE;
 
 	/**
 	 * If all data should be cleaned after an execution
@@ -71,27 +71,31 @@ public class Execution {
 	/**
 	 * The level at which all loggers should log
 	 */
-	private static final Level LOG_LEVEL = Level.ALL;
+	private static final Level LOG_LEVEL = Level.ERROR;
 
 	/**
 	 * Names of projects which should be excluded (maybe overridden by INCLUDES)
 	 */
 	private static final String[] EXCLUDES = new String[] {
 			// Timeout 30 Min
-			"cSploit-android", "alibaba-atlas", "orhanobut-logger", "orhanobut-hawk", "google-agera", "timusus-Shuttle", "requery-requery", "kickstarter-android-oss", "spring-projects-spring-boot", "apache-groovy", "spring-projects-spring-framework", "rey5137-material", 
-			"libgdx-libgdx"
+			"cSploit-android" //TODO: endless loop in gradle import?
+			, "orhanobut-logger", "orhanobut-hawk", "google-agera", "timusus-Shuttle"
+			, "requery-requery", "kickstarter-android-oss", "spring-projects-spring-boot"
+			, "apache-groovy", "spring-projects-spring-framework", "rey5137-material"
+			, "libgdx-libgdx"
 			// TGG Local completeness
-//			, "jjoe64-GraphView"
-			, "junit-team-junit5", "spring-projects-spring-security", "grpc-grpc-java", "google-binnavi", "apache-kafka", "facebook-litho", "greenrobot-EventBus"
+			, "junit-team-junit5", "grpc-grpc-java" // TODO: MClass in TypeDeclStatement not translated
+			, "facebook-litho" //TODO: MethodInvocation
 			// CVE values
-//			, "dm77-barcodescanner"
-			, "facebook-fresco"
+			,"facebook-fresco"
 			// WONTFIX
 			, "powermock-powermock", "apache-beam", "elastic-elasticsearch", "ZieIony-Carbon", "apache-ignite", "asLody-VirtualApp"
 			// Duplicate files
 			, "facebook-buck"
 			// MoDisco Discovery
-			, "apereo-cas", "igniterealtime-Smack"
+			, "apereo-cas"
+			// gradle import
+//			, "igniterealtime-Smack" //TODO: check
 			}; 
 	
 	/**

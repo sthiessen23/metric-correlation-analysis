@@ -16,7 +16,6 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -29,7 +28,7 @@ import metric.correlation.analysis.calculation.impl.VersionMetrics;
 
 public class StatisticExecuter {
 
-	private static final String INPUT_SERIES = "Results-2019-01-11_16_04";
+	private static final String INPUT_SERIES = "Results-2019-01-19_17_59";
 	private static final File DATA_FILE = new File(new File("results", INPUT_SERIES), "results.csv");
 	
 	private static final Logger LOGGER = Logger.getLogger(StatisticExecuter.class);
@@ -108,8 +107,7 @@ public class StatisticExecuter {
 				JFreeChart chart = ChartFactory.createScatterPlot(
 				       (xMetric + " vs " + yMetric), 
 				       xMetric, yMetric, scatterPlotResult);
-				//TODO: print charts for RQ2 here 
-				BufferedImage chartImage = chart.createBufferedImage(300, 300);
+				BufferedImage chartImage = chart.createBufferedImage(600, 400);
 				ImageIO.write(chartImage, "png", new FileOutputStream(new File(out, xMetric + "vs" + yMetric + ".png")));
 			}
 		}
@@ -133,7 +131,7 @@ public class StatisticExecuter {
 		Set<Integer> skipIndex = new HashSet<>();
 		for (int i = 0; i < keys.length; i++) {
 			String value = keys[i];
-			if (VersionMetrics.MetricKeysImpl.PRODUCT.toString().equals(value) || VersionMetrics.MetricKeysImpl.VERSION.toString().equals(value)) {
+			if (VersionMetrics.MetricKeysImpl.VENDOR.toString().equals(value) || VersionMetrics.MetricKeysImpl.PRODUCT.toString().equals(value) || VersionMetrics.MetricKeysImpl.VERSION.toString().equals(value)) {
 				skipIndex.add(i);
 			} else {
 				metrics.put(value, new ArrayList<>(lines.size() -1));
