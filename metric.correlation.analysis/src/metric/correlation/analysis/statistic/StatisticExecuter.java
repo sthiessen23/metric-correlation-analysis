@@ -23,6 +23,7 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.junit.Test;
 
 import metric.correlation.analysis.calculation.impl.VersionMetrics;
 
@@ -116,7 +117,6 @@ public class StatisticExecuter {
 	}
 	
 	
-	
 	/**
 	 * Creates a map from a stored metric csv file
 	 * 
@@ -178,5 +178,114 @@ public class StatisticExecuter {
 			results[col++] = d;
 		}
 		return new Array2DRowRealMatrix(results).transpose();
+	}
+	
+	/*
+	 * Version statistics
+	 */
+	@Test
+	public void test() {
+		try {
+			for (ProductMetricData metric : getProductMetricData(new File("input/versions-results.csv")))
+			generateCSVLinesFrom(metric);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private ArrayList<ProductMetricData> getProductMetricData(File dataFile) throws IOException{
+		List<String> lines = Files.readAllLines(dataFile.toPath());
+		lines.remove(0);
+		
+		ArrayList<String> productNames = new ArrayList<String>();
+		ArrayList<String> vendors = new ArrayList<String>();
+
+		ArrayList<Double> locpcs = new ArrayList<Double>();
+		ArrayList<String> versions = new ArrayList<String>();
+		ArrayList<Double> igams = new ArrayList<Double>();
+		ArrayList<Double> ldcs = new ArrayList<Double>();
+		ArrayList<Double> wmcs = new ArrayList<Double>();
+		ArrayList<Double> dits = new ArrayList<Double>();
+		ArrayList<Double> lcom5s = new ArrayList<Double>();
+		ArrayList<Double> cbos = new ArrayList<Double>();
+		ArrayList<Double> igats = new ArrayList<Double>();
+		ArrayList<Double> blobAntiPatterns = new ArrayList<Double>();
+		ArrayList<Double> llocs = new ArrayList<Double>();
+		
+		for (String line : lines) {
+			String[] split = line.split(",");
+			locpcs.add(Double.valueOf(split[0]));
+			productNames.add(split[1]);
+			vendors.add(split[10]);
+			versions.add(split[5]);
+			igams.add(Double.valueOf(split[2]));
+			ldcs.add(Double.valueOf(split[3]));
+			wmcs.add(Double.valueOf(split[4]));
+			dits.add(Double.valueOf(split[6]));
+			lcom5s.add(Double.valueOf(split[7]));
+			cbos.add(Double.valueOf(split[8]));
+			igats.add(Double.valueOf(split[9]));
+			blobAntiPatterns.add(Double.valueOf(split[11]));
+			llocs.add(Double.valueOf(split[12]));
+		}
+		
+		ArrayList<ProductMetricData> metrics = new ArrayList<ProductMetricData>();
+		ProductMetricData metric = new ProductMetricData();
+		metric.productName = productNames.get(0);
+		metric.vendor = vendors.get(0);
+		metrics.add(metric);
+		for (int i = 0; i < lines.size(); i++) {
+			String product = productNames.get(i);
+			if (!product.equals(metric.productName)) {
+				metric = new ProductMetricData();
+				metrics.add(metric);
+				metric.productName = product;
+				metric.vendor = vendors.get(i);
+			}
+			metric.locpcs.add(locpcs.get(i));
+			metric.versions.add(versions.get(i));
+			metric.igams.add(igams.get(i));
+			metric.ldcs.add(ldcs.get(i));
+			metric.wmcs.add(wmcs.get(i));
+			metric.dits.add(dits.get(i));
+			metric.lcom5s.add(lcom5s.get(i));
+			metric.cbos.add(cbos.get(i));
+			metric.igats.add(igats.get(i));
+			metric.blobAntiPatterns.add(blobAntiPatterns.get(i));
+			metric.llocs.add(llocs.get(i));
+		}
+		return metrics;	
+	}
+	
+	private List<String> generateCSVLinesFrom(ProductMetricData metric) {
+		ArrayList<String> lines = new ArrayList<String>();
+		ArrayList<ArrayList<Double>> columns = new ArrayList<ArrayList<Double>>();
+		columns.add(metric.locpcs);
+		columns.add(metric.igams);
+		columns.add(metric.ldcs);
+		columns.add(metric.wmcs);
+		columns.add(metric.dits);
+		columns.add(metric.lcom5s);
+		columns.add(metric.cbos);
+		columns.add(metric.igats);
+		columns.add(metric.blobAntiPatterns);
+		columns.add(metric.llocs);
+		
+		//lines.add(metric.productName);
+		System.out.println(metric.productName);
+
+		for (int i = 1; i < metric.versions.size(); i++) {
+			String line = metric.versions.get(i-1) + "->" + metric.versions.get(i);
+			
+			for (ArrayList<Double> column : columns ) {
+				line = line + "," + ProductMetricData.diff(column.get(i-1), column.get(i));
+			}
+			
+			lines.add(line);
+			System.out.println(line);
+
+		}
+		return lines;
 	}
 }
