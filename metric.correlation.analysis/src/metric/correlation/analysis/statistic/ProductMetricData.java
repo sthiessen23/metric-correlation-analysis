@@ -47,14 +47,5 @@ public class ProductMetricData {
 	public ProductMetricData() {
 		
 	}
-	
-	static Double diff(Double left, Double right) {
-		if (right > left) {
-			return right - left + left * 100;
-		} else {
-			return left - right + left * 100;
-		}
-	}
-	
 
 }

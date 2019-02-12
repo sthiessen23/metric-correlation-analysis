@@ -1,26 +1,45 @@
 package metric.correlation.analysis.statistic;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import org.apache.commons.math3.util.Precision;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtils;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.Test;
@@ -183,20 +202,26 @@ public class StatisticExecuter {
 	/*
 	 * Version statistics
 	 */
-	@Test
-	public void test() {
-		try {
-			for (ProductMetricData metric : getProductMetricData(new File("input/versions-results.csv")))
-			generateCSVLinesFrom(metric);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 	
 	private ArrayList<ProductMetricData> getProductMetricData(File dataFile) throws IOException{
 		List<String> lines = Files.readAllLines(dataFile.toPath());
-		lines.remove(0);
+		List<String> keys = Arrays.asList(lines.get(0).split(","));
+		
+		//if one of these wont be found (return -1), it would crash later when we would subscribt a list with -1 index
+		int idx_version = keys.indexOf(VersionMetrics.MetricKeysImpl.VERSION.toString());
+		int idx_vendor = keys.indexOf(VersionMetrics.MetricKeysImpl.VENDOR.toString());
+		int idx_product = keys.indexOf(VersionMetrics.MetricKeysImpl.PRODUCT.toString());
+		int idx_locpc = keys.indexOf(VersionMetrics.MetricKeysImpl.LOCPC.toString());
+		int idx_igam = keys.indexOf(VersionMetrics.MetricKeysImpl.IGAM.toString());
+		int idx_ldc = keys.indexOf(VersionMetrics.MetricKeysImpl.LDC.toString());
+		int idx_wmc = keys.indexOf(VersionMetrics.MetricKeysImpl.WMC.toString());
+		int idx_dit = keys.indexOf(VersionMetrics.MetricKeysImpl.DIT.toString());
+		int idx_lcom5 = keys.indexOf(VersionMetrics.MetricKeysImpl.LCOM5.toString());
+		int idx_cbo = keys.indexOf(VersionMetrics.MetricKeysImpl.CBO.toString());
+		int idx_igat = keys.indexOf(VersionMetrics.MetricKeysImpl.IGAT.toString());
+		int idx_blob = keys.indexOf(VersionMetrics.MetricKeysImpl.BLOB.toString());
+		int idx_lloc = keys.indexOf(VersionMetrics.MetricKeysImpl.LLOC.toString());
+		lines.remove(0); //remove column keys row
 		
 		ArrayList<String> productNames = new ArrayList<String>();
 		ArrayList<String> vendors = new ArrayList<String>();
@@ -215,19 +240,19 @@ public class StatisticExecuter {
 		
 		for (String line : lines) {
 			String[] split = line.split(",");
-			locpcs.add(Double.valueOf(split[0]));
-			productNames.add(split[1]);
-			vendors.add(split[10]);
-			versions.add(split[5]);
-			igams.add(Double.valueOf(split[2]));
-			ldcs.add(Double.valueOf(split[3]));
-			wmcs.add(Double.valueOf(split[4]));
-			dits.add(Double.valueOf(split[6]));
-			lcom5s.add(Double.valueOf(split[7]));
-			cbos.add(Double.valueOf(split[8]));
-			igats.add(Double.valueOf(split[9]));
-			blobAntiPatterns.add(Double.valueOf(split[11]));
-			llocs.add(Double.valueOf(split[12]));
+			locpcs.add(Double.valueOf(split[idx_locpc]));
+			productNames.add(split[idx_product]);
+			vendors.add(split[idx_vendor]);
+			versions.add(split[idx_version]);
+			igams.add(Double.valueOf(split[idx_igam]));
+			ldcs.add(Double.valueOf(split[idx_ldc]));
+			wmcs.add(Double.valueOf(split[idx_wmc]));
+			dits.add(Double.valueOf(split[idx_dit]));
+			lcom5s.add(Double.valueOf(split[idx_lcom5]));
+			cbos.add(Double.valueOf(split[idx_cbo]));
+			igats.add(Double.valueOf(split[idx_igat]));
+			blobAntiPatterns.add(Double.valueOf(split[idx_blob]));
+			llocs.add(Double.valueOf(split[idx_lloc]));
 		}
 		
 		ArrayList<ProductMetricData> metrics = new ArrayList<ProductMetricData>();
@@ -258,34 +283,135 @@ public class StatisticExecuter {
 		return metrics;	
 	}
 	
-	private List<String> generateCSVLinesFrom(ProductMetricData metric) {
-		ArrayList<String> lines = new ArrayList<String>();
-		ArrayList<ArrayList<Double>> columns = new ArrayList<ArrayList<Double>>();
-		columns.add(metric.locpcs);
-		columns.add(metric.igams);
-		columns.add(metric.ldcs);
-		columns.add(metric.wmcs);
-		columns.add(metric.dits);
-		columns.add(metric.lcom5s);
-		columns.add(metric.cbos);
-		columns.add(metric.igats);
-		columns.add(metric.blobAntiPatterns);
-		columns.add(metric.llocs);
-		
-		//lines.add(metric.productName);
-		System.out.println(metric.productName);
-
-		for (int i = 1; i < metric.versions.size(); i++) {
-			String line = metric.versions.get(i-1) + "->" + metric.versions.get(i);
-			
-			for (ArrayList<Double> column : columns ) {
-				line = line + "," + ProductMetricData.diff(column.get(i-1), column.get(i));
-			}
-			
-			lines.add(line);
-			System.out.println(line);
-
-		}
-		return lines;
+	private Double pmdDiff(Double previous, Double next) {
+		return Precision.round((((next - previous) / previous) * 100 ),2);
 	}
+	
+	String[] columnNamesInVersionsFile = {"LOCpC", "IGAM", "LDC", "WMC", "DIT", "LCOM5", "CBO", "BLOB", "LLOC"};
+
+
+	public void writeVersionsCSVFile() {
+		try {
+			for (ProductMetricData metric : getProductMetricData(new File("input/versions-results.csv"))) {
+		
+				ArrayList<ArrayList<Double>> columns = new ArrayList<ArrayList<Double>>();
+				columns.add(metric.locpcs);
+				columns.add(metric.igams);
+				columns.add(metric.ldcs);
+				columns.add(metric.wmcs);
+				columns.add(metric.dits);
+				columns.add(metric.lcom5s);
+				columns.add(metric.cbos);
+				columns.add(metric.igats);
+				columns.add(metric.blobAntiPatterns);
+				columns.add(metric.llocs);
+				
+				String columnNames = "Version,";
+				
+				for (String columnName : columnNamesInVersionsFile) {
+					columnNames += columnName + ",";
+				}
+				
+				columnNames = columnNames.substring(columnNames.length()-1);
+				columnNames += "\n";
+				
+				FileWriter writer = new FileWriter("input/" + metric.productName + "-versionGraphData.csv");
+				writer.write(columnNames);
+				
+				for (int i = 1; i < metric.versions.size(); i++) {
+					String line = metric.versions.get(i-1) + "->" + metric.versions.get(i);
+					
+					for (ArrayList<Double> column : columns ) {
+						line = line + "," + pmdDiff(column.get(i-1), column.get(i));
+					}
+					
+					line += "\n";
+					writer.write(line);
+				}
+				writer.close();
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void createVersionGraphs() {
+		ArrayList<String> projectNames = new ArrayList<>();
+		File[] versionGraphCSVs = new File("input").listFiles();
+		
+		//Get all versionGraph files
+		for (File file : versionGraphCSVs) {
+			if(file.getName().contains("versionGraphData")) {
+				projectNames.add(file.getName());
+			}
+		}
+		
+		for (String projectName : projectNames) {
+			DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+			File currentProject = new File("input/" + projectName);
+			
+			String line = "";
+	        String cvsSplitBy = ",";
+
+	        try (BufferedReader br = new BufferedReader(new FileReader(currentProject))) {
+	        	
+	        	//ignore title
+	        	br.readLine();
+	            while ((line = br.readLine()) != null) {
+
+	                // use comma as separator
+	                String[] data = line.split(cvsSplitBy);
+	                
+	                
+	                for (int i = 1; i < columnNamesInVersionsFile.length; i++) {                	
+		                dataset.addValue( Double.parseDouble(data[i]) , columnNamesInVersionsFile[i-1], data[0]);
+					}
+	           
+	            }
+	            
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+
+	        String chartTitle = "Metric changes for project " + projectName.replace("-versionGraphData.csv", "");
+	        String categoryAxisLabel = "Version";
+	        String valueAxisLabel = "Metric value";
+	        
+	      
+	        JFreeChart chart = ChartFactory.createLineChart(chartTitle,
+	                categoryAxisLabel, valueAxisLabel, dataset);
+	        
+	        //Styling
+	        chart.getPlot().setBackgroundPaint( Color.WHITE );
+	        chart.getPlot().setOutlineStroke(new BasicStroke(3.0f));
+	        
+	        CategoryPlot plot = chart.getCategoryPlot();
+	        
+	        //Thicken the plot lines
+	        for (int i = 0; i < columnNamesInVersionsFile.length-1; i++) {
+	        	plot.getRenderer().setSeriesStroke(i, new BasicStroke(3.0f));
+			}
+	        
+	        CategoryAxis xAxis = plot.getDomainAxis();
+	        xAxis.setMaximumCategoryLabelLines(2);
+	        
+	        //GENERATE SEVERAL SIZES
+//		    int width = 1280;    /* Width of the image */
+//		    int height = 720;   /* Height of the image */ 
+		    int width = 1600;    /* Width of the image */
+		    int height = 900;   /* Height of the image */ 
+	        
+		    File lineChart = new File( "Resources/LineChart-" + projectName.replace(".csv", "") + "-" + width +"x" + height + ".jpeg" ); 
+		      
+		    try {
+				ChartUtils.saveChartAsJPEG(lineChart ,chart, width ,height);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		  
+		}
+	}
+
 }
