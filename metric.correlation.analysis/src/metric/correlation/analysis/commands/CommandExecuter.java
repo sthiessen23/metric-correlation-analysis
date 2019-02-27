@@ -54,9 +54,9 @@ public class CommandExecuter {
 			}
 			printStream(process.getErrorStream(), Level.ERROR);
 			printStream(process.getInputStream(), Level.INFO);
-			process.waitFor();
+			int exitValue = process.waitFor();
 			process.destroy();
-			return process.exitValue() == 0;
+			return exitValue == 0;
 		} catch (IOException e) {
 			GitTools.LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
