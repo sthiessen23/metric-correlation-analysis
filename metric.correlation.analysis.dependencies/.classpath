@@ -20,7 +20,7 @@
 	<classpathentry exported="true" kind="lib" path="lib/elasticsearch.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/error_prone_annotations.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/gson.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/guava.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/guava.jar" sourcepath="/home/speldszus/.m2/repository/com/google/guava/guava/26.0-jre/guava-26.0-jre-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/HdrHistogram.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/hppc.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/httpasyncclient.jar"/>
