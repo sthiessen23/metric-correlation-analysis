@@ -1,24 +1,27 @@
 package metric.correlation.analysis.io;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.gravity.eclipse.os.UnsupportedOperationSystemException;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.NoWorkTreeException;
 
-import metric.correlation.analysis.GradleBuild;
-import metric.correlation.analysis.commands.CommandExecuter;
-
-public class GitTools {
+public class GitTools implements Closeable {
 
 	public static final Logger LOGGER = Logger.getLogger(GitTools.class);
+	
+	private Git git;
 
-	protected static boolean gitClone(String url, File destination)
-			throws UnsupportedOperationSystemException, GitCloneException {
-		return gitClone(url, destination, false);
+	protected GitTools(String url, File destination)
+			throws GitCloneException {
+		this(url, destination, false);
 	}
 
-	public static boolean gitClone(String url, File destination, boolean replace)
-			throws UnsupportedOperationSystemException, GitCloneException {
+	public GitTools(String url, File destination, boolean replace) throws GitCloneException {
 		if (!destination.exists()) {
 			destination.mkdirs();
 		}
@@ -34,16 +37,30 @@ public class GitTools {
 				throw new GitCloneException("There is already a repository with the name \"" + productName + "\".");
 			}
 		}
-		return CommandExecuter.executeCommand(destination, "git clone --recursive " + url);
+		try {
+			git = Git.cloneRepository()
+					.setDirectory(repository)
+					.setURI(url)
+					.setCloneSubmodules(true)
+					.call();
+		} catch (GitAPIException e) {
+			throw new GitCloneException(e);
+		}
 	}
 
-	public static boolean changeVersion(File location, String id) throws UnsupportedOperationSystemException {
-		LOGGER.log(Level.INFO, "Change version to commit: " + id);
-		File buildDir = new File(location, "build");
-		if (buildDir.exists()) {
-			GradleBuild.cleanBuild(location);
-			FileUtils.recursiveDelete(buildDir);
+	public boolean changeVersion(String id) {
+		try {
+			git.clean().setForce(true).setCleanDirectories(true).call();
+			git.checkout().setCreateBranch(false).setName(id).call();
+		} catch (NoWorkTreeException | GitAPIException e) {
+			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
+			return false;
 		}
-		return CommandExecuter.executeCommand(location, "git checkout " + id + " .");
+		return true;
+	}
+
+	@Override
+	public void close() throws IOException {
+		git.getRepository().close();
 	}
 }

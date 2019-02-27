@@ -11,4 +11,8 @@ public class GitCloneException extends Exception {
 		super(string);
 	}
 
+	public GitCloneException(Throwable cause) {
+		super(cause);
+	}
+
 }
