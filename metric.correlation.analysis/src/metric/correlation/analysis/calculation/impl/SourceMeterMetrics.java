@@ -1,39 +1,39 @@
 package metric.correlation.analysis.calculation.impl;
 
+import static metric.correlation.analysis.calculation.impl.SourceMeterMetrics.MetricKeysImpl.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.file.AccessMode;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.eclipse.jdt.core.IJavaProject;
-import org.gravity.eclipse.os.OperationSystem;
+import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
+import metric.correlation.analysis.commands.CommandExecuter;
 
 public class SourceMeterMetrics implements IMetricCalculator {
 
-	private static final String LDC = "LDC";
-
-	private static final String DIT = "DIT";
-
-	private static final String LCOM = "LCOM5";
-
-	private static final String CBO = "CBO";
-
-	private static final String WMC = "WMC";
-
-	private static final String LLOC = "LLOC";
-
 	private static final String ENV_VARIABLE_NAME = "SOURCE_METER_JAVA"; //$NON-NLS-1$
+
+	private static final Logger LOGGER = Logger.getLogger(SourceMeterMetrics.class);
 
 	private final File sourceMeterExecutable;
 	private final File tmpResultDir;
@@ -46,9 +46,11 @@ public class SourceMeterMetrics implements IMetricCalculator {
 			throw new MetricCalculatorInitializationException("SourceMeterJava environment variable not set!");
 		} else {
 			sourceMeterExecutable = new File(sourcemeter);
-			if (!sourceMeterExecutable.exists()) {
-				throw new MetricCalculatorInitializationException(
-						"SourceMeterJava executable not found at: \"" + sourcemeter + "\"!");
+			try {
+				sourceMeterExecutable.toPath().getFileSystem().provider().checkAccess(sourceMeterExecutable.toPath(),
+						AccessMode.EXECUTE);
+			} catch (IOException e) {
+				throw new MetricCalculatorInitializationException(e);
 			}
 		}
 		try {
@@ -59,150 +61,121 @@ public class SourceMeterMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
-		File in = project.getProject().getLocation().toFile();
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
+			final Map<String, String> map) {
+		File projectLocation = project.getProject().getLocation().toFile();
 
 		lastProjectName = project.getProject().getName();
 		String cmd = sourceMeterExecutable + " -projectName=" + lastProjectName + //$NON-NLS-1$
-				" -projectBaseDir=" + in.getAbsolutePath() + //$NON-NLS-1$
+				" -projectBaseDir=" + projectLocation.getAbsolutePath() + //$NON-NLS-1$
 				" -resultsDir=" + tmpResultDir.getAbsolutePath(); //$NON-NLS-1$
 
-		Runtime run = Runtime.getRuntime();
 		try {
-			Process process;
-			switch (OperationSystem.getCurrentOS()) {
-			case WINDOWS:
-				process = run.exec("cmd /c \"" + cmd + " && exit\"");
-				break;
-			case LINUX:
-				process = run.exec(cmd);
-				break;
-			default:
-				System.err.println("Program is not compatibel with the Operating System");
-				return false;
-			}
-
-			BufferedReader stream_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			while ((line = stream_reader.readLine()) != null) {
-				System.out.println("> " + line); //$NON-NLS-1$
-			}
-			stream_reader.close();
-			process.waitFor();
-		} catch (IOException e) {
-			e.printStackTrace();
+			return CommandExecuter.executeCommand(projectLocation, cmd);
+		} catch (UnsupportedOperationSystemException e) {
+			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			return false;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
-
-		return true;
 	}
 
 	@Override
-	public LinkedHashMap<String, Double> getResults() {
+	public LinkedHashMap<String, String> getResults() {
 		if (lastProjectName == null) {
 			throw new IllegalStateException("The calculateMetrics() operation hasn't been executed!");
 		}
-		LinkedHashMap<String, Double> metricMap = new LinkedHashMap<String, Double>();
-
-		String[] metricNames = { LLOC, WMC, CBO, LCOM, DIT, LDC };
-
 		File[] sourcemeterOutputFolder = new File(new File(tmpResultDir.getAbsolutePath(), lastProjectName), "java") //$NON-NLS-1$
 				.listFiles();
-		if (sourcemeterOutputFolder == null) {
-			for (String name : metricNames) {
-				metricMap.put(name, -1.0);
-			}
-			return metricMap;
-		}
+		if (sourcemeterOutputFolder == null || sourcemeterOutputFolder.length == 0) {
+			throw new IllegalStateException("There are no output files!");
+		} else {
+			DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
+			dfs.setDecimalSeparator('.');
+			DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
-		if (sourcemeterOutputFolder.length > 0) {
-			File metrics = new File(sourcemeterOutputFolder[0], lastProjectName+"-Class.csv"); // $NON-NLS-1$
-			try (BufferedReader fileReader = new BufferedReader(new FileReader(metrics))){
+			LinkedHashMap<String, String> metricMap = new LinkedHashMap<>();
+			List<String> names = null;
+			File metrics = new File(sourcemeterOutputFolder[0], lastProjectName + "-Class.csv"); // $NON-NLS-1$
+			try (BufferedReader fileReader = new BufferedReader(new FileReader(metrics))) {
 				String line = fileReader.readLine();
 				if (line == null) {
-					fileReader.close();
-					System.err.println("Sourcemeter metric file is empty");
+					throw new IllegalStateException("Sourcemeter metric file is empty");
 				}
-				String[] names = line.substring(1, line.length() - 1).split("\",\""); //$NON-NLS-1$
+				names = Arrays.asList(line.substring(1, line.length() - 1).split("\",\"")); //$NON-NLS-1$
+			} catch (IOException e) {
+				LOGGER.log(Level.ERROR, e.getMessage(), e);
+				throw new IllegalStateException("Sourcemeter metric file cannot be read");
+			}
 
+			Collection<? extends String> metricKeys = getMetricKeys();
+			for (String metricName : metricKeys) {
+				if (LOC_PER_CLASS.toString().equals(metricName)) {
+					// LOC_PER_CLASS accesses the same entry as LLOC
+					continue;
+				}
 				List<Double> classValues = new ArrayList<Double>();
-				int llocIndex = 0;
-				int llocAll = 0;
-				for (String metricName : metricNames) {
-
-					int metricIndex = Arrays.asList(names).indexOf(metricName);
-
-					try {
-						String[] files = { lastProjectName+"-Class.csv", lastProjectName+"-Enum.csv" };
-						boolean temp = false;
-						for (String f : files) {
-							metrics = new File(sourcemeterOutputFolder[0], f); // $NON-NLS-1$
-							try (BufferedReader metricReader = new BufferedReader(new FileReader(metrics))) {
-								String mLine = metricReader.readLine();
-								if ((mLine = metricReader.readLine()) == null && !temp) {
-									for (String name : metricNames) {
-										metricMap.put(name, -1.0);
-									}
-									metricReader.close();
-									return metricMap;
-								}
-
-								temp = true;
-								while (mLine != null) {
-									String[] values = mLine.substring(1, mLine.length() - 1).split("\",\""); //$NON-NLS-1$
-									if (metricName == LLOC) {
-										classValues.add(Double.parseDouble(values[metricIndex]));
-
-									} else {
-										double lloc = Double.parseDouble(values[llocIndex]);
-										classValues.add(Double.parseDouble(values[metricIndex]) * lloc);
-									}
-									mLine = metricReader.readLine();
-								}
+				int metricIndex = names.indexOf(metricName);
+				try {
+					String[] files = { lastProjectName + "-Class.csv", lastProjectName + "-Enum.csv" };
+					for (String f : files) {
+						metrics = new File(sourcemeterOutputFolder[0], f); // $NON-NLS-1$
+						try (BufferedReader metricReader = new BufferedReader(new FileReader(metrics))) {
+							String mLine = metricReader.readLine(); // We want to skip the first line
+							while ((mLine = metricReader.readLine()) != null) {
+								String value = mLine.substring(1, mLine.length() - 1).split("\",\"")[metricIndex]; //$NON-NLS-1$
+								classValues.add(Double.parseDouble(value));
 							}
 						}
-						double sum = 0;
-						for (int i = 0; i < classValues.size(); i++) {
-							sum += classValues.get(i);
-						}
-						DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
-						dfs.setDecimalSeparator('.');
-						DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
-						if (metricName == LLOC) {
-							metricMap.put(metricName, Double.parseDouble(dFormat.format(sum)));
-
-							double average = sum / classValues.size();
-							metricMap.put("LOCpC", Double.parseDouble(dFormat.format(average)));
-							llocIndex = metricIndex;
-							llocAll = (int) sum;
-
-						} else {
-							double average = sum / llocAll;
-							metricMap.put(metricName, Double.parseDouble(dFormat.format(average)));
-						}
-
-						classValues.clear();
-
-					} catch (IOException e) {
-						e.printStackTrace();
 					}
-				}
-				return metricMap;
 
-			} catch (IOException e) {
-				System.err.println("critical error");
-				for (String s : metricNames) {
-					metricMap.put(s, -1.0);
+					double sum = 0;
+					for (int i = 0; i < classValues.size(); i++) {
+						sum += classValues.get(i);
+					}
+					double average = Double.parseDouble(dFormat.format(sum / classValues.size()));
+					if (LLOC.toString().equals(metricName)) {
+						metricMap.put(LLOC.toString(), dFormat.format(sum));
+						metricMap.put(LOC_PER_CLASS.toString(), Double.toString(average));
+					} else {
+						metricMap.put(metricName, Double.toString(average));
+					}
+
+				} catch (IOException e) {
+					LOGGER.log(Level.ERROR, e.getMessage(), e);
 				}
-				return metricMap;
 			}
-		} else {
-			for (String s : metricNames) {
-				metricMap.put(s, -1.0);
-			}
+
+			return metricMap;
 		}
-		return metricMap;
+	}
+
+	@Override
+	public Collection<String> getMetricKeys() {
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	@Override
+	public Set<Class<? extends IMetricCalculator>> getDependencies() {
+		return Collections.emptySet();
+	}
+
+	/**
+	 * The keys of the SourceMeter metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
+	public enum MetricKeysImpl {
+		LDC("LDC"), DIT("DIT"), LCOM("LCOM5"), CBO("CBO"), WMC("WMC"), LLOC("LLOC"), LOC_PER_CLASS("LOCpC");
+
+		private String value;
+
+		private MetricKeysImpl(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return value;
+		}
 	}
 }

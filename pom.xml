@@ -36,7 +36,7 @@
 		<repository>
 			<id>eMoflon Core</id>
 			<layout>p2</layout>
-			<url>https://raw.githubusercontent.com/eMoflon/emoflon-core-updatesite/master/stable/updatesite/</url>
+			<url>https://emoflon.org/emoflon-core-updatesite/stable/updatesite/</url>
 		</repository>
 		<repository>
 			<id>eMoflon</id>

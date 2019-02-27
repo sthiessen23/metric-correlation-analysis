@@ -11,14 +11,20 @@ import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 /**
  * @author Antoniya Ivanova Offers some standard file-modifying abilities.
  */
 public class FileUtils {
 
+	private static final Logger LOGGER = Logger.getLogger(FileUtils.class);
+
 	/**
-	 * @param directoryPath
-	 *            - The path where the file will be created
+	 * Creates a directory
+	 * 
+	 * @param directoryPath - The path where the file will be created
 	 * @return - The new File with the given path
 	 */
 	public File createDirectory(String directoryPath) {
@@ -31,18 +37,18 @@ public class FileUtils {
 				return dir;
 
 		} catch (Exception e) {
-			System.err.println("Could not create directory " + directoryPath);
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, "Could not create directory " + directoryPath);
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 
 		return null;
 	}
 
 	/**
-	 * @param zipFilePath
-	 *            - The path of the ZIP file
-	 * @param unzipLocation
-	 *            - The location to be unzipped
+	 * Unzips a zip file to a given location
+	 * 
+	 * @param zipFilePath   - The path of the ZIP file
+	 * @param unzipLocation - The location to be unzipped
 	 */
 	public void unzip(final String zipFilePath, final String unzipLocation) {
 		if (!(Files.exists(Paths.get(unzipLocation)))) {
@@ -50,7 +56,7 @@ public class FileUtils {
 				Files.createDirectories(Paths.get(unzipLocation));
 			} catch (IOException e) {
 
-				e.printStackTrace();
+				LOGGER.log(Level.ERROR, e.getMessage(), e);
 			}
 		}
 		try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(zipFilePath))) {
@@ -67,7 +73,7 @@ public class FileUtils {
 				entry = zipInputStream.getNextEntry();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
@@ -80,7 +86,7 @@ public class FileUtils {
 				bos.write(bytesIn, 0, read);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 		}
 	}
 
@@ -93,29 +99,19 @@ public class FileUtils {
 	public static boolean recursiveDelete(File file) {
 		boolean success = true;
 		if (file.exists()) {
-			for (File f : file.listFiles()) {
-				if (f.isDirectory()) {
-					success &= recursiveDelete(f);
-					success &= f.delete();
-				} else {
-					success &= f.delete();
+			if (file.isDirectory()) {
+				for (File f : file.listFiles()) {
+					if (f.isDirectory()) {
+						success &= recursiveDelete(f);
+						success &= f.delete();
+					} else {
+						success &= f.delete();
+					}
 				}
 			}
+			success = file.delete();
 		}
 		return success;
-	}
-
-	public static void clear(File file) {
-		if (file.exists()) {
-			for (File f : file.listFiles()) {
-				if (f.isDirectory()) {
-					clear(f);
-					f.delete();
-				} else {
-					f.delete();
-				}
-			}
-		}
 	}
 
 }

@@ -6,8 +6,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaProject;
 import org.gravity.eclipse.os.OperationSystem;
@@ -20,9 +29,12 @@ import metric.correlation.analysis.GradleBuild;
 import metric.correlation.analysis.calculation.IMetricCalculator;
 import metric.correlation.analysis.calculation.MetricCalculatorInitializationException;
 
+import static metric.correlation.analysis.calculation.impl.AndrolyzeMetrics.MetricKeysImpl.*;
+
 public class AndrolyzeMetrics implements IMetricCalculator {
 
-	private static final String PERMISSIONS = "PERMISSIONS";
+	private static final Logger LOGGER = Logger.getLogger(AndrolyzeMetrics.class);
+
 	public static final String env_variable_name_androlyze = "ANDROLYZE";
 	public static final String env_variable_name_mongod = "MONGOD";
 
@@ -86,7 +98,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
-					System.err.println("MONGO_DB: " + line);
+					LOGGER.log(Level.ERROR, "MONGO_DB: " + line);
 				}
 			}
 		} catch (IOException e) {
@@ -96,17 +108,18 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 	}
 
 	@Override
-	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version) {
-		File compiled_apk;
+	public boolean calculateMetric(IJavaProject project, String productName, String vendorName, String version,
+			final Map<String, String> map) {
+		File compiledApk;
 		try {
 			IProject iproject = project.getProject();
-			compiled_apk = GradleBuild.buildApk(iproject.getLocation().toFile());
+			compiledApk = GradleBuild.buildApk(iproject.getLocation().toFile());
 		} catch (UnsupportedOperationSystemException e1) {
 			e1.printStackTrace();
 			return false;
 		}
 		String andro_cmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
-				+ "--apks " + compiled_apk + " -pm  non-parallel";
+				+ "--apks " + compiledApk + " -pm  non-parallel";
 
 		Runtime run = Runtime.getRuntime();
 		try {
@@ -116,7 +129,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
 				break;
 			case LINUX:
-				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiled_apk;
+				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiledApk;
 				process = run.exec(andro_cmd, null, androlyzeDir);
 				break;
 			default:
@@ -126,7 +139,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			try (BufferedReader stream = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
 				String line;
 				while ((line = stream.readLine()) != null) {
-					System.err.println("ANDROLYZE: " + line);
+					LOGGER.log(Level.ERROR, "ANDROLYZE: " + line);
 				}
 			}
 			process.waitFor();
@@ -134,16 +147,21 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 
 			return true;
 
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return false;
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;
 		}
 	}
 
 	@Override
-	public LinkedHashMap<String, Double> getResults() {
+	public LinkedHashMap<String, String> getResults() {
 		File resultsLocation = new File(androlyzeDir, "storage" + File.separator + "res");
 
-		LinkedHashMap<String, Double> metricResults = new LinkedHashMap<String, Double>();
+		LinkedHashMap<String, String> metricResults = new LinkedHashMap<>();
 
 		int sumPermissions = 0;
 		int sumNotUsedPermissions = 0;
@@ -152,7 +170,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		try {
 			jsonNode = JsonLoader.fromFile(resultsLocation);
 		} catch (IOException e) {
-			metricResults.put(PERMISSIONS, -1.0);
+			metricResults.put(PERMISSIONS.toString(), Double.toString(-1.0));
 			return metricResults;
 		}
 		JsonNode codePermissions = jsonNode.get("code permissions").get("listing");
@@ -173,13 +191,49 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 		dfs.setDecimalSeparator('.');
 		DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
 
-		double permission_metric = (double) sumNotUsedPermissions / (double) sumPermissions;
-		metricResults.put(PERMISSIONS, Double.parseDouble(dFormat.format(permission_metric)));
+		double permissionMetric;
+		if (sumPermissions == 0) {
+			permissionMetric = 0;
+		} else {
+			permissionMetric = (double) sumNotUsedPermissions / (double) sumPermissions;
+		}
+		metricResults.put(PERMISSIONS.toString(), dFormat.format(permissionMetric));
 
-		System.out.println(sumPermissions);
-		System.out.println(sumNotUsedPermissions);
+		LOGGER.log(Level.INFO, "Requested permissions: " + sumPermissions);
+		LOGGER.log(Level.INFO, "Unused permissions: " + sumNotUsedPermissions);
 
 		return metricResults;
+	}
+
+	@Override
+	public Collection<String> getMetricKeys() {
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+	}
+
+	@Override
+	public Set<Class<? extends IMetricCalculator>> getDependencies() {
+		return Collections.emptySet();
+	}
+
+	/**
+	 * The keys of the androlyze metrics
+	 * 
+	 * @author speldszus
+	 *
+	 */
+	public enum MetricKeysImpl {
+		PERMISSIONS("PERMISSIONS");
+
+		private String value;
+
+		private MetricKeysImpl(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return value;
+		}
 	}
 
 }
