@@ -20,6 +20,7 @@ public class ResultsCleaner {
 	private static final Logger LOGGER = Logger.getLogger(ResultsCleaner.class);
 
 	public static void main(String[] args) {
+		LOGGER.log(Level.INFO, "Removing emty results");
 		for (File result : new File("results").listFiles()){
 			try {
 				final File file = new File(result, "results.csv");
