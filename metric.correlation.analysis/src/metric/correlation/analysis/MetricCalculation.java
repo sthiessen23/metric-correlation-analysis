@@ -75,11 +75,9 @@ public class MetricCalculation {
 	 * The classes of the calculators which should be executed
 	 */
 	private static final Collection<Class<? extends IMetricCalculator>> METRIC_CALCULATORS = Arrays.asList(
-			HulkMetrics.class,
-			SourceMeterMetrics.class,
-			VulnerabilitiesPerKLOCMetrics.class,
-			AndrolyzeMetrics.class,
-			CVEMetrics.class, VersionMetrics.class);
+			HulkMetrics.class, 
+			SourceMeterMetrics.class, VulnerabilitiesPerKLOCMetrics.class, AndrolyzeMetrics.class, CVEMetrics.class,
+			VersionMetrics.class);
 
 	// END
 	// Don't edit below here
@@ -110,14 +108,13 @@ public class MetricCalculation {
 	/**
 	 * Initialized the list of calculators
 	 * 
-	 * @throws IOException
-	 *             If the results file cannot be initialized
+	 * @throws IOException If the results file cannot be initialized
 	 */
 	public MetricCalculation() throws IOException {
 
 		// Get the time stamp of this run
 		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
-		
+
 		// Initialize the metric calculators
 		FileAppender initLogger = addLogAppender("initialization");
 		this.calculators = new TreeSet<IMetricCalculator>();
@@ -154,8 +151,7 @@ public class MetricCalculation {
 	 * The main method for calculating metrics for multiple versions of multiple
 	 * projects. This method has to be called from a running eclipse workspace!
 	 * 
-	 * @param configurations
-	 *            The project configurations which should be considered
+	 * @param configurations The project configurations which should be considered
 	 * @throws UnsupportedOperationSystemException
 	 */
 	public boolean calculateAll(Collection<ProjectConfiguration> configurations)
@@ -172,8 +168,7 @@ public class MetricCalculation {
 	 * The main method for calculating metrics for multiple versions of a project.
 	 * This method has to be called from a running eclipse workspace!
 	 * 
-	 * @param configurations
-	 *            The project configuration which should be considered
+	 * @param configurations The project configuration which should be considered
 	 */
 	public boolean calculate(ProjectConfiguration config) {
 		// Create a project specific file logger
@@ -183,8 +178,15 @@ public class MetricCalculation {
 		errors = new HashSet<>();
 
 		// Clone the project
-		boolean success = clone(config);
-		if (success) {
+		boolean success = true;
+		GitTools git = null;
+		try {
+			git = new GitTools(config.getGitUrl(), REPOSITORIES, true);
+		} catch (GitCloneException e) {
+			LOGGER.log(Level.ERROR, e);
+			success = false;
+		}
+		if(success) {	
 			String productName = config.getProductName();
 			String vendorName = config.getVendorName();
 
@@ -199,21 +201,21 @@ public class MetricCalculation {
 				LOGGER.log(Level.INFO, "Checkingout commit : " + commitId);
 				LOGGER.log(Level.INFO, "#############################\n");
 
-				try {
-					// Checkout the specific commit
-					if (!GitTools.changeVersion(srcLocation, commitId)) {
-						LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
-						continue;
-					}
-				} catch (UnsupportedOperationSystemException e) {
-					LOGGER.log(Level.ERROR, e.getMessage(), e);
-					break;
+				// Checkout the specific commit
+				if (!git.changeVersion(commitId)) {
+					LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
+					continue;
 				}
 				FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
 
 				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
-				success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
+				try {
+					success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
+				} catch (Exception e) {
+					LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
+					success = false;
+				}
 			}
 		}
 
@@ -226,8 +228,7 @@ public class MetricCalculation {
 	 * Creates a new project specific logger with an new output file for a project
 	 * configuration
 	 * 
-	 * @param config
-	 *            The project configuration
+	 * @param config The project configuration
 	 * @return The project specific logger
 	 */
 	private FileAppender addLogAppender(ProjectConfiguration config) {
@@ -237,8 +238,7 @@ public class MetricCalculation {
 	/**
 	 * Creates a log appender which appends to a file with the given name
 	 * 
-	 * @param name
-	 *            The file name
+	 * @param name The file name
 	 * @return The logger
 	 */
 	private FileAppender addLogAppender(String name) {
@@ -258,8 +258,7 @@ public class MetricCalculation {
 	/**
 	 * Drops the log appender
 	 * 
-	 * @param fileAppender
-	 *            the logger
+	 * @param fileAppender the logger
 	 */
 	private void dropLogAppender(FileAppender fileAppender) {
 		if (fileAppender != null) {
@@ -268,39 +267,12 @@ public class MetricCalculation {
 	}
 
 	/**
-	 * Clones the repository
-	 * 
-	 * @param config
-	 *            The project configuration
-	 * @return true, iff the repository has been cloned successfully
-	 */
-	private boolean clone(ProjectConfiguration config) {
-		String gitUrl = config.getGitUrl();
-		try {
-			LOGGER.log(Level.INFO, "Cloning repository: " + gitUrl);
-			if (!GitTools.gitClone(gitUrl, REPOSITORIES, true)) {
-				errors.add("gitClone()");
-				return false;
-			}
-		} catch (GitCloneException | UnsupportedOperationSystemException e) {
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
-			errors.add(e.getLocalizedMessage());
-			return false;
-		}
-		return true;
-	}
-
-	/**
 	 * Calculate the correlation metrics
 	 *
-	 * @param productName
-	 *            The name of the software project
-	 * @param vendorName
-	 *            The name of the projects vendor
-	 * @param version
-	 *            The version which should be inspected
-	 * @param src
-	 *            The location of the source code
+	 * @param productName The name of the software project
+	 * @param vendorName  The name of the projects vendor
+	 * @param version     The version which should be inspected
+	 * @param src         The location of the source code
 	 * @return true if everything went okay, otherwise false
 	 */
 	private boolean calculateMetrics(String productName, String vendorName, String version, File src) {
@@ -392,8 +364,7 @@ public class MetricCalculation {
 	/**
 	 * Checks if the results of the metric calculator are plausible
 	 * 
-	 * @param calc
-	 *            The executed metric calculator
+	 * @param calc The executed metric calculator
 	 * @return true iff the results are plausible
 	 */
 	private boolean plausabilityCheck(IMetricCalculator calc) {
@@ -439,11 +410,9 @@ public class MetricCalculation {
 			String key = entry.getKey();
 
 			if (key == VersionMetrics.MetricKeysImpl.PRODUCT.toString()
-					|| key == VersionMetrics.MetricKeysImpl.VERSION
-							.toString()
-					|| key == VersionMetrics.MetricKeysImpl.VENDOR
-							.toString()
-					|| key == "AverageCVSS3" || key == "MaxCVSS3") {
+					|| key == VersionMetrics.MetricKeysImpl.VERSION.toString()
+					|| key == VersionMetrics.MetricKeysImpl.VENDOR.toString() || key == "AverageCVSS3"
+					|| key == "MaxCVSS3") {
 				continue;
 			}
 
@@ -512,7 +481,6 @@ public class MetricCalculation {
 		// auch hier die andere liste nutzen
 		allMetricResults.remove(VersionMetrics.MetricKeysImpl.PRODUCT.toString());
 		allMetricResults.remove(VersionMetrics.MetricKeysImpl.VERSION.toString());
-		
 
 		// Add them to newestVersionOnly
 		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {

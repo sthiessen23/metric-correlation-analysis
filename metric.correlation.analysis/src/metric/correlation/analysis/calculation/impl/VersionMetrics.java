@@ -54,17 +54,7 @@ public class VersionMetrics implements IMetricCalculator {
 	public enum MetricKeysImpl {
 		VERSION("version"), 
 		PRODUCT("product"), 
-		VENDOR("vendor"), 
-		LOCPC("LOCpC"),
-		IGAM("IGAM"),
-		LDC("LDC"),
-		WMC("WMC"),
-		DIT("DIT"),
-		LCOM5("LCOM5"),
-		CBO("CBO"),
-		IGAT("IGAT"),
-		BLOB("BLOB-Antipattern"),
-		LLOC("LLOC");
+		VENDOR("vendor");
 		
 		private String value;
 

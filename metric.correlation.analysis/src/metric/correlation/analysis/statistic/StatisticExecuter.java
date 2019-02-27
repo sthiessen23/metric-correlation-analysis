@@ -2,18 +2,14 @@ package metric.correlation.analysis.statistic;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -21,8 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 import javax.imageio.ImageIO;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -36,14 +30,13 @@ import org.jfree.chart.ChartUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.renderer.category.CategoryItemRenderer;
-import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.Test;
 
+import metric.correlation.analysis.calculation.impl.HulkMetrics;
+import metric.correlation.analysis.calculation.impl.SourceMeterMetrics;
 import metric.correlation.analysis.calculation.impl.VersionMetrics;
 
 public class StatisticExecuter {
@@ -211,16 +204,16 @@ public class StatisticExecuter {
 		int idx_version = keys.indexOf(VersionMetrics.MetricKeysImpl.VERSION.toString());
 		int idx_vendor = keys.indexOf(VersionMetrics.MetricKeysImpl.VENDOR.toString());
 		int idx_product = keys.indexOf(VersionMetrics.MetricKeysImpl.PRODUCT.toString());
-		int idx_locpc = keys.indexOf(VersionMetrics.MetricKeysImpl.LOCPC.toString());
-		int idx_igam = keys.indexOf(VersionMetrics.MetricKeysImpl.IGAM.toString());
-		int idx_ldc = keys.indexOf(VersionMetrics.MetricKeysImpl.LDC.toString());
-		int idx_wmc = keys.indexOf(VersionMetrics.MetricKeysImpl.WMC.toString());
-		int idx_dit = keys.indexOf(VersionMetrics.MetricKeysImpl.DIT.toString());
-		int idx_lcom5 = keys.indexOf(VersionMetrics.MetricKeysImpl.LCOM5.toString());
-		int idx_cbo = keys.indexOf(VersionMetrics.MetricKeysImpl.CBO.toString());
-		int idx_igat = keys.indexOf(VersionMetrics.MetricKeysImpl.IGAT.toString());
-		int idx_blob = keys.indexOf(VersionMetrics.MetricKeysImpl.BLOB.toString());
-		int idx_lloc = keys.indexOf(VersionMetrics.MetricKeysImpl.LLOC.toString());
+		int idx_igam = keys.indexOf(HulkMetrics.MetricKeysImpl.IGAM.toString());
+		int idx_igat = keys.indexOf(HulkMetrics.MetricKeysImpl.IGAT.toString());
+		int idx_blob = keys.indexOf(HulkMetrics.MetricKeysImpl.BLOB.toString());
+		int idx_locpc = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.LOC_PER_CLASS.toString());
+		int idx_ldc = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.LDC.toString());
+		int idx_wmc = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.WMC.toString());
+		int idx_dit = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.DIT.toString());
+		int idx_lcom5 = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.LCOM.toString());
+		int idx_cbo = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.CBO.toString());
+		int idx_lloc = keys.indexOf(SourceMeterMetrics.MetricKeysImpl.LLOC.toString());
 		lines.remove(0); //remove column keys row
 		
 		ArrayList<String> productNames = new ArrayList<String>();
