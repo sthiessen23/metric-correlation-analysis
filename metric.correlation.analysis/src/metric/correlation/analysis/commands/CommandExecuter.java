@@ -10,10 +10,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.apache.log4j.Level;
+import org.gravity.eclipse.io.GitTools;
 import org.gravity.eclipse.os.OperationSystem;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
-
-import metric.correlation.analysis.io.GitTools;
 
 /**
  * This class provides the functionality to execute commands

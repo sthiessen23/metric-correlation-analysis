@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -47,9 +48,12 @@ public class Storage {
 			resultFile.createNewFile();
 		}
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))){
-			writer.write("Application-Name");
-			for (String key : keys) {
-				writer.write("," + key);
+			
+			for (int i = 0; i < keys.size(); i++) {
+				if(i > 0) {
+					writer.write(',');
+				}
+				writer.write(this.keys.get(i));
 			}
 		}
 	}
@@ -63,11 +67,7 @@ public class Storage {
 	 */
 	public boolean writeCSV(String name, Map<String, String> results) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(output, true))) {
-			writer.newLine();
-			writer.write(name);
-			for(String key : keys) {
-				writer.write("," + results.get(key));
-			}
+			writer.write(keys.stream().map(k->results.get(k)).collect(Collectors.joining(",", "\n", "")));
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
 			return false;

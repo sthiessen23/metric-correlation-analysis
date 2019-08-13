@@ -86,7 +86,7 @@ public class HulkMetrics implements IMetricCalculator {
 		results.clear();
 		results = null;
 		for (Resource resource : resources) {
-			resource.delete(Collections.EMPTY_MAP);
+			resource.delete(Collections.emptyMap());
 		}
 		resources.clear();
 	}
@@ -139,7 +139,7 @@ public class HulkMetrics implements IMetricCalculator {
 		metrics.put(BLOB.toString(), Double.toString(blob));
 		metrics.put(IGAM.toString(), roundDouble(igam));
 		metrics.put(IGAT.toString(), roundDouble(igat));
-//		metrics.put(VISIBILITY.toString(), roundDouble(vis));
+		metrics.put(VISIBILITY.toString(), roundDouble(vis));
 //		metrics.put(DIT.toString(), roundDouble(dit));
 //		metrics.put(LCOM5.toString(), roundDouble(lcom));
 
@@ -166,8 +166,8 @@ public class HulkMetrics implements IMetricCalculator {
 	 *
 	 */
 	public enum MetricKeysImpl {
-		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT")
-//		, LCOM5("HulkLCOM5"), DIT("HulkDIT"), VISIBILITY("HulkVisibility")
+		BLOB("BLOB-Antipattern"), IGAM("IGAM"), IGAT("IGAT"), VISIBILITY("TotalMethodVisibility")
+//		, LCOM5("HulkLCOM5"), DIT("HulkDIT")
 		;
 
 		private String value;

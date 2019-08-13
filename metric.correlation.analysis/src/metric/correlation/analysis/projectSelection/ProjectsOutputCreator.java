@@ -17,6 +17,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.elasticsearch.search.SearchHit;
+import org.gravity.eclipse.io.FileUtils;
 import org.junit.Test;
 
 import com.google.gson.Gson;
@@ -25,8 +26,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
-
-import metric.correlation.analysis.io.FileUtils;
 
 public class ProjectsOutputCreator {
 
@@ -120,8 +119,7 @@ public class ProjectsOutputCreator {
 
 			}
 
-			FileUtils fileUtils = new FileUtils();
-			fileUtils.createDirectory("Resources");
+			FileUtils.createDirectory("Resources");
 
 			try (FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath)) {
 				fileWriter.write(resultJSON.toString());
@@ -203,9 +201,7 @@ public class ProjectsOutputCreator {
 				}
 				
 				//Write the new file
-				FileUtils fileUtils = new FileUtils();
-				fileUtils.createDirectory("Resources");
-
+				FileUtils.createDirectory("Resources");
 				try (FileWriter fileWriter = new FileWriter(normalizedProjectsDataOutputFilePath)) {
 					fileWriter.write(gson.toJson(resultJSON));
 				} catch (Exception e) {

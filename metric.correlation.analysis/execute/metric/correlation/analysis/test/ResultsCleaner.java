@@ -6,8 +6,7 @@ import java.nio.file.Files;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import metric.correlation.analysis.io.FileUtils;
+import org.gravity.eclipse.io.FileUtils;
 
 /**
  * Removes emty results

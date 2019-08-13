@@ -41,7 +41,7 @@ import metric.correlation.analysis.calculation.impl.VersionMetrics;
 
 public class StatisticExecuter {
 
-	private static final String INPUT_SERIES = "Results-2019-01-19_17_59";
+	private static final String INPUT_SERIES = "results";
 	private static final File DATA_FILE = new File(new File("results", INPUT_SERIES), "results.csv");
 	
 	private static final Logger LOGGER = Logger.getLogger(StatisticExecuter.class);
@@ -149,7 +149,7 @@ public class StatisticExecuter {
 				metrics.put(value, new ArrayList<>(lines.size() -1));
 			}
 		}
-		if (skipIndex.size() == 0) {
+		if (skipIndex.isEmpty()) {
 			throw new IllegalStateException("Project name not found");
 		}
 		for (String line : lines.subList(1, lines.size())) {

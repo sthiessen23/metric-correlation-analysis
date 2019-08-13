@@ -31,6 +31,9 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 import org.gravity.eclipse.importer.NoRootFolderException;
 import org.gravity.eclipse.importer.gradle.GradleImport;
+import org.gravity.eclipse.io.FileUtils;
+import org.gravity.eclipse.io.GitCloneException;
+import org.gravity.eclipse.io.GitTools;
 import org.gravity.eclipse.importer.ImportException;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
@@ -44,9 +47,6 @@ import metric.correlation.analysis.calculation.impl.SourceMeterMetrics;
 import metric.correlation.analysis.calculation.impl.VersionMetrics;
 import metric.correlation.analysis.calculation.impl.VulnerabilitiesPerKLOCMetrics;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
-import metric.correlation.analysis.io.FileUtils;
-import metric.correlation.analysis.io.GitCloneException;
-import metric.correlation.analysis.io.GitTools;
 import metric.correlation.analysis.io.Storage;
 import metric.correlation.analysis.io.VersionHelper;
 import metric.correlation.analysis.statistic.StatisticExecuter;
@@ -105,6 +105,8 @@ public class MetricCalculation {
 
 	private File errorFile;
 
+	private List<String> successFullVersions;
+	private List<String> notApplicibleVersions;
 	/**
 	 * Initialized the list of calculators
 	 * 
@@ -171,6 +173,9 @@ public class MetricCalculation {
 	 * @param configurations The project configuration which should be considered
 	 */
 	public boolean calculate(ProjectConfiguration config) {
+		successFullVersions = new ArrayList<>();
+		notApplicibleVersions = new ArrayList<>();
+		
 		// Create a project specific file logger
 		FileAppender fileAppender = addLogAppender(config);
 
@@ -181,7 +186,7 @@ public class MetricCalculation {
 		boolean success = true;
 		GitTools git = null;
 		try {
-			git = new GitTools(config.getGitUrl(), REPOSITORIES, true);
+			git = new GitTools(config.getGitUrl(), REPOSITORIES, true, true);
 		} catch (GitCloneException e) {
 			LOGGER.log(Level.ERROR, e);
 			success = false;
@@ -195,6 +200,7 @@ public class MetricCalculation {
 			// Calculate metrics for each commit of the project configuration
 			for (Entry<String, String> entry : config.getVersionCommitIdPairs()) {
 				String commitId = entry.getValue();
+				String version = entry.getKey();
 				LOGGER.log(Level.INFO, "\n\n\n#############################");
 				LOGGER.log(Level.INFO, "### " + timestamp + " ###");
 				LOGGER.log(Level.INFO, "#############################");
@@ -203,6 +209,8 @@ public class MetricCalculation {
 
 				// Checkout the specific commit
 				if (!git.changeVersion(commitId)) {
+					success = false;
+					errors.add("change commit");
 					LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
 					continue;
 				}
@@ -211,10 +219,16 @@ public class MetricCalculation {
 				// Calculate all metrics
 				LOGGER.log(Level.INFO, "Start metric calculation");
 				try {
-					success &= calculateMetrics(productName, vendorName, entry.getKey(), srcLocation);
+					success &= calculateMetrics(productName, vendorName, version, srcLocation);
 				} catch (Exception e) {
 					LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 					success = false;
+				}
+				if(success) {
+					successFullVersions.add(version);
+				}
+				else {
+					LOGGER.log(Level.ERROR, "\n### METRIC CALCULATION FAILED ###\nproject: "+productName+"\nvendor: "+vendorName+"\nversion: "+version+"\n### ###");
 				}
 			}
 		}
@@ -282,7 +296,11 @@ public class MetricCalculation {
 
 		try {
 			gradleImport = new GradleImport(src, true);
-		} catch (IOException | ImportException e) {
+		} catch(NoRootFolderException e) {
+			notApplicibleVersions.add(version);
+			errors.add("Not a gradle project");
+			return false;
+		}catch (IOException | ImportException e) {
 			errors.add("new GradleImport()");
 			return false;
 		}
@@ -480,6 +498,7 @@ public class MetricCalculation {
 		// Remove the version key completely
 		// auch hier die andere liste nutzen
 		allMetricResults.remove(VersionMetrics.MetricKeysImpl.PRODUCT.toString());
+		allMetricResults.remove(VersionMetrics.MetricKeysImpl.VENDOR.toString());
 		allMetricResults.remove(VersionMetrics.MetricKeysImpl.VERSION.toString());
 
 		// Add them to newestVersionOnly
@@ -504,4 +523,11 @@ public class MetricCalculation {
 		return true;
 	}
 
+	public List<String> getSuccessFullVersions() {
+		return successFullVersions;
+	}
+
+	public List<String> getNotApplicibleVersions() {
+		return notApplicibleVersions;
+	}
 }

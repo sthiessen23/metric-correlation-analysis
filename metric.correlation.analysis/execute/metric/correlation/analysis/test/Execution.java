@@ -11,9 +11,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
@@ -56,7 +58,7 @@ public class Execution {
 	/**
 	 * The maximum amount of versions per projects which should be considered
 	 */
-	private static final int MAX_VERSIONS_OF_PROJECTS = Integer.MAX_VALUE;
+	private static final int MAX_VERSIONS_OF_PROJECTS = 20;
 
 	/**
 	 * If all data should be cleaned after an execution
@@ -76,35 +78,18 @@ public class Execution {
 	/**
 	 * Names of projects which should be excluded (maybe overridden by INCLUDES)
 	 */
-	private static final String[] EXCLUDES = new String[] {
-			// Timeout 30 Min
-			"cSploit-android" //TODO: endless loop in gradle import?
-			, "orhanobut-logger", "orhanobut-hawk", "google-agera", "timusus-Shuttle"
-			, "requery-requery", "kickstarter-android-oss", "spring-projects-spring-boot"
-			, "apache-groovy", "spring-projects-spring-framework", "rey5137-material"
-			, "libgdx-libgdx"
-			// TGG Local completeness
-			, "junit-team-junit5", "grpc-grpc-java" // TODO: MClass in TypeDeclStatement not translated
-			, "facebook-litho" //TODO: MethodInvocation
-			// CVE values
-			,"facebook-fresco"
-			// WONTFIX
-			, "powermock-powermock", "apache-beam", "elastic-elasticsearch", "ZieIony-Carbon", "apache-ignite", "asLody-VirtualApp"
-			// Duplicate files
-			, "facebook-buck"
-			// MoDisco Discovery
-			, "apereo-cas"
-			// gradle import
-//			, "igniterealtime-Smack" //TODO: check
-			}; 
-	
+	private static final String[] EXCLUDES = new String[] {//"grpc-grpc-java", //"igniterealtime-Smack", "JabRef-jabref", "apache-groovy", "reactor-reactor-core", 
+	// Permanenet excludes:		
+	"apache-ignite", "elastic-elasticsearch"};
+
 	/**
-	 * Names of projects which should be included in any case (Overrides all excludes)
+	 * Names of projects which should be included in any case (Overrides all
+	 * excludes)
 	 */
 	private static final String[] INCLUDES = new String[] {};
 
 	// BEGIN CONSTANTS -->
-	
+
 	/**
 	 * All projects which timed out are stored here
 	 */
@@ -114,7 +99,7 @@ public class Execution {
 	 * Path to a file containing one exclude per line. Successfully processed
 	 * projects are automatically appended to this file!
 	 */
-	private static final File EXCLUDES_FILE = new File("excludes.txt");
+	private static final File EXCLUDES_FOLDER = new File("excludes");
 	// <-- END CONSTANTS
 	//
 	// Don't edit below here
@@ -123,23 +108,23 @@ public class Execution {
 	 * The logger of this class
 	 */
 	private static final Logger LOGGER = Logger.getLogger(Execution.class);
-	
+
 	private static MetricCalculation calculator;
 	private ProjectConfiguration config;
 
-	public Execution(String projectName, ProjectConfiguration config, Integer index) {
+	public Execution(String projectName, ProjectConfiguration config, Integer index, Collection<String> versions) {
 		this.config = config;
 	}
 
-	@Parameters(name = "{2} - Analyze: {0}")
+	@Parameters(name = "{2} - {0}: versions {3}")
 	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
-		Collection<String> excludedProjectNames = getExcludes();
+		Map<String, Collection<String>> excludedProjectNames = getExcludes();
 
 		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.normalizedProjectsDataOutputFilePath);
 
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
 		if (VALIDATE_JSON && !checkDocument(projectsJsonData)) {
-				throw new IllegalArgumentException("The given JSON file doesn't comply with the JSON Schema!");
+			throw new IllegalArgumentException("The given JSON file doesn't comply with the JSON Schema!");
 		}
 
 		ArrayNode projects = (ArrayNode) projectsJsonData.get("projects");
@@ -163,13 +148,19 @@ public class Execution {
 			String vendorName = project.get("vendorName").asText();
 
 			boolean skip = false;
+			Collection<String> excludedVersions = Collections.emptyList();
 			String name = vendorName + "-" + productName;
-			for (String exclude : excludedProjectNames) {
-				if (exclude.equals(name)) {
-					skip = true;
-					break;
+			for (Entry<String, Collection<String>> exclude : excludedProjectNames.entrySet()) {
+				if (exclude.getKey().equals(name)) {
+					if (exclude.getValue().contains("*")) {
+						skip = true;
+						break;
+					} else {
+						excludedVersions = exclude.getValue();
+					}
 				}
 			}
+
 			if (skip) {
 				skipedProjects++;
 				continue;
@@ -180,39 +171,71 @@ public class Execution {
 
 			HashMap<String, String> commitsAndVersions = new HashMap<>();
 
-			int commitCounter = 0;
 			for (JsonNode commit : commits) {
-				if (commitCounter++ >= MAX_VERSIONS_OF_PROJECTS) {
+				if (commitsAndVersions.size() >= MAX_VERSIONS_OF_PROJECTS) {
 					break;
 				}
 				String commitId = commit.get("commitId").asText();
 				String commitVersion = commit.get("version").asText();
 
+				if (excludedVersions.contains(commitVersion)) {
+					continue;
+				}
+
 				commitsAndVersions.put(commitVersion, commitId);
 			}
 
-			ProjectConfiguration projectConfiguration = new ProjectConfiguration(productName, vendorName, gitURL,
-					commitsAndVersions);
-			configs.add(new Object[] { vendorName + "-" + productName, projectConfiguration , new Integer(projectCounter)});
-
+			if (commitsAndVersions.size() > 0) {
+				ProjectConfiguration projectConfiguration = new ProjectConfiguration(productName, vendorName, gitURL,
+						commitsAndVersions);
+				configs.add(new Object[] { vendorName + "-" + productName, projectConfiguration,
+						new Integer(projectCounter), commitsAndVersions.keySet()});
+			}
+			else {
+				skipedProjects++;
+			}
 		}
 		return configs;
+
 	}
 
 	/**
 	 * Searches all excluded projects
 	 * 
-	 * @return The names of the excluded projects
+	 * @return The names and commits of the excluded projects
 	 * @throws IOException
 	 */
-	private static Collection<String> getExcludes() throws IOException {
-		Collection<String> excludes = new HashSet<>();
-		if (EXCLUDES_FILE.exists()) {
-			excludes.addAll(Files.readAllLines(EXCLUDES_FILE.toPath(), Charset.defaultCharset()));
+	private static HashMap<String, Collection<String>> getExcludes() throws IOException {
+		HashMap<String, Collection<String>> excludes = new HashMap<>();
+		for (File exclude : EXCLUDES_FOLDER.listFiles()) {
+			excludes.put(exclude.getName(), Files.readAllLines(exclude.toPath(), Charset.defaultCharset()));
 		}
-		excludes.removeAll(Arrays.asList(INCLUDES));
-		excludes.addAll(Arrays.asList(EXCLUDES));
+		excludes.keySet().removeAll(Arrays.asList(INCLUDES));
+		for (String include : EXCLUDES) {
+			excludes.put(include, Collections.singleton("*"));
+		}
 		return excludes;
+	}
+
+	/**
+	 * Adds the current project to the excludes file
+	 * 
+	 * @return true, iff the project has been added
+	 */
+	private boolean addExcludes() {
+		List<String> success = calculator.getSuccessFullVersions();
+		List<String> ignore = calculator.getNotApplicibleVersions();
+		Collection<String> versions = new ArrayList<>(success.size() + ignore.size());
+		versions.addAll(success);
+		versions.addAll(ignore);
+		File file = new File(EXCLUDES_FOLDER, getProjectId());
+		try {
+			Files.write(file.toPath(), versions, file.exists() ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e);
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -236,20 +259,20 @@ public class Execution {
 		return true;
 	}
 
-	@Test(timeout=(long) (1.5*1800000))
+	@Test(timeout = (long) (2 * 60 * 60 * 1000))
 	public void execute() {
 		if (config.getGitCommitIds().isEmpty()) {
 			fail("No commits available");
 		}
-		addToFile(TIMEOUT_FILE);
+		addProjectNameToFile(TIMEOUT_FILE);
 		boolean success = calculator.calculate(config);
+		addExcludes();
 		if (!success) {
 			fail(calculator.getLastErrors().stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
-		} else {
-			addToExcludeFile();
 		}
 		try {
-			Files.write(TIMEOUT_FILE.toPath(), Files.readAllLines(TIMEOUT_FILE.toPath()).stream().filter(line -> !getProjectId().equals(line)).collect(Collectors.joining("\n")).getBytes());
+			Files.write(TIMEOUT_FILE.toPath(), Files.readAllLines(TIMEOUT_FILE.toPath()).stream()
+					.filter(line -> !getProjectId().equals(line)).collect(Collectors.joining("\n")).getBytes());
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 		}
@@ -257,21 +280,12 @@ public class Execution {
 	}
 
 	/**
-	 * Adds the current project to the excludes file
+	 * Adds the current project to the given file
 	 * 
-	 * @return true, iff the project has been added
-	 */
-	private boolean addToExcludeFile() {
-		return addToFile(EXCLUDES_FILE);
-	}
-
-	/**
- 	 * Adds the current project to the given file
- 	 * 
 	 * @param file The file
 	 * @return true, iff the project has been added
 	 */
-	public boolean addToFile(final File file) {
+	public boolean addProjectNameToFile(final File file) {
 		final String name = getProjectId();
 		try {
 			Files.write(file.toPath(), (name + '\n').getBytes(),
@@ -312,7 +326,8 @@ public class Execution {
 	}
 
 	/**
-	 * Calculate all statistics and clean the repository folder after test execution if CLEAN == true
+	 * Calculate all statistics and clean the repository folder after test execution
+	 * if CLEAN == true
 	 * 
 	 * @throws InitializationError Iff the repositories couldn't be cleaned
 	 */
