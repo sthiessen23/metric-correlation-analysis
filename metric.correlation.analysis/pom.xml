@@ -11,36 +11,4 @@
 	<artifactId>metric.correlation.analysis</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
-	<repositories>
-    <repository>
-      <id>eMoflon IBEX</id>
-      <layout>p2</layout>
-      <url>https://emoflon.org/emoflon-ibex-democles-updatesite/snapshot/updatesite/</url>
-    </repository>
-    <repository>
-      <id>eMoflon Core</id>
-      <layout>p2</layout>
-      <url>https://emoflon.org/emoflon-core-updatesite/snapshot/updatesite/</url>
-    </repository>
-    <repository>
-      <id>eMoflon Democles</id>
-      <layout>p2</layout>
-      <url>http://gervarro.org/democles/integration-0.5.0/</url>
-    </repository>
-    <repository>
-      <id>eMoflon Democles Advanced</id>
-      <layout>p2</layout>
-      <url>http://gervarro.org/democles/advanced/integration-0.5.0/</url>
-    <repository>
-      <id>Henshin</id>
-      <layout>p2</layout>
-      <url>http://download.eclipse.org/modeling/emft/henshin/updates/nightly</url>
-    </repository>
-    </repository>
-		<repository>
-			<id>GRaViTY</id>
-			<layout>p2</layout>
-			<url>https://gravity-tool.github.io/updatesite</url>
-		</repository>
-	</repositories>
 </project>

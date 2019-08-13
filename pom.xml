@@ -27,26 +27,66 @@
 			<layout>p2</layout>
 			<url>http://download.eclipse.org/releases/oxygen</url>
 		</repository>
+		<repository>
+      			<id>Eclipse Latest</id>
+      			<layout>p2</layout>
+      			<url>http://download.eclipse.org/releases/latest</url>
+		</repository>
+		<repository>
+      			<id>MoDisco</id>
+      			<layout>p2</layout>
+      			<url>https://download.eclipse.org/modeling/mdt/modisco/updates/release/</url>
+		</repository>
+		<repository>
+      			<id>EMF</id>
+      			<layout>p2</layout>
+      			<url>http://download.eclipse.org/modeling/emf/updates/releases/</url>
+		</repository>
+		<repository>
+      			<id>EMF Facets</id>
+      			<layout>p2</layout>
+      			<url>http://download.eclipse.org/facet/updates/release/</url>
+		</repository>
+		<repository>
+      			<id>plantuml</id>
+	     		<layout>p2</layout>
+			<url>http://hallvard.github.io/plantuml</url>
+		</repository>
+    		<repository>
+		      <id>eMoflon IBEX</id>
+		      <layout>p2</layout>
+		      <url>https://emoflon.org/emoflon-ibex-democles-updatesite/snapshot/updatesite/</url>
+		</repository>
+		<repository>
+		      <id>eMoflon Core</id>
+		      <layout>p2</layout>
+		      <url>https://emoflon.org/emoflon-core-updatesite/snapshot/updatesite/</url>
+		</repository>
+		<repository>
+		      <id>eMoflon Democles</id>
+		      <layout>p2</layout>
+		      <url>http://gervarro.org/democles/integration-0.5.0/</url>
+		</repository>
+  		<repository>
+  			<id>eMoflon Democles Advanced</id>
+			<layout>p2</layout>
+			<url>http://gervarro.org/democles/advanced/integration-0.5.0/</url>
+		</repository>
+		<repository>
+		      <id>Henshin</id>
+		      <layout>p2</layout>
+		      <url>http://download.eclipse.org/modeling/emft/henshin/updates/nightly</url>
+    		</repository>
+		<repository>
+			<id>GRaViTY</id>
+			<layout>p2</layout>
+			<url>https://gravity-tool.github.io/updatesite</url>
+		</repository>
 		<!-- Maven Repos -->
 		<repository>
 			<id>OSGeo</id>
 			<name>OSGeo Repository</name>
 			<url>http://download.osgeo.org/webdav/geotools/</url>
-		</repository>
-		<repository>
-			<id>eMoflon Core</id>
-			<layout>p2</layout>
-			<url>https://emoflon.org/emoflon-core-updatesite/stable/updatesite/</url>
-		</repository>
-		<repository>
-			<id>eMoflon</id>
-			<layout>p2</layout>
-			<url>http://emoflon.org/eclipse-plugin/beta/updatesite/</url>
-		</repository>
-		<repository>
-			<id>GRaViTY</id>
-			<layout>p2</layout>
-			<url>https://gravity-tool.github.io/updatesite/</url>
 		</repository>
 	</repositories>
 	<pluginRepositories>
