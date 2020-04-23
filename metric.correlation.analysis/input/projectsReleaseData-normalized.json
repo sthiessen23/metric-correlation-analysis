@@ -1,5 +1,16 @@
 {
   "projects": [
+  {
+      "productName": "gradle-simple",
+      "vendorName": "jitpack",
+      "url": "https://github.com/jitpack/gradle-simple.git",
+      "commits": [
+        {
+          "commitId": "30bead8ff1bc7e784bd946ff21368665fa374ae6",
+          "version": "1.0.0"
+        }
+      ]
+    },
     {
       "productName": "tink",
       "vendorName": "google",

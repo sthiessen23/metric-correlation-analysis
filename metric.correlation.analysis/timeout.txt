@@ -1,1 +1,3 @@
 google-tink
+jitpack-gradle-simple
+jitpack-gradle-simple

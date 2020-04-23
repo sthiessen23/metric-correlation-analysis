@@ -39,6 +39,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 	private final File tmpResultDir;
 
 	private String lastProjectName;
+	private LinkedHashMap<String, String> lastResults;
 
 	public SourceMeterMetrics() throws MetricCalculatorInitializationException {
 		String sourcemeter = System.getenv(ENV_VARIABLE_NAME);
@@ -71,81 +72,100 @@ public class SourceMeterMetrics implements IMetricCalculator {
 				" -resultsDir=" + tmpResultDir.getAbsolutePath(); //$NON-NLS-1$
 
 		try {
-			return CommandExecuter.executeCommand(projectLocation, cmd);
+			if (!CommandExecuter.executeCommand(projectLocation, cmd)) {
+				return false;
+			}
+			;
 		} catch (UnsupportedOperationSystemException e) {
 			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			return false;
 		}
+		return calculateResults();
+
 	}
 
 	@Override
 	public LinkedHashMap<String, String> getResults() {
-		if (lastProjectName == null) {
-			throw new IllegalStateException("The calculateMetrics() operation hasn't been executed!");
+		if (lastResults == null) {
+			throw new IllegalStateException("The calculateMetrics() operation hasn't been executed or failed!");
 		}
-		File[] sourcemeterOutputFolder = new File(new File(tmpResultDir.getAbsolutePath(), lastProjectName), "java") //$NON-NLS-1$
-				.listFiles();
-		if (sourcemeterOutputFolder == null || sourcemeterOutputFolder.length == 0) {
-			throw new IllegalStateException("There are no output files!");
-		} else {
-			DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
-			dfs.setDecimalSeparator('.');
-			DecimalFormat dFormat = new DecimalFormat("0.00", dfs);
+		return lastResults;
+	}
 
-			LinkedHashMap<String, String> metricMap = new LinkedHashMap<>();
-			List<String> names = null;
-			File metrics = new File(sourcemeterOutputFolder[0], lastProjectName + "-Class.csv"); // $NON-NLS-1$
-			try (BufferedReader fileReader = new BufferedReader(new FileReader(metrics))) {
-				String line = fileReader.readLine();
-				if (line == null) {
-					throw new IllegalStateException("Sourcemeter metric file is empty");
+	private boolean calculateResults() {
+		File sourceMeterOutputFolder = getOutputFolder();
+		DecimalFormat dFormat = getFormatter();
+
+		lastResults = new LinkedHashMap<>();
+		File metrics = new File(sourceMeterOutputFolder, lastProjectName + "-Class.csv");
+		List<String> calculatedMetrics = readAllClassMetrics(metrics);
+
+		Collection<? extends String> metricKeys = getMetricKeys();
+		for (String metricName : metricKeys) {
+			if (LOC_PER_CLASS.toString().equals(metricName)) {
+				// LOC_PER_CLASS accesses the same entry as LLOC
+				continue;
+			}
+			List<Double> classValues = new ArrayList<Double>();
+			int metricIndex = calculatedMetrics.indexOf(metricName);
+			try {
+				try (BufferedReader metricReader = new BufferedReader(new FileReader(metrics))) {
+					String mLine = metricReader.readLine(); // We want to skip the first line
+					while ((mLine = metricReader.readLine()) != null) {
+						String value = getCsvValues(mLine)[metricIndex]; // $NON-NLS-1$
+						classValues.add(Double.parseDouble(value));
+					}
 				}
-				names = Arrays.asList(line.substring(1, line.length() - 1).split("\",\"")); //$NON-NLS-1$
+				double sum = 0;
+				for (int i = 0; i < classValues.size(); i++) {
+					sum += classValues.get(i);
+				}
+				double average = Double.parseDouble(dFormat.format(sum / classValues.size()));
+				if (LLOC.toString().equals(metricName)) {
+					lastResults.put(LLOC.toString(), dFormat.format(sum));
+					lastResults.put(LOC_PER_CLASS.toString(), Double.toString(average));
+				} else {
+					lastResults.put(metricName, Double.toString(average));
+				}
+
 			} catch (IOException e) {
 				LOGGER.log(Level.ERROR, e.getMessage(), e);
-				throw new IllegalStateException("Sourcemeter metric file cannot be read");
+				return false;
 			}
-
-			Collection<? extends String> metricKeys = getMetricKeys();
-			for (String metricName : metricKeys) {
-				if (LOC_PER_CLASS.toString().equals(metricName)) {
-					// LOC_PER_CLASS accesses the same entry as LLOC
-					continue;
-				}
-				List<Double> classValues = new ArrayList<Double>();
-				int metricIndex = names.indexOf(metricName);
-				try {
-					String[] files = { lastProjectName + "-Class.csv", lastProjectName + "-Enum.csv" };
-					for (String f : files) {
-						metrics = new File(sourcemeterOutputFolder[0], f); // $NON-NLS-1$
-						try (BufferedReader metricReader = new BufferedReader(new FileReader(metrics))) {
-							String mLine = metricReader.readLine(); // We want to skip the first line
-							while ((mLine = metricReader.readLine()) != null) {
-								String value = mLine.substring(1, mLine.length() - 1).split("\",\"")[metricIndex]; //$NON-NLS-1$
-								classValues.add(Double.parseDouble(value));
-							}
-						}
-					}
-
-					double sum = 0;
-					for (int i = 0; i < classValues.size(); i++) {
-						sum += classValues.get(i);
-					}
-					double average = Double.parseDouble(dFormat.format(sum / classValues.size()));
-					if (LLOC.toString().equals(metricName)) {
-						metricMap.put(LLOC.toString(), dFormat.format(sum));
-						metricMap.put(LOC_PER_CLASS.toString(), Double.toString(average));
-					} else {
-						metricMap.put(metricName, Double.toString(average));
-					}
-
-				} catch (IOException e) {
-					LOGGER.log(Level.ERROR, e.getMessage(), e);
-				}
-			}
-
-			return metricMap;
 		}
+		return true;
+	}
+
+	private String[] getCsvValues(String line) {
+		return line.substring(1, line.length() - 1).split("\",\"");
+	}
+
+	private File getOutputFolder() {
+		File[] outputFolderDir = new File(new File(tmpResultDir.getAbsolutePath(), lastProjectName), "java") //$NON-NLS-1$
+				.listFiles();
+		if (outputFolderDir == null || outputFolderDir.length == 0) {
+			throw new IllegalStateException("There are no output files!");
+		}
+		return outputFolderDir[0];
+	}
+
+	private List<String> readAllClassMetrics(File metrics) {
+		try (BufferedReader fileReader = new BufferedReader(new FileReader(metrics))) {
+			String line = fileReader.readLine();
+			if (line == null) {
+				throw new IllegalStateException("Sourcemeter metric file is empty");
+			}
+			return Arrays.asList(getCsvValues(line)); // $NON-NLS-1$
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			throw new IllegalStateException("Sourcemeter metric file cannot be read");
+		}
+	}
+
+	private DecimalFormat getFormatter() {
+		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
+		dfs.setDecimalSeparator('.');
+		return new DecimalFormat("0.00", dfs);
 	}
 
 	@Override
