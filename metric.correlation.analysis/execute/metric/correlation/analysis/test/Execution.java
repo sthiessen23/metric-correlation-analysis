@@ -207,6 +207,9 @@ public class Execution {
 	 */
 	private static HashMap<String, Collection<String>> getExcludes() throws IOException {
 		HashMap<String, Collection<String>> excludes = new HashMap<>();
+		if (!EXCLUDES_FOLDER.exists()) {
+			Files.createDirectory(EXCLUDES_FOLDER.toPath());
+		}
 		for (File exclude : EXCLUDES_FOLDER.listFiles()) {
 			excludes.put(exclude.getName(), Files.readAllLines(exclude.toPath(), Charset.defaultCharset()));
 		}
