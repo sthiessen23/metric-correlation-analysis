@@ -10,13 +10,15 @@ import java.nio.file.AccessMode;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -75,7 +77,6 @@ public class SourceMeterMetrics implements IMetricCalculator {
 			if (!CommandExecuter.executeCommand(projectLocation, cmd)) {
 				return false;
 			}
-			;
 		} catch (UnsupportedOperationSystemException e) {
 			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
 			return false;
@@ -97,43 +98,62 @@ public class SourceMeterMetrics implements IMetricCalculator {
 		DecimalFormat dFormat = getFormatter();
 
 		lastResults = new LinkedHashMap<>();
-		File metrics = new File(sourceMeterOutputFolder, lastProjectName + "-Class.csv");
-		List<String> calculatedMetrics = readAllClassMetrics(metrics);
-
+		List<Map<String, String>> classContent = new LinkedList<>();
+		try {
+			parseMetricFile(new File(sourceMeterOutputFolder, lastProjectName + "-Class.csv"), classContent);
+			parseMetricFile(new File(sourceMeterOutputFolder, lastProjectName + "-Enum.csv"), classContent);
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return false;
+		}
 		Collection<? extends String> metricKeys = getMetricKeys();
 		for (String metricName : metricKeys) {
 			if (LOC_PER_CLASS.toString().equals(metricName)) {
 				// LOC_PER_CLASS accesses the same entry as LLOC
 				continue;
 			}
-			List<Double> classValues = new ArrayList<Double>();
-			int metricIndex = calculatedMetrics.indexOf(metricName);
-			try {
-				try (BufferedReader metricReader = new BufferedReader(new FileReader(metrics))) {
-					String mLine = metricReader.readLine(); // We want to skip the first line
-					while ((mLine = metricReader.readLine()) != null) {
-						String value = getCsvValues(mLine)[metricIndex]; // $NON-NLS-1$
-						classValues.add(Double.parseDouble(value));
-					}
-				}
-				double sum = 0;
-				for (int i = 0; i < classValues.size(); i++) {
-					sum += classValues.get(i);
-				}
-				double average = Double.parseDouble(dFormat.format(sum / classValues.size()));
-				if (LLOC.toString().equals(metricName)) {
-					lastResults.put(LLOC.toString(), dFormat.format(sum));
-					lastResults.put(LOC_PER_CLASS.toString(), Double.toString(average));
-				} else {
-					lastResults.put(metricName, Double.toString(average));
-				}
-
-			} catch (IOException e) {
-				LOGGER.log(Level.ERROR, e.getMessage(), e);
-				return false;
+			double sum = 0;
+			for (Map<String, String> valueMap : classContent) {
+				sum += Double.parseDouble(valueMap.get(metricName));
+			}
+			double average = Double.parseDouble(dFormat.format(sum / classContent.size()));
+			if (metricName.equals(LLOC.toString())) {
+				lastResults.put(LLOC.toString(), dFormat.format(sum));
+				lastResults.put(LOC_PER_CLASS.toString(), Double.toString(average));
+			} else {
+				lastResults.put(metricName, Double.toString(average));
 			}
 		}
 		return true;
+	}
+
+	private void parseMetricFile(File metrics, List<Map<String, String>> content) throws IOException {
+		Map<String, Integer> metricIndex = new HashMap<>();
+		if (!metrics.exists()) {
+			throw new IllegalStateException("File to parse does not exist: " + metrics.getAbsolutePath());
+		}
+		BufferedReader fileReader = new BufferedReader(new FileReader(metrics));
+		initIndex(metricIndex, fileReader.readLine());
+		String mLine;
+		while ((mLine = fileReader.readLine()) != null) {
+			String[] cvsValues = getCsvValues(mLine);
+			Map<String, String> metricMap = new HashMap<>();
+			for (Entry<String, Integer> entry : metricIndex.entrySet()) {
+				metricMap.put(entry.getKey(), cvsValues[entry.getValue()]);
+			}
+			content.add(metricMap);
+		}
+		fileReader.close();
+	}
+
+	private void initIndex(Map<String, Integer> metricIndex, String line) {
+		Collection<String> metricKeys = getMetricKeys();
+		String[] sourceMeterKeys = getCsvValues(line);
+		for (int i = 0; i < sourceMeterKeys.length; i++) {
+			if (metricKeys.contains(sourceMeterKeys[i])) {
+				metricIndex.put(sourceMeterKeys[i], i);
+			}
+		}
 	}
 
 	private String[] getCsvValues(String line) {
@@ -149,19 +169,6 @@ public class SourceMeterMetrics implements IMetricCalculator {
 		return outputFolderDir[0];
 	}
 
-	private List<String> readAllClassMetrics(File metrics) {
-		try (BufferedReader fileReader = new BufferedReader(new FileReader(metrics))) {
-			String line = fileReader.readLine();
-			if (line == null) {
-				throw new IllegalStateException("Sourcemeter metric file is empty");
-			}
-			return Arrays.asList(getCsvValues(line)); // $NON-NLS-1$
-		} catch (IOException e) {
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
-			throw new IllegalStateException("Sourcemeter metric file cannot be read");
-		}
-	}
-
 	private DecimalFormat getFormatter() {
 		DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
 		dfs.setDecimalSeparator('.');
@@ -170,7 +177,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 
 	@Override
 	public Collection<String> getMetricKeys() {
-		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toList());
+		return Arrays.asList(MetricKeysImpl.values()).stream().map(Object::toString).collect(Collectors.toSet());
 	}
 
 	@Override
