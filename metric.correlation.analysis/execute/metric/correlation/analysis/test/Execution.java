@@ -48,7 +48,7 @@ public class Execution {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 100;
+	private static final int MAX_NUMBER_OF_PROJECTS = 1;
 
 	/**
 	 * From which project should be started
@@ -58,7 +58,7 @@ public class Execution {
 	/**
 	 * The maximum amount of versions per projects which should be considered
 	 */
-	private static final int MAX_VERSIONS_OF_PROJECTS = 20;
+	private static final int MAX_VERSIONS_OF_PROJECTS = 1;
 
 	/**
 	 * If all data should be cleaned after an execution
@@ -207,6 +207,9 @@ public class Execution {
 	 */
 	private static HashMap<String, Collection<String>> getExcludes() throws IOException {
 		HashMap<String, Collection<String>> excludes = new HashMap<>();
+		if (!EXCLUDES_FOLDER.exists()) {
+			Files.createDirectory(EXCLUDES_FOLDER.toPath());
+		}
 		for (File exclude : EXCLUDES_FOLDER.listFiles()) {
 			excludes.put(exclude.getName(), Files.readAllLines(exclude.toPath(), Charset.defaultCharset()));
 		}
