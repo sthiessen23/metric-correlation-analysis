@@ -119,9 +119,9 @@ public class SourceMeterMetrics implements IMetricCalculator {
 			double average = Double.parseDouble(dFormat.format(sum / classContent.size()));
 			if (metricName.equals(LLOC.toString())) {
 				lastResults.put(LLOC.toString(), dFormat.format(sum));
-				lastResults.put(LOC_PER_CLASS.toString(), Double.toString(average));
+				lastResults.put(LOC_PER_CLASS.toString(), dFormat.format(average));
 			} else {
-				lastResults.put(metricName, Double.toString(average));
+				lastResults.put(metricName, dFormat.format(average));
 			}
 		}
 		return true;
