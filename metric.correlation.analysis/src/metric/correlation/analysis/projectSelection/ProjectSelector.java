@@ -45,21 +45,21 @@ import metric.correlation.analysis.vulnerabilities.VulnerabilityDataQueryHandler
 public class ProjectSelector {
 
 	private static final Logger LOGGER = Logger.getLogger(ProjectSelector.class);
-
+	private static final int RESULTS_PER_PAGE = 100;
+	private static final int NUMBER_OF_PAGES = 10;
 	/**
 	 * Selectors for checking if the project has an supported build nature
 	 */
 	private static final IGithubProjectSelector[] BUILD_NATURE_SELECTORS = new IGithubProjectSelector[] {
-			new GradleGithubProjectSelector()
-			};
+			new GradleGithubProjectSelector() };
 
 	private RestHighLevelClient elasticClient;
 	// Change this to your own OAuthToken
-	protected static String oAuthToken = "183c10a9725ad6c00195df59c201040e1b3d1d07";
+	protected static String oAuthToken = "f74e2f293379718e29568b05121547fe959ffb42";
 	protected static String repositoryDatabaseName = "repositories_database_extended";
 
 	public void initializeProjectElasticDatabase() {
-		addDocumentsToElastic(searchForJavaRepositoryNames());
+		addDocumentsToElastic(searchForJavaRepositoryNames(100));
 	}
 
 	/**
@@ -68,20 +68,25 @@ public class ProjectSelector {
 	 * @return a HashSet of {@link Repository} results, which are Java and Gradle
 	 *         projects.
 	 */
-	private HashSet<Repository> searchForJavaRepositoryNames() {
+	public HashSet<Repository> searchForJavaRepositoryNames(int maxProjects) {
 		HashSet<Repository> respositoryResults = new HashSet<Repository>();
 		String url;
-
+		int matchedProjectCount = 0;
+		int checkedProjectCount = 0;
 		try {
 			CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 
 			// Requests per page x 100
-			for (int i = 1; i <= 100; i++) {
+			for (int i = 1; i <= NUMBER_OF_PAGES; i++) {
+				if (i % 30 == 0) { 
+					TimeUnit.MINUTES.sleep(1);
+				}
 				url = "https://api.github.com/search/repositories?q=language:java&sort=stars&order=desc"
-						+ "&access_token=" + oAuthToken + "&page=" + i + "&per_page=89";
+						 + "&page=" + i + "&per_page=" + RESULTS_PER_PAGE;
 
 				HttpGet request = new HttpGet(url);
 				request.addHeader("content-type", "application/json");
+				request.addHeader("Authorization", "token " + oAuthToken);
 				HttpResponse result = httpClient.execute(request);
 
 				String json = EntityUtils.toString(result.getEntity(), "UTF-8");
@@ -90,18 +95,18 @@ public class ProjectSelector {
 				JsonObject jobject = jelement.getAsJsonObject();
 				JsonArray jarray = jobject.getAsJsonArray("items");
 
-				for (int j = 0; j < jarray.size(); j++) {
-
+				for (int j = 0; j < jarray.size() && matchedProjectCount < maxProjects; j++) {
+					checkedProjectCount++;
 					JsonObject jo = (JsonObject) jarray.get(j);
 					String fullName = jo.get("full_name").toString().replace("\"", "");
 					int stars = Integer.parseInt(jo.get("stargazers_count").toString());
-
-					// if ((stars >= 100) && isGradleRepository(fullName)) {
+					int openIssues = Integer.parseInt(jo.get("open_issues").toString());
 					boolean accept = false;
 					for (IGithubProjectSelector b : BUILD_NATURE_SELECTORS) {
 						accept |= b.accept(fullName, oAuthToken);
 					}
 					if (accept) {
+						matchedProjectCount++;
 						LOGGER.log(Level.INFO, "MATCH : " + fullName);
 
 						String product = jo.get("name").toString().replace("\"", "");
@@ -109,27 +114,26 @@ public class ProjectSelector {
 						JsonObject owner = (JsonObject) jo.get("owner");
 						String vendor = owner.get("login").toString().replace("\"", "");
 
-						respositoryResults.add(new Repository(vendor, product, stars));
+						respositoryResults.add(new Repository(vendor, product, stars, openIssues));
 					}
 
 					LOGGER.log(Level.INFO, j);
 
-					if ((j == 28) || (j == 58) || (j == 88)) {
-						TimeUnit.MINUTES.sleep(1);
-					}
-
+				}
+				if (matchedProjectCount >= maxProjects) {
+					break;
 				}
 
-				addDocumentsToElastic(respositoryResults);
-				respositoryResults.clear();
+				// addDocumentsToElastic(respositoryResults);
+				// respositoryResults.clear();
 			}
 
 			httpClient.close();
 
 		} catch (Exception e) {
-			LOGGER.log(Level.INFO, e.getStackTrace());
+			LOGGER.log(Level.ERROR, e.getStackTrace());
 		}
-
+		LOGGER.log(Level.DEBUG, String.format("Checked %d projcts in total, out of which %d projects matched at least one selector", checkedProjectCount, matchedProjectCount));
 		return respositoryResults;
 	}
 
