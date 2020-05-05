@@ -1,10 +1,14 @@
 package metric.correlation.analysis.projectSelection;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,8 +38,11 @@ public class ProjectsOutputCreator {
 	/**
 	 * The location of the JSON file containing the project information
 	 */
-	public static String projectsDataOutputFilePath = "input/projectsReleaseData.json";
-	public static String normalizedProjectsDataOutputFilePath = "input/projectsReleaseData-normalized.json";
+	public static String projectsDataOutputFilePath = "input/projectsReleaseData2.json";
+	public static String normalizedProjectsDataOutputFilePath = "input/projectsReleaseData-normalized2.json";
+
+	private final int MAX_COMMITS = 1;
+	private final int MAX_PROJECTS = 3;
 
 	/**
 	 * @author Antoniya Ivanova - prepares the JSON output for the repository
@@ -68,48 +75,8 @@ public class ProjectsOutputCreator {
 				projectJSON.addProperty("vendorName", vendorName);
 				projectJSON.addProperty("url", URL);
 
-				JsonArray commits = new JsonArray();
+				JsonArray commits = getReleaseCommits(httpClient, vendorName, productName);
 				projectJSON.add("commits", commits);
-
-				String gitURL;
-
-				// Iterate over the project release pages
-				for (int i = 0; i < 100; i++) {
-					// Respect 30 request limit of GitHub API
-					if (apiTimeOutcounter % 30 == 0) {
-						LOGGER.log(Level.INFO, apiTimeOutcounter);
-						TimeUnit.MINUTES.sleep(2);
-					}
-
-					gitURL = "https://api.github.com/repos/" + vendorName + "/" + productName + "/tags?page=" + i
-							+ "&per_page=100&access_token=" + ProjectSelector.oAuthToken;
-
-					apiTimeOutcounter++;
-
-					HttpGet request = new HttpGet(gitURL);
-					request.addHeader("content-type", "application/json");
-
-					HttpResponse result = httpClient.execute(request);
-					String json = EntityUtils.toString(result.getEntity(), "UTF-8");
-					JsonArray jarray = new JsonParser().parse(json).getAsJsonArray();
-
-					if (jarray.size() != 0) {
-
-						// Iterate over the project releases on the page
-						for (int j = 0; j < jarray.size(); j++) {
-							JsonObject commit = new JsonObject();
-							JsonObject jo = (JsonObject) jarray.get(j);
-
-							commit.addProperty("commitId",
-									jo.get("commit").getAsJsonObject().get("sha").toString().replace("\"", ""));
-							commit.addProperty("version", jo.get("name").toString().replace("\"", ""));
-
-							commits.add(commit);
-						}
-					} else {
-						break;
-					}
-				}
 
 				if (commits.size() == 0) {
 					continue;
@@ -130,7 +97,94 @@ public class ProjectsOutputCreator {
 
 	}
 
+	private JsonArray getReleaseCommits(CloseableHttpClient httpClient, String vendorName, String productName)
+			throws Exception {
+		JsonArray commits = new JsonArray();
+		// Iterate over the project release pages
+		for (int i = 1; i < 100; i++) {
+			// Respect 30 request limit of GitHub API
+			if (i % 30 == 0) {
+				LOGGER.log(Level.INFO, i);
+				TimeUnit.MINUTES.sleep(1);
+			}
+
+			String gitURL = "https://api.github.com/repos/" + vendorName + "/" + productName + "/tags?page=" + i
+					+ "&per_page=100" ;
+
+			HttpGet request = new HttpGet(gitURL);
+			request.addHeader("content-type", "application/json");
+			request.addHeader("Authorization", "token "+ ProjectSelector.oAuthToken);
+			HttpResponse result = httpClient.execute(request);
+			String json = EntityUtils.toString(result.getEntity(), "UTF-8");
+			JsonArray jarray = new JsonParser().parse(json).getAsJsonArray();
+
+			if (jarray.size() != 0) {
+
+				// Iterate over the project releases on the page
+				for (int j = 0; j < jarray.size(); j++) {
+
+					JsonObject commit = new JsonObject();
+					JsonObject jo = (JsonObject) jarray.get(j);
+
+					commit.addProperty("commitId",
+							jo.get("commit").getAsJsonObject().get("sha").toString().replace("\"", ""));
+					String version = jo.get("name").toString().replace("\"", "");
+					commit.addProperty("version", version);
+					if (!version // filter out commits that are clearly no release
+							.matches("(\\.|-|_)(snapshot|pre|alpha|beta|rc|m|prototype)(?![a-z])(\\.|-|_)?[0-9]*")) {
+						commits.add(commit);
+						if (commits.size() >= MAX_COMMITS) {
+							return commits;
+						}
+					}
+				}
+			} else {
+				break;
+			}
+		}
+		return commits;
+	}
+
 	@Test
+	public void testFindProjects() {
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		JsonObject resultJSON = new JsonObject();
+		JsonArray resultArray = new JsonArray();
+		resultJSON.add("projects", resultArray);
+		Set<Repository> reps = new ProjectSelector().searchForJavaRepositoryNames(MAX_PROJECTS);
+		for (Repository rep : reps) {
+			JsonObject projectJSON = createJson(rep);
+			if (((JsonArray) projectJSON.get("commits")).size() > 0) {
+				resultArray.add(projectJSON);
+			}
+		}
+		assertFalse(reps.isEmpty());
+		assertTrue(reps.size() <= MAX_PROJECTS);
+		try (FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath)) {
+			fileWriter.write(gson.toJson(resultJSON));
+		} catch (IOException e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+		}
+	}
+
+	private JsonObject createJson(Repository rep) {
+		JsonObject projectJSON = new JsonObject();
+		String URL = "http://www.github.com/" + rep.getVendor() + "/" + rep.getProduct() + ".git";
+		projectJSON.addProperty("productName", rep.getProduct());
+		projectJSON.addProperty("vendorName", rep.getVendor());
+		projectJSON.addProperty("url", URL);
+		CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+		JsonArray commits;
+		try {
+			commits = getReleaseCommits(httpClient, rep.getVendor(), rep.getProduct());
+			projectJSON.add("commits", commits);
+		} catch (Exception e) {
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+		}
+		return projectJSON;
+	}
+
+	// @Test
 	public void cleanUpProjectVersions() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -199,8 +253,8 @@ public class ProjectsOutputCreator {
 				} else {
 					resultArray.add(projectJSON);
 				}
-				
-				//Write the new file
+
+				// Write the new file
 				FileUtils.createDirectory("Resources");
 				try (FileWriter fileWriter = new FileWriter(normalizedProjectsDataOutputFilePath)) {
 					fileWriter.write(gson.toJson(resultJSON));

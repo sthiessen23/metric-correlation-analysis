@@ -1,0 +1,37 @@
+{
+  "projects": [
+    {
+      "productName": "Android-CleanArchitecture",
+      "vendorName": "android10",
+      "url": "http://www.github.com/android10/Android-CleanArchitecture.git",
+      "commits": [
+        {
+          "commitId": "70eeacfab0de957ef23c47dead2aff0593c0b708",
+          "version": "v0.9.5"
+        }
+      ]
+    },
+    {
+      "productName": "kafka",
+      "vendorName": "apache",
+      "url": "http://www.github.com/apache/kafka.git",
+      "commits": [
+        {
+          "commitId": "a643be62afb23bca15ed2e88db9e76cb0ebfa906",
+          "version": "show"
+        }
+      ]
+    },
+    {
+      "productName": "GSYVideoPlayer",
+      "vendorName": "CarGuo",
+      "url": "http://www.github.com/CarGuo/GSYVideoPlayer.git",
+      "commits": [
+        {
+          "commitId": "05f7e469f8c15311cd521838f3dccdcdbe0b5c1d",
+          "version": "v7.1.3"
+        }
+      ]
+    }
+  ]
+}
