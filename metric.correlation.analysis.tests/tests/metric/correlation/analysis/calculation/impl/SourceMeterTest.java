@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class SourceMeterTest {
 	private SourceMeterMetrics sm;
-
+	private static final String PROJECT_PATH = "resources/testProject";
 	@Before
 	public void init() {
 		try {
@@ -35,7 +35,7 @@ public class SourceMeterTest {
 		expected.put("WMC", "1.00");
 		expected.put("LCOM5", "1.00");
 		expected.put("LOCpC", "5.00");
-		IProject project = new IProjectMock(new Path("testProject"), "testProject");
+		IProject project = new IProjectMock(new Path(PROJECT_PATH), "testProject");
 		IJavaProject test = new IJavaProjectMock(project);
 		Map<String, String> results = new HashMap<>();
 		boolean success = sm.calculateMetric(test, "testProject", "testVender", "1.0.0", results);

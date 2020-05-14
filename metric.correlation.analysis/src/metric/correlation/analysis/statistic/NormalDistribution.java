@@ -19,7 +19,7 @@ public class NormalDistribution {
 
 	private static final Logger LOGGER = Logger.getLogger(NormalDistribution.class);
 
-	public static double significance = 0.05;
+	public static final double significance = 0.05;
 
 	private DecimalFormat dFormat;
 

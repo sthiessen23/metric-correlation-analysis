@@ -30,7 +30,9 @@ import org.apache.log4j.PatternLayout;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 import org.gravity.eclipse.importer.NoRootFolderException;
+import org.gravity.eclipse.importer.ProjectImport;
 import org.gravity.eclipse.importer.gradle.GradleImport;
+import org.gravity.eclipse.importer.maven.MavenImport;
 import org.gravity.eclipse.io.FileUtils;
 import org.gravity.eclipse.io.GitCloneException;
 import org.gravity.eclipse.io.GitTools;
@@ -101,7 +103,7 @@ public class MetricCalculation {
 	/**
 	 * The folder in which the results are stored
 	 */
-	private static File outputFolder;
+	private File outputFolder;
 
 	private File errorFile;
 
@@ -115,7 +117,7 @@ public class MetricCalculation {
 	public MetricCalculation() throws IOException {
 
 		// Get the time stamp of this run
-		this.timestamp = new SimpleDateFormat("YYYY-MM-dd_HH_mm").format(new Date());
+		this.timestamp = new SimpleDateFormat("yyyy-MM-dd_HH_mm").format(new Date());
 
 		// Initialize the metric calculators
 		FileAppender initLogger = addLogAppender("initialization");
@@ -184,14 +186,7 @@ public class MetricCalculation {
 
 		// Clone the project
 		boolean success = true;
-		GitTools git = null;
-		try {
-			git = new GitTools(config.getGitUrl(), REPOSITORIES, true, true);
-		} catch (GitCloneException e) {
-			LOGGER.log(Level.ERROR, e);
-			success = false;
-		}
-		if(success) {	
+		try (GitTools git = new GitTools(config.getGitUrl(), REPOSITORIES, true, true)){
 			String productName = config.getProductName();
 			String vendorName = config.getVendorName();
 
@@ -231,6 +226,9 @@ public class MetricCalculation {
 					LOGGER.log(Level.ERROR, "\n### METRIC CALCULATION FAILED ###\nproject: "+productName+"\nvendor: "+vendorName+"\nversion: "+version+"\n### ###");
 				}
 			}
+		} catch (GitCloneException | IOException e) {
+			LOGGER.log(Level.ERROR, e);
+			success = false;
 		}
 
 		// Drop the project specific file logger
@@ -238,6 +236,48 @@ public class MetricCalculation {
 		return success;
 	}
 
+	public IJavaProject importProject(File src) {
+		LOGGER.log(Level.INFO, "Importing  project to Eclipse workspace");
+		if (!src.exists()) {
+			errors.add("src folder does not exist");
+			return null;
+		}
+		ProjectImport projectImport;
+		if (Arrays.stream(src.listFiles()).anyMatch(f -> f.getName().contentEquals("build.gradle"))) {
+			try {
+				projectImport = new GradleImport(src, true);
+			} catch (IOException | ImportException e) {
+				errors.add("new GradleImport()");
+				return null;
+			}
+		} else if (Arrays.stream(src.listFiles()).anyMatch(f -> f.getName().contentEquals("pom.xml"))) {
+			try {
+				projectImport = new MavenImport(src, true);
+			} catch (ImportException e) {
+				errors.add("new MavenImport()");
+				return null;
+			}
+		} else {
+			errors.add("not maven or gradle project");
+			return null;
+		}
+
+		IJavaProject project;
+
+		try {
+			project = projectImport.importProject(new NullProgressMonitor());
+		} catch (NoRootFolderException e) {
+			errors.add(projectImport.getClass().getSimpleName());
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			return null;
+		} catch (ImportException e) {
+			errors.add(projectImport.getClass().getSimpleName());
+			LOGGER.log(Level.ERROR, e.getMessage(), e);
+			Thread.currentThread().interrupt();
+			return null;
+		}
+		return project;
+	}
 	/**
 	 * Creates a new project specific logger with an new output file for a project
 	 * configuration
@@ -290,37 +330,9 @@ public class MetricCalculation {
 	 * @return true if everything went okay, otherwise false
 	 */
 	private boolean calculateMetrics(String productName, String vendorName, String version, File src) {
-		// Import the sourcecode as gradle project
-		LOGGER.log(Level.INFO, "Importing Gradle project to Eclipse workspace");
-		GradleImport gradleImport;
-
-		try {
-			gradleImport = new GradleImport(src, true);
-		} catch(NoRootFolderException e) {
-			notApplicibleVersions.add(version);
-			errors.add("Not a gradle project");
-			return false;
-		}catch (IOException | ImportException e) {
-			errors.add("new GradleImport()");
-			return false;
-		}
-
-		IJavaProject project;
-
-		try {
-			project = gradleImport.importProject(new NullProgressMonitor());
-		} catch (NoRootFolderException e) {
-			errors.add(gradleImport.getClass().getSimpleName());
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
-			return false;
-		} catch (ImportException e) {
-			errors.add(gradleImport.getClass().getSimpleName());
-			LOGGER.log(Level.ERROR, e.getMessage(), e);
-			Thread.currentThread().interrupt();
-			return false;
-		}
+		// Import the sourcecode as maven or gradle project
+		IJavaProject project = importProject(src);
 		if (project == null) {
-			errors.add("Import as Eclipse project failed");
 			return false;
 		}
 
@@ -427,17 +439,18 @@ public class MetricCalculation {
 		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
 			String key = entry.getKey();
 
-			if (key == VersionMetrics.MetricKeysImpl.PRODUCT.toString()
-					|| key == VersionMetrics.MetricKeysImpl.VERSION.toString()
-					|| key == VersionMetrics.MetricKeysImpl.VENDOR.toString() || key == "AverageCVSS3"
-					|| key == "MaxCVSS3") {
+			if (key.equals(VersionMetrics.MetricKeysImpl.PRODUCT.toString())
+					|| key.equals(VersionMetrics.MetricKeysImpl.VERSION.toString())
+					|| key.equals(VersionMetrics.MetricKeysImpl.VENDOR.toString())
+					|| key.equals("AverageCVSS3")
+					|| key.equals("MaxCVSS3")) {
 				continue;
 			}
 
 			int index = 0;
 			for (String value : entry.getValue()) {
 				// merge with plausibility check
-				if ((value == null || value == "" || Double.parseDouble(value) < 0)) {
+				if ((value == null || value.isEmpty() || Double.parseDouble(value) < 0)) {
 					badIndexes.add(Integer.valueOf(index));
 				}
 				index++;

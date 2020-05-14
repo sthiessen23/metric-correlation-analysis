@@ -38,7 +38,7 @@ import com.github.fge.jsonschema.main.JsonValidator;
 
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
-import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
+import metric.correlation.analysis.project_selection.ProjectsOutputCreator;
 
 @RunWith(Parameterized.class)
 public class Execution {

@@ -1,6 +1,7 @@
 package metric.correlation.analysis.calculation.impl;
 
-import static metric.correlation.analysis.calculation.impl.SourceMeterMetrics.MetricKeysImpl.*;
+import static metric.correlation.analysis.calculation.impl.SourceMeterMetrics.MetricKeysImpl.LLOC;
+import static metric.correlation.analysis.calculation.impl.SourceMeterMetrics.MetricKeysImpl.LOC_PER_CLASS;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -132,18 +133,23 @@ public class SourceMeterMetrics implements IMetricCalculator {
 		if (!metrics.exists()) {
 			throw new IllegalStateException("File to parse does not exist: " + metrics.getAbsolutePath());
 		}
-		BufferedReader fileReader = new BufferedReader(new FileReader(metrics));
-		initIndex(metricIndex, fileReader.readLine());
-		String mLine;
-		while ((mLine = fileReader.readLine()) != null) {
-			String[] cvsValues = getCsvValues(mLine);
-			Map<String, String> metricMap = new HashMap<>();
-			for (Entry<String, Integer> entry : metricIndex.entrySet()) {
-				metricMap.put(entry.getKey(), cvsValues[entry.getValue()]);
+		BufferedReader fileReader = new BufferedReader(new FileReader(metrics));;
+		try {
+			initIndex(metricIndex, fileReader.readLine());
+			String mLine;
+			while ((mLine = fileReader.readLine()) != null) {
+				String[] cvsValues = getCsvValues(mLine);
+				Map<String, String> metricMap = new HashMap<>();
+				for (Entry<String, Integer> entry : metricIndex.entrySet()) {
+					metricMap.put(entry.getKey(), cvsValues[entry.getValue()]);
+				}
+				content.add(metricMap);
 			}
-			content.add(metricMap);
-		}
+	} catch (IOException e) {
+		throw new IOException();
+	} finally {
 		fileReader.close();
+	}
 	}
 
 	private void initIndex(Map<String, Integer> metricIndex, String line) {
