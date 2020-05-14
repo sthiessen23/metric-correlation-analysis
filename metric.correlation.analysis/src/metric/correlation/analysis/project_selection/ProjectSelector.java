@@ -1,4 +1,4 @@
-package metric.correlation.analysis.projectSelection;
+package metric.correlation.analysis.project_selection;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -310,7 +310,7 @@ public class ProjectSelector {
 				totalNumberOfVulnerabilites += vulnerabilities.size();
 			}
 
-			averageVulnerabilitiesPerProject = totalNumberOfVulnerabilites / totalNumberOfProjects;
+			averageVulnerabilitiesPerProject = totalNumberOfVulnerabilites / (double)totalNumberOfProjects;
 
 			LOGGER.log(Level.INFO,
 					"The average number of discovered vulnerabilities is : " + averageVulnerabilitiesPerProject);

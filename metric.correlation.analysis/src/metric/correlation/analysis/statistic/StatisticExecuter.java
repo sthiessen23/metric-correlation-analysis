@@ -308,23 +308,23 @@ public class StatisticExecuter {
 				columnNames = columnNames.substring(columnNames.length()-1);
 				columnNames += "\n";
 				
-				FileWriter writer = new FileWriter("input/" + metric.productName + "-versionGraphData.csv");
-				writer.write(columnNames);
-				
-				for (int i = 1; i < metric.versions.size(); i++) {
-					String line = metric.versions.get(i-1) + "->" + metric.versions.get(i);
+				try (FileWriter writer = new FileWriter("input/" + metric.productName + "-versionGraphData.csv")) {
+					writer.write(columnNames);
 					
-					for (ArrayList<Double> column : columns ) {
-						line = line + "," + pmdDiff(column.get(i-1), column.get(i));
+					for (int i = 1; i < metric.versions.size(); i++) {
+						String line = metric.versions.get(i-1) + "->" + metric.versions.get(i);
+						
+						for (ArrayList<Double> column : columns ) {
+							line = line + "," + pmdDiff(column.get(i-1), column.get(i));
+						}
+					
+						line += "\n";
+						writer.write(line);
 					}
-					
-					line += "\n";
-					writer.write(line);
 				}
-				writer.close();
 			}
 		} catch (IOException e1) {
-			e1.printStackTrace();
+			LOGGER.log(Level.ERROR, e1);
 		}
 	}
 	
@@ -350,7 +350,7 @@ public class StatisticExecuter {
 	        try (BufferedReader br = new BufferedReader(new FileReader(currentProject))) {
 	        	
 	        	//ignore title
-	        	br.readLine();
+	        	line = br.readLine();
 	            while ((line = br.readLine()) != null) {
 
 	                // use comma as separator
@@ -364,7 +364,7 @@ public class StatisticExecuter {
 	            }
 	            
 	        } catch (IOException e) {
-	            e.printStackTrace();
+	            LOGGER.log(Level.ERROR, e);
 	        }
 
 	        String chartTitle = "Metric changes for project " + projectName.replace("-versionGraphData.csv", "");
@@ -401,7 +401,7 @@ public class StatisticExecuter {
 				ChartUtils.saveChartAsJPEG(lineChart ,chart, width ,height);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				LOGGER.log(Level.ERROR, e);
 			}
 		  
 		}

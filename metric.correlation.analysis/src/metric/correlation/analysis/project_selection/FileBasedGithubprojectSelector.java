@@ -1,4 +1,4 @@
-package metric.correlation.analysis.projectSelection;
+package metric.correlation.analysis.project_selection;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;

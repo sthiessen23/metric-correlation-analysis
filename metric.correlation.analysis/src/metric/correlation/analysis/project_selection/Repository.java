@@ -1,4 +1,4 @@
-package metric.correlation.analysis.projectSelection;
+package metric.correlation.analysis.project_selection;
 
 /**
  * @author Antoniya Ivanova Represents a GitHub repository.

@@ -115,7 +115,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			IProject iproject = project.getProject();
 			compiledApk = GradleBuild.buildApk(iproject.getLocation().toFile());
 		} catch (UnsupportedOperationSystemException e1) {
-			e1.printStackTrace();
+			LOGGER.log(Level.ERROR, e1);
 			return false;
 		}
 		String andro_cmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "

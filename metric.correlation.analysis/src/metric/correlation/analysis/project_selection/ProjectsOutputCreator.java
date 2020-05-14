@@ -1,4 +1,4 @@
-package metric.correlation.analysis.projectSelection;
+package metric.correlation.analysis.project_selection;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -38,8 +38,8 @@ public class ProjectsOutputCreator {
 	/**
 	 * The location of the JSON file containing the project information
 	 */
-	public static String projectsDataOutputFilePath = "input/projectsReleaseData2.json";
-	public static String normalizedProjectsDataOutputFilePath = "input/projectsReleaseData-normalized2.json";
+	public static final String projectsDataOutputFilePath = "input/projectsReleaseData2.json";
+	public static final String normalizedProjectsDataOutputFilePath = "input/projectsReleaseData-normalized2.json";
 
 	private final int MAX_COMMITS = 1;
 	private final int MAX_PROJECTS = 3;
