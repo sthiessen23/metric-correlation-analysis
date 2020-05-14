@@ -45,7 +45,11 @@ public class Storage {
 		
 		if(!resultFile.exists()) {
 			resultFile.getParentFile().mkdirs();
-			resultFile.createNewFile();
+			boolean created = resultFile.createNewFile();
+			if (!created) {
+				LOGGER.log(Level.ERROR, "resultFile could not be created");
+				throw new IOException();
+			}
 		}
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))){
 			
