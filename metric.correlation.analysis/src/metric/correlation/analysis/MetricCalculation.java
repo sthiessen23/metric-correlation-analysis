@@ -236,7 +236,7 @@ public class MetricCalculation {
 		return success;
 	}
 
-	public IJavaProject importProject(File src) {
+	public IJavaProject importProject(File src, boolean ignoreBuildErrors) {
 		LOGGER.log(Level.INFO, "Importing  project to Eclipse workspace");
 		if (!src.exists()) {
 			errors.add("src folder does not exist");
@@ -245,14 +245,14 @@ public class MetricCalculation {
 		ProjectImport projectImport;
 		if (Arrays.stream(src.listFiles()).anyMatch(f -> f.getName().contentEquals("build.gradle"))) {
 			try {
-				projectImport = new GradleImport(src, true);
+				projectImport = new GradleImport(src, ignoreBuildErrors);
 			} catch (IOException | ImportException e) {
 				errors.add("new GradleImport()");
 				return null;
 			}
 		} else if (Arrays.stream(src.listFiles()).anyMatch(f -> f.getName().contentEquals("pom.xml"))) {
 			try {
-				projectImport = new MavenImport(src, true);
+				projectImport = new MavenImport(src, ignoreBuildErrors);
 			} catch (ImportException e) {
 				errors.add("new MavenImport()");
 				return null;
@@ -331,7 +331,7 @@ public class MetricCalculation {
 	 */
 	private boolean calculateMetrics(String productName, String vendorName, String version, File src) {
 		// Import the sourcecode as maven or gradle project
-		IJavaProject project = importProject(src);
+		IJavaProject project = importProject(src, true);
 		if (project == null) {
 			return false;
 		}

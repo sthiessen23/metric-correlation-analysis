@@ -35,50 +35,50 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 
 	private static final Logger LOGGER = Logger.getLogger(AndrolyzeMetrics.class);
 
-	public static final String env_variable_name_androlyze = "ANDROLYZE";
-	public static final String env_variable_name_mongod = "MONGOD";
+	public static final String ENV_VARIABLE_NAME_ANDROLYZE = "ANDROLYZE";
+	public static final String ENV_VARIABLE_NAME_MONGOD = "MONGOD";
 
 	private final File androlyzeDir;
 
 	public AndrolyzeMetrics() throws MetricCalculatorInitializationException {
-		String andro = System.getenv(env_variable_name_androlyze);
+		String andro = System.getenv(ENV_VARIABLE_NAME_ANDROLYZE);
 		if (andro == null) {
 			throw new MetricCalculatorInitializationException("Androlyze environment variable not set!");
 		}
-		File androlyzeDir = new File(andro);
-		if (!androlyzeDir.exists()) {
+		File androlyzeDirTmp = new File(andro);
+		if (!androlyzeDirTmp.exists()) {
 			throw new MetricCalculatorInitializationException(
-					"The location \"" + androlyzeDir.getAbsolutePath() + "\" doesn't exist.");
+					"The location \"" + androlyzeDirTmp.getAbsolutePath() + "\" doesn't exist.");
 		}
-		if (androlyzeDir.isFile()) {
-			androlyzeDir = androlyzeDir.getParentFile();
+		if (androlyzeDirTmp.isFile()) {
+			androlyzeDirTmp = androlyzeDirTmp.getParentFile();
 		}
-		if (!new File(androlyzeDir, "androanalyze").exists()) {
+		if (!new File(androlyzeDirTmp, "androanalyze").exists()) {
 			throw new MetricCalculatorInitializationException(
-					"Androlyze executable not found in \"" + androlyzeDir.getAbsolutePath() + "\".");
+					"Androlyze executable not found in \"" + androlyzeDirTmp.getAbsolutePath() + "\".");
 		}
-		this.androlyzeDir = androlyzeDir;
+		this.androlyzeDir = androlyzeDirTmp;
 
 		startDatabase();
 	}
 
 	private boolean startDatabase() throws MetricCalculatorInitializationException {
 
-		String mongod = System.getenv(env_variable_name_mongod);
+		String mongod = System.getenv(ENV_VARIABLE_NAME_MONGOD);
 		if (mongod == null) {
 			throw new MetricCalculatorInitializationException(
-					"Environment variable \"" + env_variable_name_mongod + "\" not set.");
+					"Environment variable \"" + ENV_VARIABLE_NAME_MONGOD + "\" not set.");
 		}
 		File mongodFile = new File(mongod);
 		if (!mongodFile.exists()) {
 			throw new MetricCalculatorInitializationException(
-					"Location \"" + env_variable_name_mongod + "\" not found.");
+					"Location \"" + ENV_VARIABLE_NAME_MONGOD + "\" not found.");
 		}
 		if (mongodFile.isDirectory()) {
 			mongodFile = new File(mongodFile, "mongod");
 			if (!mongodFile.exists()) {
 				throw new MetricCalculatorInitializationException(
-						"Location \"" + env_variable_name_mongod + "\" not found.");
+						"Location \"" + ENV_VARIABLE_NAME_MONGOD + "\" not found.");
 			}
 		}
 		Runtime run = Runtime.getRuntime();
@@ -118,7 +118,7 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			LOGGER.log(Level.ERROR, e1);
 			return false;
 		}
-		String andro_cmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
+		String androCmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
 				+ "--apks " + compiledApk + " -pm  non-parallel";
 
 		Runtime run = Runtime.getRuntime();
@@ -126,11 +126,11 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			Process process;
 			switch (OperationSystem.getCurrentOS()) {
 			case WINDOWS:
-				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
+				process = run.exec("cmd /c \"" + androCmd + " && exit\"");
 				break;
 			case LINUX:
-				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiledApk;
-				process = run.exec(andro_cmd, null, androlyzeDir);
+				androCmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiledApk;
+				process = run.exec(androCmd, null, androlyzeDir);
 				break;
 			default:
 				return false;

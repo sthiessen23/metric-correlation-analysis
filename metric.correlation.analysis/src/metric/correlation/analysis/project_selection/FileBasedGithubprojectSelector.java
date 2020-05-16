@@ -17,11 +17,11 @@ public abstract class FileBasedGithubprojectSelector implements IGithubProjectSe
 
 	private static final Logger LOGGER = Logger.getLogger(FileBasedGithubprojectSelector.class);
 
-	private final String FILE_NAME;
-	private final int MAX_PAGES = 100;
+	private final String fileName;
+	private static final int MAX_PAGES = 100;
 
 	public FileBasedGithubprojectSelector(String fileName) {
-		this.FILE_NAME = fileName;
+		this.fileName = fileName;
 	}
 
 	/**
@@ -37,7 +37,7 @@ public abstract class FileBasedGithubprojectSelector implements IGithubProjectSe
 		try {
 			CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 			for (int i = 1; i < MAX_PAGES; i++) {
-				searchUrl = "https://api.github.com/search/code?q=repo:" + repositoryName + "+filename:" + FILE_NAME
+				searchUrl = "https://api.github.com/search/code?q=repo:" + repositoryName + "+filename:" + fileName
 						+ "&access_token=" + OAuthToken + "&per_page=100&page=" + i;
 
 				HttpGet requestGradleRepository = new HttpGet(searchUrl);
@@ -54,7 +54,7 @@ public abstract class FileBasedGithubprojectSelector implements IGithubProjectSe
 				}
 				for (JsonElement elem : jarray) {
 					String path = ((JsonObject) elem).get("path").toString().replace("\"","");
-					if (path.equals(FILE_NAME)) {
+					if (path.equals(fileName)) {
 						httpClient.close();
 						return true;
 					}

@@ -30,7 +30,8 @@ public class ImportTest {
 		if (!f.exists()) {
 			fail("project does not exist at expected location");
 		}
-		IJavaProject importProject = metricCalculation.importProject(new File(GRADLE_PROJECT_PATH));
+		// enforces the import to finish without build errors
+		IJavaProject importProject = metricCalculation.importProject(new File(GRADLE_PROJECT_PATH), false);
 		assertNotNull(importProject);
 	}
 	
@@ -40,7 +41,8 @@ public class ImportTest {
 		if (!f.exists()) {
 			fail("project does not exist at expected location");
 		}
-		IJavaProject importProject = metricCalculation.importProject(new File(MAVEN_PROJECT_PATH));
+		// enforces the import to finish without build errors
+		IJavaProject importProject = metricCalculation.importProject(new File(MAVEN_PROJECT_PATH), false);
 		assertNotNull(importProject);
 	}
 	

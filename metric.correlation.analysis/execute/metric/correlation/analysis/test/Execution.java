@@ -120,7 +120,7 @@ public class Execution {
 	public static Collection<Object[]> collectProjects() throws IOException, ProcessingException {
 		Map<String, Collection<String>> excludedProjectNames = getExcludes();
 
-		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.normalizedProjectsDataOutputFilePath);
+		File projectsReleaseDataJSON = new File(ProjectsOutputCreator.PROJECTS_DATA_OUTPUT_FILE_NORMALIZED);
 
 		JsonNode projectsJsonData = JsonLoader.fromFile(projectsReleaseDataJSON);
 		if (VALIDATE_JSON && !checkDocument(projectsJsonData)) {

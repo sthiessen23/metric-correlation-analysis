@@ -133,7 +133,7 @@ public class SourceMeterMetrics implements IMetricCalculator {
 		if (!metrics.exists()) {
 			throw new IllegalStateException("File to parse does not exist: " + metrics.getAbsolutePath());
 		}
-		BufferedReader fileReader = new BufferedReader(new FileReader(metrics));;
+		BufferedReader fileReader = new BufferedReader(new FileReader(metrics));
 		try {
 			initIndex(metricIndex, fileReader.readLine());
 			String mLine;

@@ -38,11 +38,11 @@ public class ProjectsOutputCreator {
 	/**
 	 * The location of the JSON file containing the project information
 	 */
-	public static final String projectsDataOutputFilePath = "input/projectsReleaseData2.json";
-	public static final String normalizedProjectsDataOutputFilePath = "input/projectsReleaseData-normalized2.json";
-
-	private final int MAX_COMMITS = 1;
-	private final int MAX_PROJECTS = 3;
+	public static final String PROJECTS_DATA_OUTPUT_FILE = "input/projectsReleaseData2.json";
+	public static final String PROJECTS_DATA_OUTPUT_FILE_NORMALIZED = "input/projectsReleaseData-normalized2.json";
+	private static final String PROJECTS = "projects";
+	private static final int MAX_COMMITS = 1;
+	private static final int MAX_PROJECTS = 3;
 
 	/**
 	 * @author Antoniya Ivanova - prepares the JSON output for the repository
@@ -51,13 +51,12 @@ public class ProjectsOutputCreator {
 	 *
 	 */
 	public void getProjectReleases() {
-		int apiTimeOutcounter = 1;
 
 		HashSet<SearchHit> repositoriesWithCVEs = new ProjectSelector().getProjectsWithAtLeastOneVulnerability();
 
 		JsonObject resultJSON = new JsonObject();
 		JsonArray resultArray = new JsonArray();
-		resultJSON.add("projects", resultArray);
+		resultJSON.add(PROJECTS, resultArray);
 
 		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
 
@@ -88,7 +87,7 @@ public class ProjectsOutputCreator {
 
 			FileUtils.createDirectory("Resources");
 
-			try (FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath)) {
+			try (FileWriter fileWriter = new FileWriter(PROJECTS_DATA_OUTPUT_FILE)) {
 				fileWriter.write(resultJSON.toString());
 			}
 		} catch (Exception e) {
@@ -150,7 +149,7 @@ public class ProjectsOutputCreator {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonObject resultJSON = new JsonObject();
 		JsonArray resultArray = new JsonArray();
-		resultJSON.add("projects", resultArray);
+		resultJSON.add(PROJECTS, resultArray);
 		Set<Repository> reps = new ProjectSelector().searchForJavaRepositoryNames(MAX_PROJECTS);
 		for (Repository rep : reps) {
 			JsonObject projectJSON = createJson(rep);
@@ -160,7 +159,7 @@ public class ProjectsOutputCreator {
 		}
 		assertFalse(reps.isEmpty());
 		assertTrue(reps.size() <= MAX_PROJECTS);
-		try (FileWriter fileWriter = new FileWriter(projectsDataOutputFilePath)) {
+		try (FileWriter fileWriter = new FileWriter(PROJECTS_DATA_OUTPUT_FILE)) {
 			fileWriter.write(gson.toJson(resultJSON));
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getMessage(), e);
@@ -189,15 +188,15 @@ public class ProjectsOutputCreator {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 		// Reading the unnormalized file
-		try (JsonReader reader = new JsonReader(new FileReader(projectsDataOutputFilePath))) {
+		try (JsonReader reader = new JsonReader(new FileReader(PROJECTS_DATA_OUTPUT_FILE))) {
 			JsonObject jsonTree = gson.fromJson(reader, JsonObject.class);
 			// Getting all the projects
-			JsonArray projects = jsonTree.get("projects").getAsJsonArray();
+			JsonArray projects = jsonTree.get(PROJECTS).getAsJsonArray();
 
 			// Setting up the normalized file
 			JsonObject resultJSON = new JsonObject();
 			JsonArray resultArray = new JsonArray();
-			resultJSON.add("projects", resultArray);
+			resultJSON.add(PROJECTS, resultArray);
 
 			// Iterate the unnormalized file
 			for (int i = 0; i < projects.size(); i++) {
@@ -256,7 +255,7 @@ public class ProjectsOutputCreator {
 
 				// Write the new file
 				FileUtils.createDirectory("Resources");
-				try (FileWriter fileWriter = new FileWriter(normalizedProjectsDataOutputFilePath)) {
+				try (FileWriter fileWriter = new FileWriter(PROJECTS_DATA_OUTPUT_FILE_NORMALIZED)) {
 					fileWriter.write(gson.toJson(resultJSON));
 				} catch (Exception e) {
 					LOGGER.log(Level.ERROR, "Couldn't write normalized file", e);
