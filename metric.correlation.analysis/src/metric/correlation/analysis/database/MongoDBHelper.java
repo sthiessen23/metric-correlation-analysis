@@ -140,11 +140,10 @@ public class MongoDBHelper {
 	public static void shutdownDatabase() {
 		Document shutdownDoc = new Document();
 		shutdownDoc.append("shutdown", 1);
-		MongoClient shutdownClient = new MongoClient(new MongoClientURI(SERVER_URI));
-		try {
+		try (MongoClient shutdownClient = new MongoClient(new MongoClientURI(SERVER_URI))){
 			shutdownClient.getDatabase("admin").runCommand(shutdownDoc);
-		} catch (MongoSocketReadException e) { // the shutdown always throws an exception but works
-			shutdownClient.close();
+		} catch (MongoSocketReadException e) { // the shutdown throws this exception when successful
+			LOGGER.info("shutdown mongodb server");
 		}
 
 	}
