@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 
 public class VersionHelper {
 
+	private static final String numbersOrDots = "[^\\d|\\.]";
     /**
      * Compares one version string to another version string by dotted ordinals.
      * eg. "1.0" > "0.09" ; "0.9.5" < "0.10",
@@ -14,6 +15,8 @@ public class VersionHelper {
      * @return 0 if equal, -1 if thisVersion &lt; comparedVersion and 1 otherwise.
      */
     public static int compare(@Nonnull String left, @Nonnull String right) {
+    	left = left.replaceAll(numbersOrDots, "");
+        right = right.replaceAll(numbersOrDots, "");
         if (left.equals(right)) {
             return 0;
         }

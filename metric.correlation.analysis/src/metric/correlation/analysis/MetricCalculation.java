@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
+import org.gravity.eclipse.importer.ImportException;
 import org.gravity.eclipse.importer.NoRootFolderException;
 import org.gravity.eclipse.importer.ProjectImport;
 import org.gravity.eclipse.importer.gradle.GradleImport;
@@ -36,7 +37,6 @@ import org.gravity.eclipse.importer.maven.MavenImport;
 import org.gravity.eclipse.io.FileUtils;
 import org.gravity.eclipse.io.GitCloneException;
 import org.gravity.eclipse.io.GitTools;
-import org.gravity.eclipse.importer.ImportException;
 import org.gravity.eclipse.os.UnsupportedOperationSystemException;
 
 import com.google.common.io.Files;
@@ -399,7 +399,7 @@ public class MetricCalculation {
 	 */
 	private boolean plausabilityCheck(IMetricCalculator calc) {
 		for (String value : calc.getResults().values()) {
-			if (value == null || Double.toString(Double.NaN).equals(value)) {
+			if (value == null || value.isEmpty() || Double.toString(Double.NaN).equals(value)) {
 				errors.add("Values not plausible: " + calc.getClass().getSimpleName());
 				return false;
 			}
@@ -433,52 +433,6 @@ public class MetricCalculation {
 	 */
 	public boolean performStatistics() {
 		LinkedHashMap<String, List<Double>> newestVersionOnly = new LinkedHashMap<>();
-		Set<Integer> badIndexes = new HashSet<Integer>();
-
-		// Get all invalid indexes
-		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
-			String key = entry.getKey();
-
-			if (key.equals(VersionMetrics.MetricKeysImpl.PRODUCT.toString())
-					|| key.equals(VersionMetrics.MetricKeysImpl.VERSION.toString())
-					|| key.equals(VersionMetrics.MetricKeysImpl.VENDOR.toString())
-					|| key.equals("AverageCVSS3")
-					|| key.equals("MaxCVSS3")) {
-				continue;
-			}
-
-			int index = 0;
-			for (String value : entry.getValue()) {
-				// merge with plausibility check
-				if ((value == null || value.isEmpty() || Double.parseDouble(value) < 0)) {
-					badIndexes.add(Integer.valueOf(index));
-				}
-				index++;
-			}
-		}
-
-		// Sort the indexes descending
-		List<Integer> badIndexesList = new ArrayList<Integer>();
-
-		for (Integer badIndex : badIndexes) {
-			badIndexesList.add(badIndex);
-		}
-
-		Collections.sort(badIndexesList);
-		Collections.reverse(badIndexesList);
-
-		// Remove all invalid entries
-		/*
-		 * if(anyValue for index is invalid) { continue; }
-		 * 
-		 * baue eine neue liste mit nur validen werten
-		 */
-		for (Entry<String, List<String>> entry : allMetricResults.entrySet()) {
-			List<String> values = entry.getValue();
-			for (Integer badIndex : badIndexesList) {
-				values.remove(badIndex.intValue());
-			}
-		}
 
 		// Find indexes of all newest versions
 		List<String> productNames = allMetricResults
