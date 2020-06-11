@@ -49,6 +49,7 @@ import metric.correlation.analysis.calculation.impl.SourceMeterMetrics;
 import metric.correlation.analysis.calculation.impl.VersionMetrics;
 import metric.correlation.analysis.calculation.impl.VulnerabilitiesPerKLOCMetrics;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
+import metric.correlation.analysis.database.MongoDBHelper;
 import metric.correlation.analysis.io.Storage;
 import metric.correlation.analysis.io.VersionHelper;
 import metric.correlation.analysis.statistic.StatisticExecuter;
@@ -367,6 +368,12 @@ public class MetricCalculation {
 		// If all metrics have been calculated successfully add them to the metric
 		// results
 		if (success) {
+			try (MongoDBHelper dbHelper = new MongoDBHelper()) {
+				dbHelper.storeMetrics(results);
+			} catch (Exception e) {
+				LOGGER.error("could not store results in database");
+				LOGGER.log(Level.ERROR, e.getStackTrace());
+			}
 			for (Entry<String, String> entry : results.entrySet()) {
 				if (!allMetricResults.containsKey(entry.getKey())) {
 					allMetricResults.put(entry.getKey(), new LinkedList<>());

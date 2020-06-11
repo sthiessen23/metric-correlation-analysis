@@ -28,7 +28,7 @@ import com.mongodb.client.model.UpdateOptions;
  * @author Stefan Thießen
  *
  */
-public class MongoDBHelper {
+public class MongoDBHelper implements AutoCloseable{
 
 	private static final Logger LOGGER = Logger.getLogger(MongoDBHelper.class);
 
