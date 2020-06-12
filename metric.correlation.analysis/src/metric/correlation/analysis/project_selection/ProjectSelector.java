@@ -47,6 +47,11 @@ public class ProjectSelector {
 	private static final Logger LOGGER = Logger.getLogger(ProjectSelector.class);
 	private static final int RESULTS_PER_PAGE = 100;
 	private static final int NUMBER_OF_PAGES = 10;
+	private static final int MAX_SIZE = 150000;
+	public static final int GIT_REQUESTS_PER_MINUTE = 20;
+	private static final int MIN_OPEN_ISSUES = 20;
+	
+	public static int GIT_REQUESTS = 1;
 	/**
 	 * Selectors for checking if the project has an supported build nature
 	 */
@@ -72,13 +77,16 @@ public class ProjectSelector {
 		HashSet<Repository> respositoryResults = new HashSet<Repository>();
 		String url;
 		int matchedProjectCount = 0;
-		int checkedProjectCount = 0;
+		int sizeError = 0;
+		int issueError = 0;
+		int totalCnt = 0;
+		int acceptError = 0;
 		try {
 			CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 
 			// Requests per page x 100
 			for (int i = 1; i <= NUMBER_OF_PAGES; i++) {
-				if (i % 30 == 0) { 
+				if (GIT_REQUESTS++ % GIT_REQUESTS_PER_MINUTE == 0) { 
 					TimeUnit.MINUTES.sleep(1);
 				}
 				url = "https://api.github.com/search/repositories?q=language:java&sort=stars&order=desc"
@@ -86,7 +94,7 @@ public class ProjectSelector {
 
 				HttpGet request = new HttpGet(url);
 				request.addHeader("content-type", "application/json");
-				request.addHeader("Authorization", "token " + oAuthToken);
+				request.addHeader("Authorization", "Token " + oAuthToken);
 				HttpResponse result = httpClient.execute(request);
 
 				String json = EntityUtils.toString(result.getEntity(), "UTF-8");
@@ -96,11 +104,20 @@ public class ProjectSelector {
 				JsonArray jarray = jobject.getAsJsonArray("items");
 
 				for (int j = 0; j < jarray.size() && matchedProjectCount < maxProjects; j++) {
-					checkedProjectCount++;
+					totalCnt++;
 					JsonObject jo = (JsonObject) jarray.get(j);
 					String fullName = jo.get("full_name").toString().replace("\"", "");
 					int stars = Integer.parseInt(jo.get("stargazers_count").toString());
 					int openIssues = Integer.parseInt(jo.get("open_issues").toString());
+					int size = Integer.parseInt(jo.get("size").toString());
+					if (size > MAX_SIZE) {
+						sizeError++;
+						continue;
+					}
+					if (openIssues < MIN_OPEN_ISSUES) {
+						issueError++;
+						continue;
+					}
 					boolean accept = false;
 					for (IGithubProjectSelector b : BUILD_NATURE_SELECTORS) {
 						accept |= b.accept(fullName, oAuthToken);
@@ -108,13 +125,17 @@ public class ProjectSelector {
 					if (accept) {
 						matchedProjectCount++;
 						LOGGER.log(Level.INFO, "MATCH : " + fullName);
-
+						System.out.println("MATCH " + fullName);
 						String product = jo.get("name").toString().replace("\"", "");
 
 						JsonObject owner = (JsonObject) jo.get("owner");
 						String vendor = owner.get("login").toString().replace("\"", "");
 
 						respositoryResults.add(new Repository(vendor, product, stars, openIssues));
+					}
+					else {
+						acceptError++;
+						System.out.println("NO MATCH " + fullName);
 					}
 
 					LOGGER.log(Level.INFO, j);
@@ -133,7 +154,12 @@ public class ProjectSelector {
 		} catch (Exception e) {
 			LOGGER.log(Level.ERROR, e.getStackTrace());
 		}
-		LOGGER.log(Level.DEBUG, String.format("Checked %d projcts in total, out of which %d projects matched at least one selector", checkedProjectCount, matchedProjectCount));
+		LOGGER.info("PROJECT SELECTION STATISTICS");
+		LOGGER.info("Total number of checked projects : " + totalCnt);
+		LOGGER.info("Disregarded for size: " + sizeError);
+		LOGGER.info("Disregarded for issues: " + issueError);
+		LOGGER.info("Disregarded for lack of mvn/ gradle: " + acceptError);
+		LOGGER.info("Matched projects: " + matchedProjectCount);
 		return respositoryResults;
 	}
 

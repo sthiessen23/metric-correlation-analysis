@@ -41,8 +41,9 @@ public class ProjectsOutputCreator {
 	public static final String PROJECTS_DATA_OUTPUT_FILE = "input/projectsReleaseData2.json";
 	public static final String PROJECTS_DATA_OUTPUT_FILE_NORMALIZED = "input/projectsReleaseData-normalized2.json";
 	private static final String PROJECTS = "projects";
+		
 	private static final int MAX_COMMITS = 1;
-	private static final int MAX_PROJECTS = 3;
+	private static final int MAX_PROJECTS = 200;
 
 	/**
 	 * @author Antoniya Ivanova - prepares the JSON output for the repository
@@ -102,8 +103,7 @@ public class ProjectsOutputCreator {
 		// Iterate over the project release pages
 		for (int i = 1; i < 100; i++) {
 			// Respect 30 request limit of GitHub API
-			if (i % 30 == 0) {
-				LOGGER.log(Level.INFO, i);
+			if (ProjectSelector.GIT_REQUESTS++ % ProjectSelector.GIT_REQUESTS_PER_MINUTE == 0) { 
 				TimeUnit.MINUTES.sleep(1);
 			}
 
@@ -130,7 +130,7 @@ public class ProjectsOutputCreator {
 					String version = jo.get("name").toString().replace("\"", "");
 					commit.addProperty("version", version);
 					if (!version // filter out commits that are clearly no release
-							.matches("(\\.|-|_)(snapshot|pre|alpha|beta|rc|m|prototype)(?![a-z])(\\.|-|_)?[0-9]*")) {
+							.matches(".*(\\.|-|_|^)(snapshot|doc|pre|alpha|beta|rc|m|prototype)(?![a-z]).*")) {
 						commits.add(commit);
 						if (commits.size() >= MAX_COMMITS) {
 							return commits;
@@ -146,6 +146,7 @@ public class ProjectsOutputCreator {
 
 	@Test
 	public void testFindProjects() {
+		LOGGER.getRootLogger().setLevel(Level.ALL);
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonObject resultJSON = new JsonObject();
 		JsonArray resultArray = new JsonArray();
