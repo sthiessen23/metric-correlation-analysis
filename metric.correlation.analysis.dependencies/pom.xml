@@ -80,6 +80,11 @@
 			<version>1.1.0</version>
 		</dependency>
 		<dependency>
+  			<groupId>org.apache.opennlp</groupId>
+  			<artifactId>opennlp-tools</artifactId>
+ 		 	<version>1.9.3</version>
+		</dependency>
+		<dependency>
 			<groupId>org.appenders.log4j</groupId>
 			<artifactId>log4j2-elasticsearch-jest</artifactId>
 			<version>1.1.1</version>

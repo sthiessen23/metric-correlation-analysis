@@ -4,9 +4,13 @@ Bundle-Name: Metric Correlation Analysis
 Bundle-SymbolicName: metric.correlation.analysis;singleton:=true
 Bundle-Version: 0.0.1.qualifier
 Bundle-ClassPath: .,
- flanagan.jar
+ flanagan.jar,
+ opennlp-tools.jar,
+ lib/
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8,
+ JavaSE-11,
+ JavaSE-13
 Require-Bundle: org.eclipse.jdt.core;bundle-version="3.12.0",
  org.junit;bundle-version="4.12.0",
  org.gravity.hulk,
@@ -18,7 +22,14 @@ Require-Bundle: org.eclipse.jdt.core;bundle-version="3.12.0",
  org.gravity.tgg.modisco,
  metric.correlation.analysis.dependencies,
  org.eclipse.emf.ecore,
- org.eclipse.jgit
+ org.eclipse.jgit,
+ org.junit,
+ org.junit.jupiter.api,
+ org.eclipse.jdt.launching;bundle-version="3.17.0",
+ com.github.spotbugs.plugin.eclipse;bundle-version="4.0.6",
+ org.sonarlint.eclipse.core;bundle-version="5.3.0"
 Automatic-Module-Name: Metric-Correlation-Analysis
 Export-Package: metric.correlation.analysis,
- metric.correlation.analysis.calculation.impl
+ metric.correlation.analysis.calculation.impl,
+ metric.correlation.analysis.database,
+ metric.correlation.analysis.io,metric.correlation.analysis.issues, opennlp.tools.util

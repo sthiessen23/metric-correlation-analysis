@@ -38,7 +38,7 @@ import com.github.fge.jsonschema.main.JsonValidator;
 
 import metric.correlation.analysis.MetricCalculation;
 import metric.correlation.analysis.configuration.ProjectConfiguration;
-import metric.correlation.analysis.project_selection.ProjectsOutputCreator;
+import metric.correlation.analysis.projectSelection.ProjectsOutputCreator;
 
 @RunWith(Parameterized.class)
 public class Execution {
@@ -48,7 +48,7 @@ public class Execution {
 	/**
 	 * The maximum amount of projects which should be considered
 	 */
-	private static final int MAX_NUMBER_OF_PROJECTS = 1;
+	private static final int MAX_NUMBER_OF_PROJECTS = 40;
 
 	/**
 	 * From which project should be started
@@ -156,7 +156,7 @@ public class Execution {
 						skip = true;
 						break;
 					} else {
-						excludedVersions = exclude.getValue();
+						excludedVersions = exclude.getValue(); // code missing?
 					}
 				}
 			}
@@ -189,7 +189,7 @@ public class Execution {
 				ProjectConfiguration projectConfiguration = new ProjectConfiguration(productName, vendorName, gitURL,
 						commitsAndVersions);
 				configs.add(new Object[] { vendorName + "-" + productName, projectConfiguration,
-						new Integer(projectCounter), commitsAndVersions.keySet()});
+						projectCounter, commitsAndVersions.keySet()});
 			}
 			else {
 				skipedProjects++;
@@ -207,9 +207,6 @@ public class Execution {
 	 */
 	private static HashMap<String, Collection<String>> getExcludes() throws IOException {
 		HashMap<String, Collection<String>> excludes = new HashMap<>();
-		if (!EXCLUDES_FOLDER.exists()) {
-			Files.createDirectory(EXCLUDES_FOLDER.toPath());
-		}
 		for (File exclude : EXCLUDES_FOLDER.listFiles()) {
 			excludes.put(exclude.getName(), Files.readAllLines(exclude.toPath(), Charset.defaultCharset()));
 		}
@@ -247,7 +244,7 @@ public class Execution {
 	 * @param projectsJsonData The JSON document the schema
 	 * @return true, iff the JSON document complies with the schema
 	 * @throws IOException         Iff the JSON Schema cannot be read
-	 * @throws ProcessingException Iff processing the validation had an error
+	 * @throws ProcessingException Iff processing the va	lidation had an error
 	 */
 	static boolean checkDocument(JsonNode projectsJsonData) throws IOException, ProcessingException {
 		ProcessingReport report = null;
@@ -262,14 +259,15 @@ public class Execution {
 		return true;
 	}
 
-	@Test(timeout = (long) (2 * 60 * 60 * 1000))
+	@Test(timeout = (long) ( 4*60 * 60 * 1000))
 	public void execute() {
+		LOGGER.getRootLogger().setLevel(Level.ALL);
 		if (config.getGitCommitIds().isEmpty()) {
 			fail("No commits available");
 		}
 		addProjectNameToFile(TIMEOUT_FILE);
 		boolean success = calculator.calculate(config);
-		addExcludes();
+		//addExcludes();
 		if (!success) {
 			fail(calculator.getLastErrors().stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 		}
@@ -318,7 +316,7 @@ public class Execution {
 	@BeforeClass
 	public static void initialize() throws InitializationError {
 		Logger.getRootLogger().setLevel(LOG_LEVEL);
-		if (!MetricCalculation.cleanupRepositories()) {
+		if (CLEAN && !MetricCalculation.cleanupRepositories()) {
 			throw new InitializationError("Couldn't clean repositories");
 		}
 		try {

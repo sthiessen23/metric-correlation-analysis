@@ -1,10 +1,5 @@
 package metric.correlation.analysis.calculation.impl;
 
-import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.BLOB;
-import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.IGAM;
-import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.IGAT;
-import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.VISIBILITY;
-
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -23,19 +18,23 @@ import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.jdt.core.IJavaProject;
+
 import org.gravity.hulk.HulkAPI;
 import org.gravity.hulk.HulkAPI.AntiPatternNames;
 import org.gravity.hulk.antipatterngraph.HAnnotation;
 import org.gravity.hulk.antipatterngraph.HMetric;
 import org.gravity.hulk.antipatterngraph.antipattern.HBlobAntiPattern;
+import org.gravity.hulk.antipatterngraph.metrics.HDepthOfInheritanceMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGAMMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
+import org.gravity.hulk.antipatterngraph.metrics.HLCOM5Metric;
 import org.gravity.hulk.antipatterngraph.metrics.HTotalVisibilityMetric;
 import org.gravity.hulk.exceptions.DetectionFailedException;
 import org.gravity.tgg.modisco.MoDiscoTGGActivator;
 import org.gravity.typegraph.basic.TypeGraph;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
+import static metric.correlation.analysis.calculation.impl.HulkMetrics.MetricKeysImpl.*;
 
 public class HulkMetrics implements IMetricCalculator {
 
@@ -99,6 +98,9 @@ public class HulkMetrics implements IMetricCalculator {
 		double igam = 0.0;
 		double igat = 0.0;
 		double vis = 0.0;
+		double lcom = 0.0;
+		double dit = 0.0;
+
 
 		if (!ok) {
 			throw new IllegalStateException("The metrics haven't been calculated successfully!");
@@ -125,6 +127,12 @@ public class HulkMetrics implements IMetricCalculator {
 				else if (annoatation instanceof HTotalVisibilityMetric) {
 					vis = ((HMetric) annoatation).getValue();
 				}
+				else if (annoatation instanceof HLCOM5Metric) {
+					lcom = ((HMetric) annoatation).getValue();
+				}
+				else if (annoatation instanceof HDepthOfInheritanceMetric) {
+					dit = ((HMetric) annoatation).getValue();
+				}
 			}
 
 		}
@@ -132,6 +140,8 @@ public class HulkMetrics implements IMetricCalculator {
 		metrics.put(IGAM.toString(), roundDouble(igam));
 		metrics.put(IGAT.toString(), roundDouble(igat));
 		metrics.put(VISIBILITY.toString(), roundDouble(vis));
+//		metrics.put(DIT.toString(), roundDouble(dit));
+//		metrics.put(LCOM5.toString(), roundDouble(lcom));
 
 		return metrics;
 	}

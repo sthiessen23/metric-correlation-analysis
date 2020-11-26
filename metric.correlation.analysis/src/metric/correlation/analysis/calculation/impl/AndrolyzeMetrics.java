@@ -35,50 +35,50 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 
 	private static final Logger LOGGER = Logger.getLogger(AndrolyzeMetrics.class);
 
-	public static final String ENV_VARIABLE_NAME_ANDROLYZE = "ANDROLYZE";
-	public static final String ENV_VARIABLE_NAME_MONGOD = "MONGOD";
+	public static final String env_variable_name_androlyze = "ANDROLYZE";
+	public static final String env_variable_name_mongod = "MONGOD";
 
 	private final File androlyzeDir;
 
 	public AndrolyzeMetrics() throws MetricCalculatorInitializationException {
-		String andro = System.getenv(ENV_VARIABLE_NAME_ANDROLYZE);
+		String andro = System.getenv(env_variable_name_androlyze);
 		if (andro == null) {
 			throw new MetricCalculatorInitializationException("Androlyze environment variable not set!");
 		}
-		File androlyzeDirTmp = new File(andro);
-		if (!androlyzeDirTmp.exists()) {
+		File androlyzeDir = new File(andro);
+		if (!androlyzeDir.exists()) {
 			throw new MetricCalculatorInitializationException(
-					"The location \"" + androlyzeDirTmp.getAbsolutePath() + "\" doesn't exist.");
+					"The location \"" + androlyzeDir.getAbsolutePath() + "\" doesn't exist.");
 		}
-		if (androlyzeDirTmp.isFile()) {
-			androlyzeDirTmp = androlyzeDirTmp.getParentFile();
+		if (androlyzeDir.isFile()) {
+			androlyzeDir = androlyzeDir.getParentFile();
 		}
-		if (!new File(androlyzeDirTmp, "androanalyze").exists()) {
+		if (!new File(androlyzeDir, "androanalyze").exists()) {
 			throw new MetricCalculatorInitializationException(
-					"Androlyze executable not found in \"" + androlyzeDirTmp.getAbsolutePath() + "\".");
+					"Androlyze executable not found in \"" + androlyzeDir.getAbsolutePath() + "\".");
 		}
-		this.androlyzeDir = androlyzeDirTmp;
+		this.androlyzeDir = androlyzeDir;
 
 		startDatabase();
 	}
 
 	private boolean startDatabase() throws MetricCalculatorInitializationException {
 
-		String mongod = System.getenv(ENV_VARIABLE_NAME_MONGOD);
+		String mongod = System.getenv(env_variable_name_mongod);
 		if (mongod == null) {
 			throw new MetricCalculatorInitializationException(
-					"Environment variable \"" + ENV_VARIABLE_NAME_MONGOD + "\" not set.");
+					"Environment variable \"" + env_variable_name_mongod + "\" not set.");
 		}
 		File mongodFile = new File(mongod);
 		if (!mongodFile.exists()) {
 			throw new MetricCalculatorInitializationException(
-					"Location \"" + ENV_VARIABLE_NAME_MONGOD + "\" not found.");
+					"Location \"" + env_variable_name_mongod + "\" not found.");
 		}
 		if (mongodFile.isDirectory()) {
 			mongodFile = new File(mongodFile, "mongod");
 			if (!mongodFile.exists()) {
 				throw new MetricCalculatorInitializationException(
-						"Location \"" + ENV_VARIABLE_NAME_MONGOD + "\" not found.");
+						"Location \"" + env_variable_name_mongod + "\" not found.");
 			}
 		}
 		Runtime run = Runtime.getRuntime();
@@ -115,10 +115,10 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			IProject iproject = project.getProject();
 			compiledApk = GradleBuild.buildApk(iproject.getLocation().toFile());
 		} catch (UnsupportedOperationSystemException e1) {
-			LOGGER.log(Level.ERROR, e1);
+			e1.printStackTrace();
 			return false;
 		}
-		String androCmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
+		String andro_cmd = "cd " + androlyzeDir + " && " + "androlyze.py " + "analyze " + "CodePermissions.py "
 				+ "--apks " + compiledApk + " -pm  non-parallel";
 
 		Runtime run = Runtime.getRuntime();
@@ -126,11 +126,11 @@ public class AndrolyzeMetrics implements IMetricCalculator {
 			Process process;
 			switch (OperationSystem.getCurrentOS()) {
 			case WINDOWS:
-				process = run.exec("cmd /c \"" + androCmd + " && exit\"");
+				process = run.exec("cmd /c \"" + andro_cmd + " && exit\"");
 				break;
 			case LINUX:
-				androCmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiledApk;
-				process = run.exec(androCmd, null, androlyzeDir);
+				andro_cmd = "./androanalyze scripts_builtin/CodePermissions.py --apks " + compiledApk;
+				process = run.exec(andro_cmd, null, androlyzeDir);
 				break;
 			default:
 				return false;

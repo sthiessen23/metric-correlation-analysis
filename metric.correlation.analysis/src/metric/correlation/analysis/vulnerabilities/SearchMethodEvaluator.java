@@ -264,13 +264,8 @@ public class SearchMethodEvaluator {
 		LOGGER.log(Level.INFO, "################Recall and precision per project################");
 
 		// Calculate overall recall and precision
-		float total = allTruePositives + (float)allFalseNegatives;
-		if (total == 0) {
-			LOGGER.log(Level.ERROR, "Recall and precision calculation failed");
-			throw new IllegalStateException("total must be > 0");
-		}
-		float recall = allTruePositives / total;
-		float precision = allTruePositives / total;
+		float recall = allTruePositives / (float) (allTruePositives + allFalseNegatives);
+		float precision = allTruePositives / (float) (allTruePositives + allFalsePositives);
 
 		LOGGER.log(Level.INFO, "################Recall and precision overall################");
 		LOGGER.log(Level.INFO, "For " + CVEsInControlResults + " CVE entries in the control results, there were: ");

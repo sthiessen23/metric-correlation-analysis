@@ -26,10 +26,6 @@ import org.eclipse.jdt.core.eval.IEvaluationContext;
 
 public class IJavaProjectMock implements IJavaProject {
 
-	private IProject project;
-	public IJavaProjectMock(IProject project) {
-		this.project = project;
-	}
 	@Override
 	public IJavaElement[] getChildren() throws JavaModelException {
 		// TODO Auto-generated method stub
@@ -406,7 +402,7 @@ public class IJavaProjectMock implements IJavaProject {
 	@Override
 	public IProject getProject() {
 		// TODO Auto-generated method stub
-		return project;
+		return null;
 	}
 
 	@Override
