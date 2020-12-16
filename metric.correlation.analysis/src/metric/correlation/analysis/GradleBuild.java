@@ -23,7 +23,7 @@ public class GradleBuild {
 	public static File buildApk(File src) throws UnsupportedOperationSystemException {
 
 		if (new File(src, "build").exists()) {
-			LOGGER.log(Level.WARN, "Build already exists!");
+			LOGGER.warn("Build already exists!");
 			return getApk(src);
 		}
 
@@ -58,10 +58,10 @@ public class GradleBuild {
 			}
 
 		} catch (InterruptedException e) {
-			LOGGER.log(Level.WARN, e.getMessage(), e);
+			LOGGER.warn(e.getMessage(), e);
 			Thread.currentThread().interrupt();
 		} catch (IOException e) {
-			LOGGER.log(Level.WARN, e.getMessage(), e);
+			LOGGER.warn(e.getMessage(), e);
 		}
 		return getApk(src);
 	}

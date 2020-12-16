@@ -30,7 +30,7 @@ import org.gravity.hulk.antipatterngraph.metrics.HIGATMetric;
 import org.gravity.hulk.antipatterngraph.metrics.HLCOM5Metric;
 import org.gravity.hulk.antipatterngraph.metrics.HTotalVisibilityMetric;
 import org.gravity.hulk.exceptions.DetectionFailedException;
-import org.gravity.tgg.modisco.MoDiscoTGGActivator;
+import org.gravity.tgg.modisco.pm.MoDiscoTGGActivator;
 import org.gravity.typegraph.basic.TypeGraph;
 
 import metric.correlation.analysis.calculation.IMetricCalculator;
@@ -61,7 +61,7 @@ public class HulkMetrics implements IMetricCalculator {
 		try {
 			cleanResults();
 		} catch (IOException e) {
-			LOGGER.log(Level.WARN, "Cleaning previous results failed: " + e.getMessage(), e);
+			LOGGER.warn("Cleaning previous results failed: " + e.getMessage(), e);
 		}
 		try {
 			results = HulkAPI.detect(project, new NullProgressMonitor(), AntiPatternNames.BLOB, AntiPatternNames.IGAM,

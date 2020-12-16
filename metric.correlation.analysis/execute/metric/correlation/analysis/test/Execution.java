@@ -253,7 +253,7 @@ public class Execution {
 		JsonValidator validator = JsonSchemaFactory.byDefault().getValidator();
 		report = validator.validate(schemaNode, projectsJsonData);
 		if (!report.isSuccess()) {
-			LOGGER.log(Level.WARN, "The project configuration is not valid!");
+			LOGGER.warn("The project configuration is not valid!");
 			return false;
 		}
 		return true;
@@ -291,7 +291,7 @@ public class Execution {
 			Files.write(file.toPath(), (name + '\n').getBytes(),
 					file.exists() ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
 		} catch (IOException e) {
-			LOGGER.log(Level.WARN, "Couldn't append project to excludes: " + name);
+			LOGGER.warn("Couldn't append project to excludes: " + name);
 			return false;
 		}
 		return true;
