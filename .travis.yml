@@ -6,9 +6,7 @@ cache:
   - $HOME/.m2
 addons:
   sonarcloud:
-    organization: "svenpeldszus-github" # the key of the org you chose at step #3
-    token:
-      secure: ${SONAR_TOKEN}
+    organization: "svenpeldszus-github"
 script:
   # the following command line builds the project, runs the tests with coverage and then execute the SonarCloud analysis
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dsonar.projectKey=metric.correlation.analysis.core:metric.correlation.analysis.tycho-parent 
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dsonar.login=${SONAR_TOKEN} -Dsonar.projectKey=metric.correlation.analysis.core:metric.correlation.analysis.tycho-parent 
