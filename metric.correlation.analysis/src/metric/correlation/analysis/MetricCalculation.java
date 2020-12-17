@@ -136,7 +136,7 @@ public class MetricCalculation {
 				calculators.add(clazz.getConstructor().newInstance());
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				LOGGER.log(Level.WARN, e.getMessage(), e);
+				LOGGER.warn(e.getMessage(), e);
 			}
 		}
 
@@ -235,7 +235,7 @@ public class MetricCalculation {
 				if (!git.changeVersion(commitId)) {
 					success = false;
 					errors.add("change commit");
-					LOGGER.log(Level.WARN, "Skipped commit: " + commitId);
+					LOGGER.warn("Skipped commit: " + commitId);
 					continue;
 				}
 				FileUtils.recursiveDelete(new File(RESULTS, "SourceMeter"));
@@ -366,7 +366,7 @@ public class MetricCalculation {
 			fileAppender.activateOptions();
 			Logger.getRootLogger().addAppender(fileAppender);
 		} catch (IOException e) {
-			LOGGER.log(Level.WARN, "Adding file appender failed!");
+			LOGGER.warn("Adding file appender failed!");
 		}
 		return fileAppender;
 	}
@@ -587,7 +587,7 @@ public class MetricCalculation {
 			if (newestVersionOnly.size() > 1) {
 				new StatisticExecuter().calculateStatistics(newestVersionOnly, outputFolder);
 			} else {
-				LOGGER.log(Level.WARN, "Skipped calculation of correlation matrix");
+				LOGGER.warn("Skipped calculation of correlation matrix");
 			}
 		} catch (IOException e) {
 			LOGGER.log(Level.ERROR, e.getLocalizedMessage(), e);
